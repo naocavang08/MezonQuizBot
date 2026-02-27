@@ -1,12 +1,224 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\application\\dtos\\quizquestion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\application\\dtos\\quizquestion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\domain\\entities\\quiz.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\domain\\entities\\quiz.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\application\\dtos\\quizsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\application\\dtos\\quizsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\domain\\entities\\userrole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\domain\\entities\\userrole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\domain\\entities\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\domain\\entities\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\domain\\entities\\permission.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\domain\\entities\\permission.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\domain\\entities\\quizcategory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\domain\\entities\\quizcategory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\domain\\entities\\rolepermission.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\domain\\entities\\rolepermission.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\domain\\entities\\sessionparticipant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\domain\\entities\\sessionparticipant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\webapp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\webapp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|c:\\minh\\nccplus\\mezonquizzbot\\mezonquiz\\src\\webapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E3CF19E4-5622-64B9-34FF-31DCC94C3E01}|src\\WebApp\\WebApp.csproj|solutionrelative:src\\webapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "QuizSettings.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Application\\Dtos\\QuizSettings.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Application\\Dtos\\QuizSettings.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Application\\Dtos\\QuizSettings.cs*",
+              "RelativeToolTip": "src\\WebApp\\Application\\Dtos\\QuizSettings.cs*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T06:25:41.632Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "QuizQuestion.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Application\\Dtos\\QuizQuestion.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Application\\Dtos\\QuizQuestion.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Application\\Dtos\\QuizQuestion.cs",
+              "RelativeToolTip": "src\\WebApp\\Application\\Dtos\\QuizQuestion.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T06:25:31.74Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Permission.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\Permission.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Domain\\Entities\\Permission.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\Permission.cs",
+              "RelativeToolTip": "src\\WebApp\\Domain\\Entities\\Permission.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAzwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T04:41:19.9Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Role.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\Role.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Domain\\Entities\\Role.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\Role.cs",
+              "RelativeToolTip": "src\\WebApp\\Domain\\Entities\\Role.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAA1wAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T04:41:05.028Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Quiz.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\Quiz.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Domain\\Entities\\Quiz.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\Quiz.cs*",
+              "RelativeToolTip": "src\\WebApp\\Domain\\Entities\\Quiz.cs*",
+              "ViewState": "AgIAABwAAAAAAAAAAAAhwCAAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T04:27:12.005Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "UserRole.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\UserRole.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Domain\\Entities\\UserRole.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\UserRole.cs",
+              "RelativeToolTip": "src\\WebApp\\Domain\\Entities\\UserRole.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAAkwBEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T04:17:24.676Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Data\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Data\\AppDbContext.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Data\\AppDbContext.cs",
+              "RelativeToolTip": "src\\WebApp\\Data\\AppDbContext.cs",
+              "ViewState": "AgIAAGAAAAAAAAAAAAAAAGoAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T03:34:32.987Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "QuizCategory.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\QuizCategory.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Domain\\Entities\\QuizCategory.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\QuizCategory.cs",
+              "RelativeToolTip": "src\\WebApp\\Domain\\Entities\\QuizCategory.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAAQwAQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T04:22:55.576Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "RolePermission.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\RolePermission.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Domain\\Entities\\RolePermission.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\RolePermission.cs",
+              "RelativeToolTip": "src\\WebApp\\Domain\\Entities\\RolePermission.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAYwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T04:41:03.086Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "SessionParticipant.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\SessionParticipant.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Domain\\Entities\\SessionParticipant.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Domain\\Entities\\SessionParticipant.cs",
+              "RelativeToolTip": "src\\WebApp\\Domain\\Entities\\SessionParticipant.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAzwBMAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T04:37:44.511Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "WebApp",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\WebApp.csproj",
+              "RelativeDocumentMoniker": "src\\WebApp\\WebApp.csproj",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\WebApp.csproj*",
+              "RelativeToolTip": "src\\WebApp\\WebApp.csproj*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-02-27T03:53:44.844Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Program.cs",
+              "RelativeDocumentMoniker": "src\\WebApp\\Program.cs",
+              "ToolTip": "C:\\Minh\\NCCPLUS\\MezonQuizzBot\\MezonQuiz\\src\\WebApp\\Program.cs",
+              "RelativeToolTip": "src\\WebApp\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T03:32:57.308Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }
