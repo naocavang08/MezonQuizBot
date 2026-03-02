@@ -10,10 +10,9 @@ namespace WebApp.Domain.Entites
         [Column("id")]
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        [Required]
         [Column("mezon_user_id")]
         [MaxLength(255)]
-        public string MezonUserId { get; set; } = null!;
+        public string? MezonUserId { get; set; }
 
         [Column("email")]
         [MaxLength(255)]
@@ -23,6 +22,10 @@ namespace WebApp.Domain.Entites
         [Column("username")]
         [MaxLength(255)]
         public string Username { get; set; } = null!;
+
+        [Column("password")]
+        [MaxLength(255)]
+        public string? Password { get; set; }
 
         [Column("display_name")]
         [MaxLength(255)]
