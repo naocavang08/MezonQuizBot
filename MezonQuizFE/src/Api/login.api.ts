@@ -13,4 +13,18 @@ export const login = (body: {
       if (token) setTokenAccess(token);
       return res.data;
     });
-}; 
+};
+
+export const mezonCallbackLogin = (body: {
+  code: string;
+  state: string;
+  redirectUri: string;
+}) => {
+  return apiClient
+    .post<LoginResponse>('/api/Login/mezon-callback', body)
+    .then((res) => {
+      const token = res.data?.token;
+      if (token) setTokenAccess(token);
+      return res.data;
+    });
+};

@@ -4,9 +4,9 @@ export interface LoginResponse {
 }
 
 export interface User {
-  Id: string;
-  UserName: string;
-  Email?: string;
-  DisplayName?: string;
-  AvatarUrl?: string;
+  id: string;
+  username: string;
+  email?: string;
+  displayName?: string;
+  avatarUrl?: string;
 }
