@@ -26,6 +26,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IMezonAuthService, MezonAuthService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
 
