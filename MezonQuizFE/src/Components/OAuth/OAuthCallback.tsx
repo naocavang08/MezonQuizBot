@@ -36,7 +36,7 @@ const OAuthCallback: React.FC = () => {
         }
 
         setAuth(response);
-        navigate('/', { replace: true });
+        navigate(response.hasSystemRole ? '/admin/dashboard' : '/user/home', { replace: true });
       } catch {
         setError('Không thể kết nối tới server hoặc xác thực thất bại.');
       }

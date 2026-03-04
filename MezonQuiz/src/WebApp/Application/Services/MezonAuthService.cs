@@ -182,6 +182,24 @@ namespace WebApp.Application.Services
             await _dbContext.SaveChangesAsync();
 
             var token = _tokenService.CreateToken(user);
+            var roles = await _dbContext.UserRoles
+                .Where(ur => ur.UserId == user.Id)
+                .Join(_dbContext.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { r.Name, r.IsSystem })
+                .Distinct()
+                .ToListAsync();
+
+            var roleNames = roles
+                .Select(r => r.Name)
+                .ToList();
+
+            var hasSystemRole = roles.Any(r => r.IsSystem);
+
+            var permissionNames = await _dbContext.UserRoles
+                .Where(ur => ur.UserId == user.Id)
+                .Join(_dbContext.RolePermissions, ur => ur.RoleId, rp => rp.RoleId, (ur, rp) => rp.PermissionId)
+                .Join(_dbContext.Permissions, permissionId => permissionId, p => p.Id, (permissionId, p) => p.Resource + "." + p.Action)
+                .Distinct()
+                .ToListAsync();
 
             return MezonCallbackResult.Success(new
             {
@@ -193,7 +211,10 @@ namespace WebApp.Application.Services
                     user.Email,
                     user.DisplayName,
                     user.AvatarUrl
-                }
+                },
+                RoleName = roleNames,
+                PermissionName = permissionNames,
+                HasSystemRole = hasSystemRole
             });
         }
     }

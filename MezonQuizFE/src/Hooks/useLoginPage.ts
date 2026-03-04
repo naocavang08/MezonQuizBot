@@ -29,7 +29,7 @@ const useLoginPage = () => {
 			}
 
 			setAuth(response);
-			navigate("/", { replace: true });
+			navigate(response.hasSystemRole ? "/admin/dashboard" : "/user/home", { replace: true });
 		} catch (error: unknown) {
 			if (error && typeof error === "object" && "response" in error) {
 				const errorResponse = (error as { response?: { data?: { message?: string } } }).response;

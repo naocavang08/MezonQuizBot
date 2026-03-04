@@ -1,6 +1,9 @@
 export interface LoginResponse {
   token: string;
   user: User;
+  roleName?: string[];
+  permissionName?: string[];
+  hasSystemRole?: boolean;
 }
 
 export interface User {
@@ -10,3 +13,4 @@ export interface User {
   displayName?: string;
   avatarUrl?: string;
 }
+
