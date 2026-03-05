@@ -39,7 +39,7 @@ namespace WebApp.Application.Services
             return MapRoleToDto(role);
         }
 
-        public async Task<RoleDto> CreateRoleAsync(RoleDto request)
+        public async Task<RoleDto> CreateRoleAsync(RoleRequestDto request)
         {
             var normalizedName = request.Name?.Trim();
             if (string.IsNullOrWhiteSpace(normalizedName))

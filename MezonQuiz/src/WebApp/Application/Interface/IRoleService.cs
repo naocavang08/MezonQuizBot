@@ -6,7 +6,7 @@ namespace WebApp.Application.Interface
     {
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto> GetRoleByIdAsync(Guid id);
-        Task<RoleDto> CreateRoleAsync(RoleDto request);
+        Task<RoleDto> CreateRoleAsync(RoleRequestDto request);
         Task DeleteRoleAsync(Guid id);
         Task<List<PermissionDto>> GetAllPermissionsAsync();
         Task<List<Guid>> GetRolePermissionIdsAsync(Guid roleId);

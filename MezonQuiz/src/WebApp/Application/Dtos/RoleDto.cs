@@ -2,10 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WebApp.Application.Dtos
 {
-    public class RoleDto
+    public class RoleRequestDto
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
-
         [Required]
         [MaxLength(50)]
         public string Name { get; set; } = null!;
@@ -16,5 +14,9 @@ namespace WebApp.Application.Dtos
         public string? Description { get; set; }
 
         public bool IsSystem { get; set; } = false;
+    }
+    public class RoleDto : RoleRequestDto
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
     }
 }

@@ -15,14 +15,14 @@ namespace WebApp.Area.Admin.Controllers
             _roleService = roleService;
         }
 
-        [HttpGet("roles")]
+        [HttpGet]
         public async Task<IActionResult> GetAllRoles()
         {
             var roles = await _roleService.GetAllRolesAsync();
             return Ok(roles);
         }
 
-        [HttpGet("roles/{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetRoleById(Guid id)
         {
             try
@@ -36,7 +36,7 @@ namespace WebApp.Area.Admin.Controllers
             }
         }
 
-        [HttpPost("roles")]
+        [HttpPost]
         public async Task<IActionResult> CreateRole([FromBody] RoleDto request)
         {
             try
@@ -54,7 +54,7 @@ namespace WebApp.Area.Admin.Controllers
             }
         }
 
-        [HttpDelete("roles/{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRole(Guid id)    
         {
             try
@@ -79,7 +79,7 @@ namespace WebApp.Area.Admin.Controllers
             return Ok(permissions);
         }
 
-        [HttpGet("roles/{id}/permissions")]
+        [HttpGet("{id}/permissions")]
         public async Task<IActionResult> GetRolePermissions(Guid id)
         {
             try
@@ -93,7 +93,7 @@ namespace WebApp.Area.Admin.Controllers
             }
         }
 
-        [HttpPost("roles/{id}/permissions")]
+        [HttpPost("{id}/permissions")]
         public async Task<IActionResult> AssignPermissionsToRole(Guid id, [FromBody] List<Guid> permissionIds)
         {
             try
