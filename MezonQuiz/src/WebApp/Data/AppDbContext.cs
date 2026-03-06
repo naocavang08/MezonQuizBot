@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Reflection.Emit;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Text.Json;
+using WebApp.Application.Dtos;
 using WebApp.Domain.Entites;
 using static WebApp.Domain.Enums.Status;
 
@@ -7,6 +9,20 @@ namespace WebApp.Data
 {
     public class AppDbContext : DbContext
     {
+            private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+            private static readonly ValueComparer<List<QuizQuestion>> QuestionsComparer = new(
+                  (left, right) => JsonSerializer.Serialize(left ?? new List<QuizQuestion>(), JsonOptions) == JsonSerializer.Serialize(right ?? new List<QuizQuestion>(), JsonOptions),
+                  value => JsonSerializer.Serialize(value ?? new List<QuizQuestion>(), JsonOptions).GetHashCode(),
+                  value => JsonSerializer.Deserialize<List<QuizQuestion>>(JsonSerializer.Serialize(value ?? new List<QuizQuestion>(), JsonOptions), JsonOptions) ?? new List<QuizQuestion>()
+            );
+
+            private static readonly ValueComparer<QuizSettings> SettingsComparer = new(
+                  (left, right) => JsonSerializer.Serialize(left ?? new QuizSettings(), JsonOptions) == JsonSerializer.Serialize(right ?? new QuizSettings(), JsonOptions),
+                  value => JsonSerializer.Serialize(value ?? new QuizSettings(), JsonOptions).GetHashCode(),
+                  value => JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(value ?? new QuizSettings(), JsonOptions), JsonOptions) ?? new QuizSettings()
+            );
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
 
@@ -91,22 +107,25 @@ namespace WebApp.Data
 
             b.Entity<Quiz>(entity =>
             {
+                        entity.Property(e => e.Questions)
+                                .HasColumnType("jsonb")
+                                .HasConversion(
+                                      value => JsonSerializer.Serialize(value ?? new List<QuizQuestion>(), JsonOptions),
+                                      value => JsonSerializer.Deserialize<List<QuizQuestion>>(value, JsonOptions) ?? new List<QuizQuestion>())
+                                .Metadata.SetValueComparer(QuestionsComparer);
+
+                        entity.Property(e => e.Settings)
+                                .HasColumnType("jsonb")
+                                .HasConversion(
+                                      value => JsonSerializer.Serialize(value ?? new QuizSettings(), JsonOptions),
+                                      value => JsonSerializer.Deserialize<QuizSettings>(value, JsonOptions) ?? new QuizSettings())
+                                .Metadata.SetValueComparer(SettingsComparer);
+
                 entity.Property(e => e.Visibility)
                       .HasColumnType("quiz_visibility");
 
                 entity.Property(e => e.Status)
                       .HasColumnType("quiz_status");
-
-                entity.OwnsOne(e => e.Settings, settings =>
-                {
-                    settings.ToJson("settings");
-                });
-
-                entity.OwnsMany(e => e.Questions, questions =>
-                {
-                    questions.ToJson("questions");
-                    questions.OwnsMany(q => q.Options);
-                });
 
                 entity.HasOne(e => e.Creator)
                       .WithMany()

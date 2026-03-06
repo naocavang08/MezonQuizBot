@@ -15,6 +15,19 @@ namespace WebApp.Application.Services
             _dbContext = dbContext;
         }
 
+        public async Task<IEnumerable<ListQuizDto>> GetAllQuizzesAsync()
+        {
+            var quizzes = await _dbContext.Quizzes
+                .AsNoTracking()
+                .Select(q => new ListQuizDto
+                {
+                    Id = q.Id,
+                    Title = q.Title
+                })
+                .ToListAsync();
+            return quizzes;
+        }
+
         public async Task<IEnumerable<ListQuizDto>> GetMyQuizzesAsync(Guid userId)
         {
             var quizzes = await _dbContext.Quizzes

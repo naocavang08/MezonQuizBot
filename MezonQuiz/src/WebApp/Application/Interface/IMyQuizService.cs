@@ -4,6 +4,7 @@ namespace WebApp.Application.Interface
 {
     public interface IMyQuizService
     {
+        Task<IEnumerable<ListQuizDto>> GetAllQuizzesAsync();
         Task<IEnumerable<ListQuizDto>> GetMyQuizzesAsync(Guid userId);
         Task<QuizDto?> GetQuizDetailsAsync(Guid quizId);
         Task<bool> CreateQuizAsync(QuizDto quizData);

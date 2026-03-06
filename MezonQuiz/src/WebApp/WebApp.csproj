@@ -7,8 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Area\Admin\Models\" />
-    <Folder Include="Area\Admin\Views\" />
     <Folder Include="Domain\Enums\" />
   </ItemGroup>
 

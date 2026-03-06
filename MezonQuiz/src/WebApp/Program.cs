@@ -67,6 +67,7 @@ builder.Services.AddScoped<IMezonAuthService, MezonAuthService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMyQuizService, MyQuizService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
 
