@@ -10,6 +10,8 @@ import RolePage from "../Pages/Admin/RolePage";
 import UserPage from "../Pages/Admin/UserPage";
 import useAuthStore from "../Stores/login.store";
 import ProtectedRoute from "./ProtectedRoute";
+import MyQuizPage from "../Pages/User/MyQuizPage";
+import CreateQuizPage from "../Pages/User/CreateQuizPage";
 
 const AdminShell = () => {
   return (
@@ -55,6 +57,8 @@ const AppRoutes = () => {
         <Route path="/user" element={!hasSystemRole ? <UserShell /> : <Navigate to="/admin/dashboard" replace />}>
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomePage />} />
+          <Route path="my-quizzes" element={<MyQuizPage />} />
+          <Route path="create-quiz" element={<CreateQuizPage />} />
         </Route>
       </Route>
 

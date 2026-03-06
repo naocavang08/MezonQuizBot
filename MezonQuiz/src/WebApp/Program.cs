@@ -2,9 +2,11 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 using WebApp.Application.Interface;
 using WebApp.Application.Services;
 using WebApp.Data;
+using static WebApp.Domain.Enums.Status;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,17 +48,25 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Missing connection string: DefaultConnection.");
+
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+dataSourceBuilder.MapEnum<QuizVisibility>("quiz_visibility");
+dataSourceBuilder.MapEnum<QuizStatus>("quiz_status");
+dataSourceBuilder.MapEnum<SessionStatus>("session_status");
+var dataSource = dataSourceBuilder.Build();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    );
+    options.UseNpgsql(dataSource);
 });
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IMezonAuthService, MezonAuthService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IMyQuizService, MyQuizService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
 

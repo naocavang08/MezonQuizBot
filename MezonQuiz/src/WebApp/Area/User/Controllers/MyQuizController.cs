@@ -82,5 +82,75 @@ namespace WebApp.Area.User.Controllers
 
             return Ok(new { Message = $"Quiz {quizId} deleted successfully" });
         }
+
+        [HttpPost("quizzes/{quizId}/questions")]
+        public async Task<IActionResult> AddQuestion(Guid quizId, [FromBody] QuizQuestion questionData)
+        {
+            var added = await _myQuizService.AddQuestionAsync(quizId, questionData);
+            if (!added)
+                return BadRequest(new { Message = "Could not add question to quiz." });
+
+            return Ok(new { Message = "Question added successfully" });
+        }
+
+        [HttpPut("quizzes/{quizId}/questions/{questionIndex}")]
+        public async Task<IActionResult> UpdateQuestion(Guid quizId, int questionIndex, [FromBody] QuizQuestion questionData)
+        {
+            var updated = await _myQuizService.UpdateQuestionAsync(quizId, questionIndex, questionData);
+            if (!updated)
+                return BadRequest(new { Message = "Could not update question." });
+
+            return Ok(new { Message = "Question updated successfully" });
+        }
+
+        [HttpDelete("quizzes/{quizId}/questions/{questionIndex}")]
+        public async Task<IActionResult> DeleteQuestion(Guid quizId, int questionIndex)
+        {
+            var deleted = await _myQuizService.DeleteQuestionAsync(quizId, questionIndex);
+            if (!deleted)
+                return NotFound(new { Message = "Could not delete question." });
+
+            return Ok(new { Message = "Question deleted successfully" });
+        }
+
+        [HttpPost("quizzes/{quizId}/questions/{questionIndex}/options")]
+        public async Task<IActionResult> AddOption(Guid quizId, int questionIndex, [FromBody] QuizOption optionData)
+        {
+            var added = await _myQuizService.AddOptionAsync(quizId, questionIndex, optionData);
+            if (!added)
+                return BadRequest(new { Message = "Could not add option to question." });
+
+            return Ok(new { Message = "Option added successfully" });
+        }
+
+        [HttpPut("quizzes/{quizId}/questions/{questionIndex}/options/{optionIndex}")]
+        public async Task<IActionResult> UpdateOption(Guid quizId, int questionIndex, int optionIndex, [FromBody] QuizOption optionData)
+        {
+            var updated = await _myQuizService.UpdateOptionAsync(quizId, questionIndex, optionIndex, optionData);
+            if (!updated)
+                return BadRequest(new { Message = "Could not update option." });
+
+            return Ok(new { Message = "Option updated successfully" });
+        }
+
+        [HttpDelete("quizzes/{quizId}/questions/{questionIndex}/options/{optionIndex}")]
+        public async Task<IActionResult> DeleteOption(Guid quizId, int questionIndex, int optionIndex)
+        {
+            var deleted = await _myQuizService.DeleteOptionAsync(quizId, questionIndex, optionIndex);
+            if (!deleted)
+                return NotFound(new { Message = "Could not delete option." });
+
+            return Ok(new { Message = "Option deleted successfully" });
+        }
+
+        [HttpPut("quizzes/{quizId}/settings")]
+        public async Task<IActionResult> UpdateQuizSettings(Guid quizId, [FromBody] QuizSettings settingsData)
+        {
+            var updated = await _myQuizService.UpdateQuizSettingsAsync(quizId, settingsData);
+            if (!updated)
+                return BadRequest(new { Message = "Could not update quiz settings." });
+
+            return Ok(new { Message = "Quiz settings updated successfully" });
+        }
     }
 }

@@ -1,6 +1,8 @@
 import { Box, Button, Typography, Stack, Container } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
+    const navigate = useNavigate();
 
     return (
         <Container maxWidth="md">
@@ -46,7 +48,7 @@ const HomePage = () => {
                             fontSize: "1rem",
                         }}
                         onClick={() => {
-                            window.location.href = "/my-quizzes";
+                            navigate("/user/my-quizzes");
                         }}
                     >
                         📋 My Quiz

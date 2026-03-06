@@ -75,7 +75,7 @@ namespace WebApp.Application.Services
             if (!IsValidQuizData(quizData))
                 return false;
 
-            var quiz = await _dbContext.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId);
+            var quiz = await GetQuizForUpdateAsync(quizId);
             if (quiz is null)
                 return false;
 
@@ -89,18 +89,141 @@ namespace WebApp.Application.Services
             quiz.Settings = MapSettings(quizData.Settings);
             quiz.Visibility = quizData.Visibility;
             quiz.Status = quizData.Status;
-            quiz.UpdatedAt = DateTime.UtcNow;
+            UpdateQuizMetadata(quiz);
 
             return await _dbContext.SaveChangesAsync() > 0;
         }
 
         public async Task<bool> DeleteQuizAsync(Guid quizId)
         {
-            var quiz = await _dbContext.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId);
+            var quiz = await GetQuizForUpdateAsync(quizId);
             if (quiz is null)
                 return false;
 
             _dbContext.Quizzes.Remove(quiz);
+            return await _dbContext.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> AddQuestionAsync(Guid quizId, QuizQuestion questionData)
+        {
+            if (questionData is null || !questionData.IsValid())
+                return false;
+
+            var quiz = await GetQuizForUpdateAsync(quizId);
+            if (quiz is null)
+                return false;
+
+            quiz.Questions.Add(questionData);
+            UpdateQuizMetadata(quiz);
+
+            return await _dbContext.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateQuestionAsync(Guid quizId, int questionIndex, QuizQuestion questionData)
+        {
+            if (questionData is null || !questionData.IsValid())
+                return false;
+
+            var quiz = await GetQuizForUpdateAsync(quizId);
+            if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out _))
+                return false;
+
+            quiz.Questions[questionIndex] = questionData;
+            UpdateQuizMetadata(quiz);
+
+            return await _dbContext.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> DeleteQuestionAsync(Guid quizId, int questionIndex)
+        {
+            var quiz = await GetQuizForUpdateAsync(quizId);
+            if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out _))
+                return false;
+
+            quiz.Questions.RemoveAt(questionIndex);
+            UpdateQuizMetadata(quiz);
+
+            return await _dbContext.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> AddOptionAsync(Guid quizId, int questionIndex, QuizOption optionData)
+        {
+            var quiz = await GetQuizForUpdateAsync(quizId);
+            if (quiz is null || optionData is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
+                return false;
+
+            if (!IsValidOptionData(optionData))
+                return false;
+
+            question.Options.Add(optionData);
+            if (!question.IsValid())
+            {
+                question.Options.RemoveAt(question.Options.Count - 1);
+                return false;
+            }
+
+            UpdateQuizMetadata(quiz);
+
+            return await _dbContext.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateOptionAsync(Guid quizId, int questionIndex, int optionIndex, QuizOption optionData)
+        {
+            var quiz = await GetQuizForUpdateAsync(quizId);
+            if (quiz is null || optionData is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
+                return false;
+
+            if (!TryGetOptionByListIndex(question, optionIndex, out _))
+                return false;
+
+            if (!IsValidOptionData(optionData))
+                return false;
+
+            var previousOption = question.Options[optionIndex];
+            question.Options[optionIndex] = optionData;
+
+            if (!question.IsValid())
+            {
+                question.Options[optionIndex] = previousOption;
+                return false;
+            }
+
+            UpdateQuizMetadata(quiz);
+
+            return await _dbContext.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> DeleteOptionAsync(Guid quizId, int questionIndex, int optionIndex)
+        {
+            var quiz = await GetQuizForUpdateAsync(quizId);
+            if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
+                return false;
+
+            if (!TryGetOptionByListIndex(question, optionIndex, out var optionToRemove))
+                return false;
+
+            question.Options.RemoveAt(optionIndex);
+
+            if (!question.IsValid())
+            {
+                question.Options.Insert(optionIndex, optionToRemove);
+                return false;
+            }
+
+            UpdateQuizMetadata(quiz);
+
+            return await _dbContext.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateQuizSettingsAsync(Guid quizId, QuizSettings settingsData)
+        {
+            var quiz = await GetQuizForUpdateAsync(quizId);
+            if (quiz is null || settingsData is null || !settingsData.IsValid())
+                return false;
+
+            quiz.Settings = MapSettings(settingsData);
+            UpdateQuizMetadata(quiz);
+
             return await _dbContext.SaveChangesAsync() > 0;
         }
 
@@ -170,6 +293,42 @@ namespace WebApp.Application.Services
                 ShowCorrectAnswer = settings.ShowCorrectAnswer,
                 MaxAttempts = settings.MaxAttempts
             };
+        }
+
+        private async Task<Quiz?> GetQuizForUpdateAsync(Guid quizId)
+        {
+            return await _dbContext.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId);
+        }
+
+        private static void UpdateQuizMetadata(Quiz quiz)
+        {
+            quiz.TotalPoints = quiz.Questions.Sum(q => q.Points);
+            quiz.UpdatedAt = DateTime.UtcNow;
+        }
+
+        private static bool TryGetQuestionByListIndex(Quiz quiz, int questionIndex, out QuizQuestion question)
+        {
+            question = null!;
+            if (questionIndex < 0 || questionIndex >= quiz.Questions.Count)
+                return false;
+
+            question = quiz.Questions[questionIndex];
+            return true;
+        }
+
+        private static bool TryGetOptionByListIndex(QuizQuestion question, int optionIndex, out QuizOption option)
+        {
+            option = null!;
+            if (optionIndex < 0 || optionIndex >= question.Options.Count)
+                return false;
+
+            option = question.Options[optionIndex];
+            return true;
+        }
+
+        private static bool IsValidOptionData(QuizOption optionData)
+        {
+            return !string.IsNullOrWhiteSpace(optionData.Content);
         }
     }
 }
