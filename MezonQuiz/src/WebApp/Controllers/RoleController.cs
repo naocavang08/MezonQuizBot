@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using WebApp.Application.Dtos;
 using WebApp.Application.Interface;
 
-namespace WebApp.Area.Admin.Controllers
+namespace WebApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

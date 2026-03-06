@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Application.Interface;
-using WebApp.Area.User.Dtos;
+using WebApp.Controllers.Dtos;
 using WebApp.Data;
 
 
-namespace WebApp.Area.User.Controllers
+namespace WebApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

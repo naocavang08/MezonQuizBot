@@ -6,33 +6,25 @@ using WebApp.Domain.Entites;
 
 namespace WebApp.Application.Services
 {
-    public class MyQuizService : IMyQuizService
+    public class QuizService : IQuizService
     {
         private readonly AppDbContext _dbContext;
 
-        public MyQuizService(AppDbContext dbContext)
+        public QuizService(AppDbContext dbContext)
         {
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<ListQuizDto>> GetAllQuizzesAsync()
+        public async Task<IEnumerable<ListQuizDto>> GetQuizzesAsync(Guid? userId = null)
         {
-            var quizzes = await _dbContext.Quizzes
-                .AsNoTracking()
-                .Select(q => new ListQuizDto
-                {
-                    Id = q.Id,
-                    Title = q.Title
-                })
-                .ToListAsync();
-            return quizzes;
-        }
+            var query = _dbContext.Quizzes.AsNoTracking();
 
-        public async Task<IEnumerable<ListQuizDto>> GetMyQuizzesAsync(Guid userId)
-        {
-            var quizzes = await _dbContext.Quizzes
-                .AsNoTracking()
-                .Where(q => q.CreatorId == userId)
+            if (userId.HasValue && userId.Value != Guid.Empty)
+            {
+                query = query.Where(q => q.CreatorId == userId.Value);
+            }
+
+            var quizzes = await query
                 .Select(q => new ListQuizDto
                 {
                     Id = q.Id,

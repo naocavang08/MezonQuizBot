@@ -3,36 +3,26 @@ using System.Security.Claims;
 using WebApp.Application.Dtos;
 using WebApp.Application.Interface;
 
-namespace WebApp.Area.User.Controllers
+namespace WebApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class MyQuizController : ControllerBase
+    public class QuizController : ControllerBase
     {
-        private readonly IMyQuizService _myQuizService;
-        public MyQuizController(IMyQuizService myQuizService)
+        private readonly IQuizService _myQuizService;
+        public QuizController(IQuizService myQuizService)
         {
             _myQuizService = myQuizService;
         }
 
-        [HttpGet("quizzes")]
-        public async Task<IActionResult> GetMyQuizzes([FromQuery] Guid? userId = null)
+        [HttpGet]
+        public async Task<IActionResult> GetQuizzes([FromQuery] Guid? userId = null)
         {
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (!Guid.TryParse(userIdClaim, out var claimUserId))
-            {
-                if (userId is null || userId == Guid.Empty)
-                    return Unauthorized(new { Message = "User ID claim is missing." });
-
-                claimUserId = userId.Value;
-            }
-
-            var quizzes = await _myQuizService.GetMyQuizzesAsync(claimUserId);
+            var quizzes = await _myQuizService.GetQuizzesAsync(userId);
             return Ok(quizzes);
         }
 
-        [HttpGet("quizzes/{quizId}")]
+        [HttpGet("{quizId}")]
         public async Task<IActionResult> GetQuizDetails(Guid quizId)
         {
             var quiz = await _myQuizService.GetQuizDetailsAsync(quizId);
@@ -42,7 +32,7 @@ namespace WebApp.Area.User.Controllers
             return Ok(quiz);
         }
 
-        [HttpPost("quizzes")]
+        [HttpPost]
         public async Task<IActionResult> CreateQuiz([FromBody] QuizDto quizData, [FromQuery] Guid? userId = null)
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -63,7 +53,7 @@ namespace WebApp.Area.User.Controllers
             return Ok(new { Message = "Quiz created successfully" });
         }
 
-        [HttpPut("quizzes/{quizId}")]
+        [HttpPut("{quizId}")]
         public async Task<IActionResult> UpdateQuiz(Guid quizId, [FromBody] QuizDto quizData)
         {
             var updated = await _myQuizService.UpdateQuizAsync(quizId, quizData);
@@ -73,7 +63,7 @@ namespace WebApp.Area.User.Controllers
             return Ok(new { Message = $"Quiz {quizId} updated successfully" });
         }
 
-        [HttpDelete("quizzes/{quizId}")]
+        [HttpDelete("{quizId}")]
         public async Task<IActionResult> DeleteQuiz(Guid quizId)
         {
             var deleted = await _myQuizService.DeleteQuizAsync(quizId);
@@ -83,7 +73,7 @@ namespace WebApp.Area.User.Controllers
             return Ok(new { Message = $"Quiz {quizId} deleted successfully" });
         }
 
-        [HttpPost("quizzes/{quizId}/questions")]
+        [HttpPost("{quizId}/questions")]
         public async Task<IActionResult> AddQuestion(Guid quizId, [FromBody] QuizQuestion questionData)
         {
             var added = await _myQuizService.AddQuestionAsync(quizId, questionData);
@@ -93,7 +83,7 @@ namespace WebApp.Area.User.Controllers
             return Ok(new { Message = "Question added successfully" });
         }
 
-        [HttpPut("quizzes/{quizId}/questions/{questionIndex}")]
+        [HttpPut("{quizId}/questions/{questionIndex}")]
         public async Task<IActionResult> UpdateQuestion(Guid quizId, int questionIndex, [FromBody] QuizQuestion questionData)
         {
             var updated = await _myQuizService.UpdateQuestionAsync(quizId, questionIndex, questionData);
@@ -103,7 +93,7 @@ namespace WebApp.Area.User.Controllers
             return Ok(new { Message = "Question updated successfully" });
         }
 
-        [HttpDelete("quizzes/{quizId}/questions/{questionIndex}")]
+        [HttpDelete("{quizId}/questions/{questionIndex}")]
         public async Task<IActionResult> DeleteQuestion(Guid quizId, int questionIndex)
         {
             var deleted = await _myQuizService.DeleteQuestionAsync(quizId, questionIndex);
@@ -113,7 +103,7 @@ namespace WebApp.Area.User.Controllers
             return Ok(new { Message = "Question deleted successfully" });
         }
 
-        [HttpPost("quizzes/{quizId}/questions/{questionIndex}/options")]
+        [HttpPost("{quizId}/questions/{questionIndex}/options")]
         public async Task<IActionResult> AddOption(Guid quizId, int questionIndex, [FromBody] QuizOption optionData)
         {
             var added = await _myQuizService.AddOptionAsync(quizId, questionIndex, optionData);
@@ -123,7 +113,7 @@ namespace WebApp.Area.User.Controllers
             return Ok(new { Message = "Option added successfully" });
         }
 
-        [HttpPut("quizzes/{quizId}/questions/{questionIndex}/options/{optionIndex}")]
+        [HttpPut("{quizId}/questions/{questionIndex}/options/{optionIndex}")]
         public async Task<IActionResult> UpdateOption(Guid quizId, int questionIndex, int optionIndex, [FromBody] QuizOption optionData)
         {
             var updated = await _myQuizService.UpdateOptionAsync(quizId, questionIndex, optionIndex, optionData);
@@ -133,7 +123,7 @@ namespace WebApp.Area.User.Controllers
             return Ok(new { Message = "Option updated successfully" });
         }
 
-        [HttpDelete("quizzes/{quizId}/questions/{questionIndex}/options/{optionIndex}")]
+        [HttpDelete("{quizId}/questions/{questionIndex}/options/{optionIndex}")]
         public async Task<IActionResult> DeleteOption(Guid quizId, int questionIndex, int optionIndex)
         {
             var deleted = await _myQuizService.DeleteOptionAsync(quizId, questionIndex, optionIndex);
@@ -143,7 +133,7 @@ namespace WebApp.Area.User.Controllers
             return Ok(new { Message = "Option deleted successfully" });
         }
 
-        [HttpPut("quizzes/{quizId}/settings")]
+        [HttpPut("{quizId}/settings")]
         public async Task<IActionResult> UpdateQuizSettings(Guid quizId, [FromBody] QuizSettings settingsData)
         {
             var updated = await _myQuizService.UpdateQuizSettingsAsync(quizId, settingsData);

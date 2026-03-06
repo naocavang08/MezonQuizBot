@@ -1,5 +1,5 @@
 using WebApp.Application.Dtos;
-using WebApp.Area.User.Dtos;
+using WebApp.Controllers.Dtos;
 
 namespace WebApp.Application.Interface
 {

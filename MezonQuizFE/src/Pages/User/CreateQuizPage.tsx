@@ -21,7 +21,7 @@ import {
 } from "@mui/material";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { createQuiz } from "../../Api/myQuiz.api";
+import { createQuiz } from "../../Api/quiz.api";
 import {
     QuestionType,
     QuizStatus,
@@ -29,7 +29,7 @@ import {
     type QuizDto,
     type QuizOptionDto,
     type QuizQuestionDto,
-} from "../../Interface/MyQuiz.dto";
+} from "../../Interface/Quiz.dto";
 
 type FormState = {
     title: string;

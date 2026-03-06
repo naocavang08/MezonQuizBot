@@ -3,7 +3,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Application.Dtos;
 using WebApp.Application.Interface;
-using WebApp.Area.User.Dtos;
+using WebApp.Controllers.Dtos;
 using WebApp.Data;
 using DomainUser = WebApp.Domain.Entites.User;
 

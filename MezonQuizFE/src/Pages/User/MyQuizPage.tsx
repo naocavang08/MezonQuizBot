@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { getMyQuizzes } from "../../Api/myQuiz.api";
-import type { ListQuizDto } from "../../Interface/MyQuiz.dto";
+import { getQuizzes } from "../../Api/quiz.api";
+import type { ListQuizDto } from "../../Interface/Quiz.dto";
 
 const MyQuizPage = () => {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ const MyQuizPage = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await getMyQuizzes();
+        const data = await getQuizzes();
 
         if (isMounted) {
           setQuizzes(Array.isArray(data) ? data : []);
@@ -81,12 +81,19 @@ const MyQuizPage = () => {
           {quizzes.map((quiz) => (
             <Box
               key={quiz.id}
+              onClick={() => navigate(`/user/my-quizzes/${quiz.id}/settings`)}
               sx={{
                 border: "1px solid",
                 borderColor: "divider",
                 borderRadius: 2,
                 p: 2,
                 backgroundColor: "transparent",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                '&:hover': {
+                  borderColor: "primary.main",
+                  transform: "translateY(-1px)",
+                },
               }}
             >
               <Typography variant="h6" fontWeight={600}>

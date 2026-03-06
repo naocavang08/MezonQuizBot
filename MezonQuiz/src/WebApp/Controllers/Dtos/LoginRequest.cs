@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-namespace WebApp.Area.User.Dtos
+namespace WebApp.Controllers.Dtos
 {
     public class LoginRequest
     {
