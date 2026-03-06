@@ -1,4 +1,4 @@
-import type { LoginResponse } from "../Interface/LoginResponse";
+import type { LoginResponse } from "../Interface/Login.dto";
 import { setTokenAccess } from "../Lib/Utils/localStorage";
 import apiClient from "./ApiClient";
 

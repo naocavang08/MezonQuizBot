@@ -1,4 +1,7 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using WebApp.Application.Interface;
 using WebApp.Application.Services;
 using WebApp.Data;
@@ -18,6 +21,31 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+
+        var jwtSettings = builder.Configuration.GetSection("JwtTokenSettings");
+        var signingKey = jwtSettings["SymmetricSecurityKey"]
+            ?? throw new InvalidOperationException("Missing JwtTokenSettings:SymmetricSecurityKey configuration.");
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings["ValidIssuer"],
+            ValidateAudience = true,
+            ValidAudience = jwtSettings["ValidAudience"],
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(
@@ -28,6 +56,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IMezonAuthService, MezonAuthService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
 

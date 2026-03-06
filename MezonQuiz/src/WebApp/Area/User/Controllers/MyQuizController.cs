@@ -23,7 +23,7 @@ namespace WebApp.Area.User.Controllers
             if (!Guid.TryParse(userIdClaim, out var claimUserId))
             {
                 if (userId is null || userId == Guid.Empty)
-                    return Unauthorized(new { Message = "Không xác định được userId." });
+                    return Unauthorized(new { Message = "User ID claim is missing." });
 
                 claimUserId = userId.Value;
             }
