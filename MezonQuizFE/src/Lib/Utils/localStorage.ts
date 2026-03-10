@@ -1,4 +1,4 @@
-import type { User } from "../../Interface/Login.dto";
+import type { User } from "../../Interface/login.dto";
 
 const ACCESS_TOKEN_KEY = 'accessToken';
 const HAS_SYSTEM_ROLE_KEY = 'hasSystemRole';

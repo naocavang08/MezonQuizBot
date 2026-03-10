@@ -1,4 +1,4 @@
-import type { CreateUserRequest, UpdateUserRequest, UserResponse } from "../Interface/User.dto";
+import type { CreateUserRequest, UpdateUserRequest, UserResponse } from "../Interface/user.dto";
 import apiClient from "./ApiClient";
 
 export const getAllUsers = () => {

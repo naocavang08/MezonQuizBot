@@ -9,11 +9,11 @@ import type {
     QuizOptionDto,
     QuizQuestionDto,
     UpdateQuizResponse,
-} from "../Interface/Quiz.dto";
+} from "../Interface/quiz.dto";
 
 export const getQuizzes = (userId?: string) => {
     return apiClient
-        .get<ListQuizDto[]>("/api/Quiz/quizzes", {
+        .get<ListQuizDto[]>("/api/Quiz", {
             params: userId ? { userId } : undefined,
         })
         .then((res) => {
@@ -23,7 +23,7 @@ export const getQuizzes = (userId?: string) => {
 
 export const getQuizDetails = (id: string) => {
     return apiClient
-        .get<QuizDto>(`/api/Quiz/quizzes/${id}`)
+        .get<QuizDto>(`/api/Quiz/${id}`)
         .then((res) => {
             return res.data;
         });
@@ -31,7 +31,7 @@ export const getQuizDetails = (id: string) => {
 
 export const createQuiz = (body: QuizDto, userId?: string) => {
     return apiClient
-        .post<CreateQuizResponse>("/api/Quiz/quizzes", body, {
+        .post<CreateQuizResponse>("/api/Quiz", body, {
             params: userId ? { userId } : undefined,
         })
         .then((res) => {
@@ -41,7 +41,7 @@ export const createQuiz = (body: QuizDto, userId?: string) => {
 
 export const updateQuiz = (quizId: string, body: QuizDto) => {
     return apiClient
-        .put<UpdateQuizResponse>(`/api/Quiz/quizzes/${quizId}`, body)
+        .put<UpdateQuizResponse>(`/api/Quiz/${quizId}`, body)
         .then((res) => {
             return res.data;
         });
@@ -49,7 +49,7 @@ export const updateQuiz = (quizId: string, body: QuizDto) => {
 
 export const deleteQuiz = (quizId: string) => {
     return apiClient
-        .delete<DeleteQuizResponse>(`/api/Quiz/quizzes/${quizId}`)
+        .delete<DeleteQuizResponse>(`/api/Quiz/${quizId}`)
         .then((res) => {
             return res.data;
         });
@@ -57,7 +57,7 @@ export const deleteQuiz = (quizId: string) => {
 
 export const addQuestion = (quizId: string, question: QuizQuestionDto) => {
     return apiClient
-        .post<QuestionOperationResponse>(`/api/Quiz/quizzes/${quizId}/questions`, question)
+        .post<QuestionOperationResponse>(`/api/Quiz/${quizId}/questions`, question)
         .then((res) => {
             return res.data;
         });
@@ -66,7 +66,7 @@ export const addQuestion = (quizId: string, question: QuizQuestionDto) => {
 export const updateQuestion = (quizId: string, questionIndex: number, question: QuizQuestionDto) => {
     return apiClient
         .put<QuestionOperationResponse>(
-            `/api/Quiz/quizzes/${quizId}/questions/${questionIndex}`,
+            `/api/Quiz/${quizId}/questions/${questionIndex}`,
             question
         )
         .then((res) => {
@@ -77,7 +77,7 @@ export const updateQuestion = (quizId: string, questionIndex: number, question: 
 export const deleteQuestion = (quizId: string, questionIndex: number) => {
     return apiClient
         .delete<QuestionOperationResponse>(
-            `/api/Quiz/quizzes/${quizId}/questions/${questionIndex}`
+            `/api/Quiz/${quizId}/questions/${questionIndex}`
         )
         .then((res) => {
             return res.data;
@@ -87,7 +87,7 @@ export const deleteQuestion = (quizId: string, questionIndex: number) => {
 export const addOption = (quizId: string, questionIndex: number, option: QuizOptionDto) => {
     return apiClient
         .post<OptionOperationResponse>(
-            `/api/Quiz/quizzes/${quizId}/questions/${questionIndex}/options`,
+            `/api/Quiz/${quizId}/questions/${questionIndex}/options`,
             option
         )
         .then((res) => {
@@ -103,7 +103,7 @@ export const updateOption = (
 ) => {
     return apiClient
         .put<OptionOperationResponse>(
-            `/api/Quiz/quizzes/${quizId}/questions/${questionIndex}/options/${optionIndex}`,
+            `/api/Quiz/${quizId}/questions/${questionIndex}/options/${optionIndex}`,
             option
         )
         .then((res) => {
@@ -118,7 +118,7 @@ export const deleteOption = (
 ) => {
     return apiClient
         .delete<OptionOperationResponse>(
-            `/api/Quiz/quizzes/${quizId}/questions/${questionIndex}/options/${optionIndex}`
+            `/api/Quiz/${quizId}/questions/${questionIndex}/options/${optionIndex}`
         )
         .then((res) => {
             return res.data;
@@ -127,7 +127,7 @@ export const deleteOption = (
 
 export const updateQuizSettings = (quizId: string, settings: QuizDto["settings"]) => {
     return apiClient
-        .put<UpdateQuizResponse>(`/api/Quiz/quizzes/${quizId}/settings`, settings)
+        .put<UpdateQuizResponse>(`/api/Quiz/${quizId}/settings`, settings)
         .then((res) => {
             return res.data;
         });

@@ -1,4 +1,4 @@
-import type { PermissionResponse, RoleRequest, RoleResponse } from "../Interface/Role.dto";
+import type { PermissionResponse, RoleRequest, RoleResponse } from "../Interface/role.dto";
 import apiClient from "./ApiClient";
 
 export const getAllRoles = () => {

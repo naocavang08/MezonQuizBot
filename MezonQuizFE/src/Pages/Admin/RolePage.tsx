@@ -17,7 +17,7 @@ import {
 	FormControlLabel,
 } from "@mui/material";
 import { getAllRoles, getAllPermissions, getRolePermissions, assignPermissionsToRole, deleteRole, createRole } from "../../Api/role.api";
-import type { RoleResponse, PermissionResponse, RoleRequest } from "../../Interface/Role.dto";
+import type { RoleResponse, PermissionResponse, RoleRequest } from "../../Interface/role.dto";
 
 const RolePage = () => {
 	const [roles, setRoles] = useState<RoleResponse[]>([]);

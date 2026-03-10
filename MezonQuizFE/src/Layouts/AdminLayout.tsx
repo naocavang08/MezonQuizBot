@@ -157,6 +157,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <SidebarLink to="/admin/quizzes">
                         Quizzes
                     </SidebarLink>
+                    <SidebarLink to="/admin/categories">
+                        Categories
+                    </SidebarLink>
                 </SidebarNav>
             </Sidebar>
 

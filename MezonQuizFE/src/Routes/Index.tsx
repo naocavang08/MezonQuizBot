@@ -8,6 +8,7 @@ import DashboardPage from "../Pages/Admin/DashboardPage";
 import QuizPage from "../Pages/Admin/QuizPage";
 import RolePage from "../Pages/Admin/RolePage";
 import UserPage from "../Pages/Admin/UserPage";
+import CategoryPage from "../Pages/Admin/CategoryPage";
 import useAuthStore from "../Stores/login.store";
 import ProtectedRoute from "./ProtectedRoute";
 import MyQuizPage from "../Pages/User/MyQuizPage";
@@ -53,6 +54,7 @@ const AppRoutes = () => {
           <Route path="users" element={<UserPage />} />
           <Route path="roles" element={<RolePage />} />
           <Route path="quizzes" element={<QuizPage />} />
+          <Route path="categories" element={<CategoryPage />} />
         </Route>
 
         <Route path="/user" element={!hasSystemRole ? <UserShell /> : <Navigate to="/admin/dashboard" replace />}>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { getQuizzes } from "../../Api/quiz.api";
-import type { ListQuizDto } from "../../Interface/Quiz.dto";
+import type { ListQuizDto } from "../../Interface/quiz.dto";
 
 const MyQuizPage = () => {
   const navigate = useNavigate();

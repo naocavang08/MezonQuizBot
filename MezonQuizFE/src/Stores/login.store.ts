@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { LoginResponse, User } from "../Interface/Login.dto";
+import type { LoginResponse, User } from "../Interface/login.dto";
 import {
 	getHasSystemRole,
 	getTokenAccess,

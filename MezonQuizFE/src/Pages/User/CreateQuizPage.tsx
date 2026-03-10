@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Box,
@@ -21,7 +21,9 @@ import {
 } from "@mui/material";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import { getAllCategories } from "../../Api/category.api";
 import { createQuiz } from "../../Api/quiz.api";
+import type { CategoryDto } from "../../Interface/Category.dto";
 import {
     QuestionType,
     QuizStatus,
@@ -29,11 +31,12 @@ import {
     type QuizDto,
     type QuizOptionDto,
     type QuizQuestionDto,
-} from "../../Interface/Quiz.dto";
+} from "../../Interface/quiz.dto";
 
 type FormState = {
     title: string;
     description: string;
+	categoryId: string;
     visibility: QuizDto["visibility"];
     status: QuizDto["status"];
     settings: QuizDto["settings"];
@@ -84,12 +87,15 @@ const questionTypeLabel: Record<QuizQuestionDto["questionType"], string> = {
 
 const CreateQuizPage = () => {
 	const navigate = useNavigate();
+	const [categories, setCategories] = useState<CategoryDto[]>([]);
+	const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 	const [form, setForm] = useState<FormState>({
 		title: "",
 		description: "",
+		categoryId: "",
 		visibility: QuizVisibility.Private,
 		status: QuizStatus.Draft,
 		settings: {
@@ -100,6 +106,34 @@ const CreateQuizPage = () => {
 		},
 		questions: [makeDefaultQuestion(1)],
 	});
+
+	useEffect(() => {
+		let isMounted = true;
+
+		const loadCategories = async () => {
+			try {
+				setIsLoadingCategories(true);
+				const data = await getAllCategories();
+				if (isMounted) {
+					setCategories(data);
+				}
+			} catch {
+				if (isMounted) {
+					setSubmitError("Failed to load categories.");
+				}
+			} finally {
+				if (isMounted) {
+					setIsLoadingCategories(false);
+				}
+			}
+		};
+
+		loadCategories();
+
+		return () => {
+			isMounted = false;
+		};
+	}, []);
 
 	const totalPoints = useMemo(
 		() => form.questions.reduce((sum, question) => sum + Number(question.points || 0), 0),
@@ -331,6 +365,7 @@ const CreateQuizPage = () => {
 		const payload: QuizDto = {
 			title: form.title.trim(),
 			description: form.description.trim() || undefined,
+			categoryId: form.categoryId || undefined,
 			visibility: form.visibility,
 			status: form.status,
 			settings: form.settings,
@@ -395,6 +430,24 @@ const CreateQuizPage = () => {
 							value={form.description}
 							onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
 						/>
+
+						<FormControl fullWidth>
+							<FormLabel>Category</FormLabel>
+							<Select
+								value={form.categoryId}
+								onChange={(event) =>
+									setForm((prev) => ({ ...prev, categoryId: String(event.target.value) }))
+								}
+								disabled={isLoadingCategories}
+							>
+								<MenuItem value="">No Category</MenuItem>
+								{categories.map((category) => (
+									<MenuItem key={category.id} value={category.id}>
+										{category.name}
+									</MenuItem>
+								))}
+							</Select>
+						</FormControl>
 
 						<Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
 							<FormControl fullWidth>
@@ -470,98 +523,96 @@ const CreateQuizPage = () => {
 			<Stack spacing={2} mb={3}>
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
 					<Typography variant="h5" fontWeight={700}>Questions</Typography>
-					<Button startIcon={<MdAdd />} variant="outlined" onClick={addQuestion}>
-						Add Question
-					</Button>
 				</Stack>
 
 				{form.questions.map((question, questionIndex) => (
-					<Card key={`question-${questionIndex}`} variant="outlined" sx={{ backgroundColor: "transparent" }}>
-						<CardContent>
-							<Stack spacing={2}>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Typography variant="h6" fontWeight={600}>
-										Question {questionIndex + 1}
-									</Typography>
-									<IconButton
-										color="error"
-										onClick={() => removeQuestion(questionIndex)}
-										disabled={form.questions.length === 1}
-									>
-										<MdDelete />
-									</IconButton>
-								</Stack>
-
-								<TextField
-									label="Question Content"
-									fullWidth
-									required
-									value={question.content}
-									onChange={(event) => setQuestionField(questionIndex, "content", event.target.value)}
-								/>
-
-								<TextField
-									label="Media URL (optional)"
-									fullWidth
-									value={question.mediaUrl ?? ""}
-									onChange={(event) => setQuestionField(questionIndex, "mediaUrl", event.target.value)}
-								/>
-
-								<Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-									<TextField
-										type="number"
-										label="Time Limit (10-30s)"
-										inputProps={{ min: 10, max: 30 }}
-										value={question.timeLimitSeconds}
-										onChange={(event) => setQuestionField(questionIndex, "timeLimitSeconds", Number(event.target.value || 10))}
-									/>
-									<TextField
-										type="number"
-										label="Points (1-20)"
-										inputProps={{ min: 1, max: 20 }}
-										value={question.points}
-										onChange={(event) => setQuestionField(questionIndex, "points", Number(event.target.value || 1))}
-									/>
-									<FormControl fullWidth>
-										<FormLabel>Question Type</FormLabel>
-										<Select
-											value={question.questionType}
-											onChange={(event) =>
-												handleQuestionTypeChange(
-													questionIndex,
-													Number(event.target.value) as QuizQuestionDto["questionType"]
-												)
-											}
+					<Stack key={`question-${questionIndex}`} spacing={1.5}>
+						<Card variant="outlined" sx={{ backgroundColor: "transparent" }}>
+							<CardContent>
+								<Stack spacing={2}>
+									<Stack direction="row" justifyContent="space-between" alignItems="center">
+										<Typography variant="h6" fontWeight={600}>
+											Question {questionIndex + 1}
+										</Typography>
+										<IconButton
+											color="error"
+											onClick={() => removeQuestion(questionIndex)}
+											disabled={form.questions.length === 1}
 										>
-											{Object.values(QuestionType).map((value) => (
-												<MenuItem key={value} value={value}>
-													{questionTypeLabel[value as QuizQuestionDto["questionType"]]}
-												</MenuItem>
-											))}
-										</Select>
-									</FormControl>
-								</Stack>
+											<MdDelete />
+										</IconButton>
+									</Stack>
 
-								<Divider />
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Typography variant="subtitle1" fontWeight={600}>Options</Typography>
-									<Button
-										startIcon={<MdAdd />}
-										variant="text"
-										onClick={() => addOption(questionIndex)}
-										disabled={question.questionType === QuestionType.TrueFalse}
-									>
-										Add Option
-									</Button>
-								</Stack>
+									<TextField
+										label="Question Content"
+										fullWidth
+										required
+										value={question.content}
+										onChange={(event) => setQuestionField(questionIndex, "content", event.target.value)}
+									/>
 
-								{question.questionType === QuestionType.SingleChoice || question.questionType === QuestionType.TrueFalse ? (
-									<RadioGroup
-										value={question.options.findIndex((option) => option.isCorrect)}
-										onChange={(event) => setCorrectOption(questionIndex, Number(event.target.value), true)}
-									>
-										<Stack spacing={1}>
-											{question.options.map((option, optionIndex) => (
+									<TextField
+										label="Media URL (optional)"
+										fullWidth
+										value={question.mediaUrl ?? ""}
+										onChange={(event) => setQuestionField(questionIndex, "mediaUrl", event.target.value)}
+									/>
+
+									<Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+										<TextField
+											type="number"
+											label="Time Limit (10-30s)"
+											inputProps={{ min: 10, max: 30 }}
+											value={question.timeLimitSeconds}
+											onChange={(event) => setQuestionField(questionIndex, "timeLimitSeconds", Number(event.target.value || 10))}
+										/>
+										<TextField
+											type="number"
+											label="Points (1-20)"
+											inputProps={{ min: 1, max: 20 }}
+											value={question.points}
+											onChange={(event) => setQuestionField(questionIndex, "points", Number(event.target.value || 1))}
+										/>
+										<FormControl fullWidth>
+											<FormLabel>Question Type</FormLabel>
+											<Select
+												value={question.questionType}
+												onChange={(event) =>
+													handleQuestionTypeChange(
+														questionIndex,
+														Number(event.target.value) as QuizQuestionDto["questionType"]
+													)
+												}
+											>
+												{Object.values(QuestionType).map((value) => (
+													<MenuItem key={value} value={value}>
+														{questionTypeLabel[value as QuizQuestionDto["questionType"]]}
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									</Stack>
+
+									<Divider />
+									<Stack direction="row" justifyContent="space-between" alignItems="center">
+										<Typography variant="subtitle1" fontWeight={600}>Options</Typography>
+										<Button
+											startIcon={<MdAdd />}
+											variant="text"
+											onClick={() => addOption(questionIndex)}
+											disabled={question.questionType === QuestionType.TrueFalse}
+										>
+											Add Option
+										</Button>
+									</Stack>
+
+									{question.questionType === QuestionType.SingleChoice || question.questionType === QuestionType.TrueFalse ? (
+										<RadioGroup
+											value={question.options.findIndex((option) => option.isCorrect)}
+											onChange={(event) => setCorrectOption(questionIndex, Number(event.target.value), true)}
+										>
+											<Stack spacing={1}>
+												{question.options.map((option, optionIndex) => (
                                                 <Stack key={`option-${questionIndex}-${optionIndex}`} direction="row" spacing={1} alignItems="center">
                                                     <FormControlLabel value={optionIndex} control={<Radio />} label="" sx={{ mr: 0 }} />
                                                     <TextField
@@ -582,36 +633,55 @@ const CreateQuizPage = () => {
                                                     )}
                                                 </Stack>
                                             ))}
-										</Stack>
-									</RadioGroup>
-								) : (
-									<Stack spacing={1}>
-										{question.options.map((option, optionIndex) => (
-											<Stack key={`option-${questionIndex}-${optionIndex}`} direction="row" spacing={1} alignItems="center">
-												<Switch
-													checked={option.isCorrect}
-													onChange={(event) => setCorrectOption(questionIndex, optionIndex, event.target.checked)}
-												/>
-												<TextField
-													fullWidth
-													label={`Option ${optionIndex + 1}`}
-													value={option.content}
-													onChange={(event) => setOptionField(questionIndex, optionIndex, "content", event.target.value)}
-												/>
-												<IconButton
-													color="error"
-													onClick={() => removeOption(questionIndex, optionIndex)}
-													disabled={question.options.length <= 2}
-												>
-													<MdDelete />
-												</IconButton>
 											</Stack>
-										))}
-									</Stack>
-								)}
+										</RadioGroup>
+									) : (
+										<Stack spacing={1}>
+											{question.options.map((option, optionIndex) => (
+												<Stack key={`option-${questionIndex}-${optionIndex}`} direction="row" spacing={1} alignItems="center">
+													<Switch
+														checked={option.isCorrect}
+														onChange={(event) => setCorrectOption(questionIndex, optionIndex, event.target.checked)}
+													/>
+													<TextField
+														fullWidth
+														label={`Option ${optionIndex + 1}`}
+														value={option.content}
+														onChange={(event) => setOptionField(questionIndex, optionIndex, "content", event.target.value)}
+													/>
+													<IconButton
+														color="error"
+														onClick={() => removeOption(questionIndex, optionIndex)}
+														disabled={question.options.length <= 2}
+													>
+														<MdDelete />
+													</IconButton>
+												</Stack>
+											))}
+										</Stack>
+									)}
+								</Stack>
+							</CardContent>
+						</Card>
+
+						{questionIndex === form.questions.length - 1 ? (
+							<Stack direction="row" justifyContent="center">
+								<IconButton
+									onClick={addQuestion}
+									aria-label="Add question"
+									sx={{
+										width: 44,
+										height: 44,
+										border: "1px dashed",
+										borderColor: "divider",
+										backgroundColor: "background.paper",
+									}}
+								>
+									<MdAdd />
+								</IconButton>
 							</Stack>
-						</CardContent>
-					</Card>
+						) : null}
+					</Stack>
 				))}
 			</Stack>
 

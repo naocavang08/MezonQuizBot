@@ -45,7 +45,7 @@ const UserLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         >
             <Container maxWidth="lg">
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={6}>
-                    <Typography variant="h4" fontWeight={700} color="primary">
+                    <Typography variant="h4" fontWeight={700} color="primary" onClick={() => navigate("/")} sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer" }}>
                         <img src="/src/assets/mezon_icon.png" alt="Mezon Logo" width={24} height={24} style={{ marginRight: 8 }} />
                         Mezon Quiz
                     </Typography>

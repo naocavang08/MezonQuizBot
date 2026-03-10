@@ -31,8 +31,8 @@ import {
 	updateUser,
 } from "../../Api/user.api";
 import { getAllRoles } from "../../Api/role.api";
-import type { RoleResponse } from "../../Interface/Role.dto";
-import type { CreateUserRequest, UpdateUserRequest, UserResponse } from "../../Interface/User.dto";
+import type { RoleResponse } from "../../Interface/role.dto";
+import type { CreateUserRequest, UpdateUserRequest, UserResponse } from "../../Interface/user.dto";
 
 const UserPage = () => {
 	const [users, setUsers] = useState<UserResponse[]>([]);
