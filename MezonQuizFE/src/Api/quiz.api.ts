@@ -13,7 +13,7 @@ import type {
     UpdateQuizResponse,
 } from "../Interface/quiz.dto";
 
-const normalizePagedQuizList = (raw: unknown, fallbackPage = 1, fallbackPageSize = 10): PagedQuizListDto => {
+const normalizePagedQuizList = (raw: unknown, fallbackPage = 1, fallbackPageSize = 10): PagedQuizListDto<ListQuizDto> => {
     if (Array.isArray(raw)) {
         const items = raw as ListQuizDto[];
         return {

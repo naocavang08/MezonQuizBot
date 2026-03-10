@@ -15,7 +15,7 @@ namespace WebApp.Application.Services
             _dbContext = dbContext;
         }
 
-        public async Task<PagedQuizListDto> GetQuizzesAsync(QuizListQuery request)
+        public async Task<PagedQuizListDto<ListQuizDto>> GetQuizzesAsync(QuizListQuery request)
         {
             request ??= new QuizListQuery();
 
@@ -55,7 +55,7 @@ namespace WebApp.Application.Services
                 })
                 .ToListAsync();
 
-            return new PagedQuizListDto
+            return new PagedQuizListDto<ListQuizDto>
             {
                 Items = quizzes,
                 TotalCount = totalCount,

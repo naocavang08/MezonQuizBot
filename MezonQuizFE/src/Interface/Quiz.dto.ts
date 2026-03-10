@@ -7,17 +7,17 @@ export const QuestionType = {
 export type QuestionType = (typeof QuestionType)[keyof typeof QuestionType];
 
 export const QuizVisibility = {
-    Private: 0,
-    Public: 1,
-    Unlisted: 2,
+    Private: 0, // Quiz chỉ chủ sở hữu hoặc người được cấp quyền mới xem được.
+    Public: 1, // Quiz ai cũng có thể tìm và xem được.
+    Unlisted: 2, // Quiz không hiển thị trong danh sách công khai nhưng ai có link vẫn có thể xem được.
 } as const;
 
 export type QuizVisibility = (typeof QuizVisibility)[keyof typeof QuizVisibility];
 
 export const QuizStatus = {
-    Draft: 0,
-    Published: 1,
-    Archived: 2,
+    Draft: 0, // Quiz đang ở trạng thái nháp. Chỉ chủ sở hữu mới có thể xem và chỉnh sửa.
+    Published: 1, // Quiz đã được xuất bản. Ai cũng có thể xem được nếu quiz là Public hoặc Unlisted. Chỉ chủ sở hữu mới có thể chỉnh sửa.
+    Archived: 2, // Quiz đã được lưu trữ. Chỉ chủ sở hữu mới có thể xem và chỉnh sửa. Không hiển thị trong danh sách công khai.
 } as const;
 
 export type QuizStatus = (typeof QuizStatus)[keyof typeof QuizStatus];
@@ -62,10 +62,13 @@ export interface QuizDto {
     updatedAt?: string;
 }
 
-export interface ListQuizDto {
+export interface ListQuizDto extends ListPublicQuizDto {
+    status: QuizStatus;
+}
+
+export interface ListPublicQuizDto {
     id: string;
     title: string;
-    status: QuizStatus;
 }
 
 export interface QuizListQueryParams {
@@ -76,8 +79,8 @@ export interface QuizListQueryParams {
     pageSize?: number;
 }
 
-export interface PagedQuizListDto {
-    items: ListQuizDto[];
+export interface PagedQuizListDto<T extends ListQuizDto | ListPublicQuizDto> {
+    items: T[];
     totalCount: number;
     page: number;
     pageSize: number;

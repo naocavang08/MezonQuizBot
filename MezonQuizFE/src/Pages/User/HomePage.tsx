@@ -34,6 +34,9 @@ const HomePage = () => {
                             borderRadius: "8px",
                             fontSize: "1rem",
                         }}
+                        onClick={() => {
+                            navigate("/user/find-quizzes")
+                        }}
                     >
                         ➕ Find Quiz
                     </Button>

@@ -34,10 +34,14 @@ namespace WebApp.Application.Dtos
         public DateTime UpdatedAt { get; set; }
     }
 
-    public class ListQuizDto
+    public class PublicQuizDto
     {
         public Guid Id { get; set; }
         public string Title { get; set; } = null!;
+    }
+
+    public class ListQuizDto : PublicQuizDto
+    {
         public QuizStatus Status { get; set; }
     }
 
@@ -50,9 +54,9 @@ namespace WebApp.Application.Dtos
         public int PageSize { get; set; } = 10;
     }
 
-    public class PagedQuizListDto
+    public class PagedQuizListDto<T>
     {
-        public List<ListQuizDto> Items { get; set; } = new();
+        public List<T> Items { get; set; } = new();
         public int TotalCount { get; set; }
         public int Page { get; set; }
         public int PageSize { get; set; }

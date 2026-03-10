@@ -14,6 +14,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import MyQuizPage from "../Pages/User/MyQuizPage";
 import CreateQuizPage from "../Pages/User/CreateQuizPage";
 import QuizSettingPage from "../Pages/User/QuizSettingPage";
+import FindQuizPage from "../Pages/User/FindQuizPage";
 
 const AdminShell = () => {
   return (
@@ -60,6 +61,7 @@ const AppRoutes = () => {
         <Route path="/user" element={!hasSystemRole ? <UserShell /> : <Navigate to="/admin/dashboard" replace />}>
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomePage />} />
+          <Route path="find-quizzes" element={<FindQuizPage />} />
           <Route path="my-quizzes" element={<MyQuizPage />} />
           <Route path="my-quizzes/:quizId/settings" element={<QuizSettingPage />} />
           <Route path="create-quiz" element={<CreateQuizPage />} />

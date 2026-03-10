@@ -4,7 +4,7 @@ namespace WebApp.Application.Interface
 {
     public interface IQuizService
     {
-        Task<PagedQuizListDto> GetQuizzesAsync(QuizListQuery query);
+        Task<PagedQuizListDto<ListQuizDto>> GetQuizzesAsync(QuizListQuery query);
         Task<QuizDto?> GetQuizDetailsAsync(Guid quizId);
         Task<bool> CreateQuizAsync(QuizDto quizData);
         Task<bool> UpdateQuizAsync(Guid quizId, QuizDto quizData);
