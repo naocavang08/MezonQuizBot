@@ -15,24 +15,54 @@ namespace WebApp.Application.Services
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<ListQuizDto>> GetQuizzesAsync(Guid? userId = null)
+        public async Task<PagedQuizListDto> GetQuizzesAsync(QuizListQuery request)
         {
-            var query = _dbContext.Quizzes.AsNoTracking();
+            request ??= new QuizListQuery();
 
-            if (userId.HasValue && userId.Value != Guid.Empty)
+            var page = request.Page < 1 ? 1 : request.Page;
+            var pageSize = request.PageSize < 1 ? 10 : Math.Min(request.PageSize, 100);
+
+            var quizzesQuery = _dbContext.Quizzes.AsNoTracking();
+
+            if (request.UserId.HasValue && request.UserId.Value != Guid.Empty)
             {
-                query = query.Where(q => q.CreatorId == userId.Value);
+                quizzesQuery = quizzesQuery.Where(q => q.CreatorId == request.UserId.Value);
             }
 
-            var quizzes = await query
+            if (request.Category.HasValue)
+            {
+                quizzesQuery = quizzesQuery.Where(q => q.CategoryId == request.Category.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Title))
+            {
+                var normalizedTitle = request.Title.Trim();
+                quizzesQuery = quizzesQuery.Where(q => q.Title.Contains(normalizedTitle));
+            }
+
+            var totalCount = await quizzesQuery.CountAsync();
+            var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var quizzes = await quizzesQuery
+                .OrderByDescending(q => q.UpdatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(q => new ListQuizDto
                 {
                     Id = q.Id,
-                    Title = q.Title
+                    Title = q.Title,
+                    Status = q.Status
                 })
                 .ToListAsync();
 
-            return quizzes;
+            return new PagedQuizListDto
+            {
+                Items = quizzes,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
         }
 
         public async Task<QuizDto?> GetQuizDetailsAsync(Guid quizId)

@@ -23,7 +23,7 @@ import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../../Api/category.api";
 import { createQuiz } from "../../Api/quiz.api";
-import type { CategoryDto } from "../../Interface/Category.dto";
+import type { CategoryDto } from "../../Interface/category.dto";
 import {
     QuestionType,
     QuizStatus,

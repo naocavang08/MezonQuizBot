@@ -65,6 +65,23 @@ export interface QuizDto {
 export interface ListQuizDto {
     id: string;
     title: string;
+    status: QuizStatus;
+}
+
+export interface QuizListQueryParams {
+    userId?: string;
+    category?: string;
+    title?: string;
+    page?: number;
+    pageSize?: number;
+}
+
+export interface PagedQuizListDto {
+    items: ListQuizDto[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
 }
 
 export interface CreateQuizResponse {

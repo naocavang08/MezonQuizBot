@@ -4,6 +4,8 @@ import type {
     DeleteQuizResponse,
     ListQuizDto,
     OptionOperationResponse,
+    PagedQuizListDto,
+    QuizListQueryParams,
     QuestionOperationResponse,
     QuizDto,
     QuizOptionDto,
@@ -11,13 +13,45 @@ import type {
     UpdateQuizResponse,
 } from "../Interface/quiz.dto";
 
-export const getQuizzes = (userId?: string) => {
+const normalizePagedQuizList = (raw: unknown, fallbackPage = 1, fallbackPageSize = 10): PagedQuizListDto => {
+    if (Array.isArray(raw)) {
+        const items = raw as ListQuizDto[];
+        return {
+            items,
+            totalCount: items.length,
+            page: fallbackPage,
+            pageSize: fallbackPageSize,
+            totalPages: items.length > 0 ? 1 : 0,
+        };
+    }
+
+    const data = (raw ?? {}) as Record<string, unknown>;
+    const items = (Array.isArray(data.items) ? data.items : data.Items) as ListQuizDto[] | undefined;
+    const totalCount = Number(data.totalCount ?? data.TotalCount ?? items?.length ?? 0);
+    const page = Number(data.page ?? data.Page ?? fallbackPage);
+    const pageSize = Number(data.pageSize ?? data.PageSize ?? fallbackPageSize);
+    const totalPages = Number(data.totalPages ?? data.TotalPages ?? (totalCount > 0 ? Math.ceil(totalCount / Math.max(pageSize, 1)) : 0));
+
+    return {
+        items: Array.isArray(items) ? items : [],
+        totalCount,
+        page,
+        pageSize,
+        totalPages,
+    };
+};
+
+export const getQuizzes = (params?: QuizListQueryParams) => {
     return apiClient
-        .get<ListQuizDto[]>("/api/Quiz", {
-            params: userId ? { userId } : undefined,
+        .get("/api/Quiz", {
+            params,
         })
         .then((res) => {
-            return res.data;
+            return normalizePagedQuizList(
+                res.data,
+                params?.page ?? 1,
+                params?.pageSize ?? 10
+            );
         });
 };
 

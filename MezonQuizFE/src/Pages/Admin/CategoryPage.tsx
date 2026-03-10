@@ -19,7 +19,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { createCategory, deleteCategory, getAllCategories, updateCategory } from "../../Api/category.api";
-import type { CategoryDto, SaveCategoryDto } from "../../Interface/Category.dto";
+import type { CategoryDto, SaveCategoryDto } from "../../Interface/category.dto";
 
 const defaultForm: SaveCategoryDto = {
 	name: "",

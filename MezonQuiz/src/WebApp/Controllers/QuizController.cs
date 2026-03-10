@@ -16,9 +16,9 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetQuizzes([FromQuery] Guid? userId = null)
+        public async Task<IActionResult> GetQuizzes([FromQuery] QuizListQuery query)
         {
-            var quizzes = await _myQuizService.GetQuizzesAsync(userId);
+            var quizzes = await _myQuizService.GetQuizzesAsync(query);
             return Ok(quizzes);
         }
 

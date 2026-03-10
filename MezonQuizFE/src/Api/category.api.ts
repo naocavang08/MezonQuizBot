@@ -1,4 +1,4 @@
-import type { CategoryDto, createCategoryResponse, deleteCategoryResponse, SaveCategoryDto, updateCategoryResponse } from "../Interface/Category.dto";
+import type { CategoryDto, createCategoryResponse, deleteCategoryResponse, SaveCategoryDto, updateCategoryResponse } from "../Interface/category.dto";
 import apiClient from "./ApiClient";
 
 export const getAllCategories = () => {
