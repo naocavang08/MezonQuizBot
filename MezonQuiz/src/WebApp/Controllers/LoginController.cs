@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Application.Interface;
@@ -29,6 +30,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             if (!ModelState.IsValid)
@@ -94,6 +96,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("mezon-callback")]
+        [AllowAnonymous]
         public async Task<IActionResult> MezonCallback([FromBody] MezonAuthRequest request)
         {
             var result = await _mezonAuthService.HandleCallbackAsync(request);

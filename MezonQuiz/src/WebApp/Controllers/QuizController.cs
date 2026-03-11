@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WebApp.Application.Dtos;
 using WebApp.Application.Interface;
+using WebApp.Authorization;
 
 namespace WebApp.Controllers
 {
@@ -16,6 +17,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
+        [PermissionAuthorize(PermissionNames.Quizzes.List)]
         public async Task<IActionResult> GetQuizzes([FromQuery] QuizListQuery query)
         {
             var quizzes = await _myQuizService.GetQuizzesAsync(query);
@@ -23,6 +25,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet("{quizId}")]
+        [PermissionAuthorize(PermissionNames.Quizzes.View)]
         public async Task<IActionResult> GetQuizDetails(Guid quizId)
         {
             var quiz = await _myQuizService.GetQuizDetailsAsync(quizId);
@@ -33,6 +36,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
+        [PermissionAuthorize(PermissionNames.Quizzes.Create)]
         public async Task<IActionResult> CreateQuiz([FromBody] QuizDto quizData, [FromQuery] Guid? userId = null)
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -54,6 +58,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPut("{quizId}")]
+        [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateQuiz(Guid quizId, [FromBody] QuizDto quizData)
         {
             var updated = await _myQuizService.UpdateQuizAsync(quizId, quizData);
@@ -64,6 +69,7 @@ namespace WebApp.Controllers
         }
 
         [HttpDelete("{quizId}")]
+        [PermissionAuthorize(PermissionNames.Quizzes.Delete)]
         public async Task<IActionResult> DeleteQuiz(Guid quizId)
         {
             var deleted = await _myQuizService.DeleteQuizAsync(quizId);
@@ -74,6 +80,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{quizId}/questions")]
+        [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> AddQuestion(Guid quizId, [FromBody] QuizQuestion questionData)
         {
             var added = await _myQuizService.AddQuestionAsync(quizId, questionData);
@@ -84,6 +91,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPut("{quizId}/questions/{questionIndex}")]
+        [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateQuestion(Guid quizId, int questionIndex, [FromBody] QuizQuestion questionData)
         {
             var updated = await _myQuizService.UpdateQuestionAsync(quizId, questionIndex, questionData);
@@ -94,6 +102,7 @@ namespace WebApp.Controllers
         }
 
         [HttpDelete("{quizId}/questions/{questionIndex}")]
+        [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> DeleteQuestion(Guid quizId, int questionIndex)
         {
             var deleted = await _myQuizService.DeleteQuestionAsync(quizId, questionIndex);
@@ -104,6 +113,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{quizId}/questions/{questionIndex}/options")]
+        [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> AddOption(Guid quizId, int questionIndex, [FromBody] QuizOption optionData)
         {
             var added = await _myQuizService.AddOptionAsync(quizId, questionIndex, optionData);
@@ -114,6 +124,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPut("{quizId}/questions/{questionIndex}/options/{optionIndex}")]
+        [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateOption(Guid quizId, int questionIndex, int optionIndex, [FromBody] QuizOption optionData)
         {
             var updated = await _myQuizService.UpdateOptionAsync(quizId, questionIndex, optionIndex, optionData);
@@ -124,6 +135,7 @@ namespace WebApp.Controllers
         }
 
         [HttpDelete("{quizId}/questions/{questionIndex}/options/{optionIndex}")]
+        [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> DeleteOption(Guid quizId, int questionIndex, int optionIndex)
         {
             var deleted = await _myQuizService.DeleteOptionAsync(quizId, questionIndex, optionIndex);
@@ -134,6 +146,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPut("{quizId}/settings")]
+        [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateQuizSettings(Guid quizId, [FromBody] QuizSettings settingsData)
         {
             var updated = await _myQuizService.UpdateQuizSettingsAsync(quizId, settingsData);

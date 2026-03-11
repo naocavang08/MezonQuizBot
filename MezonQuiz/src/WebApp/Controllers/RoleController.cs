@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Application.Dtos;
 using WebApp.Application.Interface;
+using WebApp.Authorization;
 
 namespace WebApp.Controllers
 {
@@ -16,6 +17,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
+        [PermissionAuthorize(PermissionNames.Roles.List)]
         public async Task<IActionResult> GetAllRoles()
         {
             var roles = await _roleService.GetAllRolesAsync();
@@ -23,6 +25,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet("{id}")]
+        [PermissionAuthorize(PermissionNames.Roles.View)]
         public async Task<IActionResult> GetRoleById(Guid id)
         {
             try
@@ -37,6 +40,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
+        [PermissionAuthorize(PermissionNames.Roles.Create)]
         public async Task<IActionResult> CreateRole([FromBody] RoleDto request)
         {
             try
@@ -55,6 +59,7 @@ namespace WebApp.Controllers
         }
 
         [HttpDelete("{id}")]
+        [PermissionAuthorize(PermissionNames.Roles.Delete)]
         public async Task<IActionResult> DeleteRole(Guid id)    
         {
             try
@@ -73,6 +78,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet("permissions")]
+        [PermissionAuthorize(PermissionNames.Roles.View)]
         public async Task<IActionResult> GetAllPermissions()
         {
             var permissions = await _roleService.GetAllPermissionsAsync();
@@ -80,6 +86,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet("{id}/permissions")]
+        [PermissionAuthorize(PermissionNames.Roles.View)]
         public async Task<IActionResult> GetRolePermissions(Guid id)
         {
             try
@@ -94,6 +101,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{id}/permissions")]
+        [PermissionAuthorize(PermissionNames.Roles.Update)]
         public async Task<IActionResult> AssignPermissionsToRole(Guid id, [FromBody] List<Guid> permissionIds)
         {
             try

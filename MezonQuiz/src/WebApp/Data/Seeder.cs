@@ -41,12 +41,17 @@ namespace WebApp.Data
                 ("settings", "update", "Update system settings")
             };
 
-            var existingPermissionKeys = await context.Permissions
-                .Select(p => new { p.Resource, p.Action })
+            var seedMap = permissionSeeds
+                .ToDictionary(
+                    p => $"{p.Resource}:{p.Action}",
+                    p => p,
+                    StringComparer.OrdinalIgnoreCase);
+
+            var existingPermissions = await context.Permissions
                 .ToListAsync();
 
-            var existingKeySet = existingPermissionKeys
-                .Select(k => $"{k.Resource}:{k.Action}")
+            var existingKeySet = existingPermissions
+                .Select(p => $"{p.Resource}:{p.Action}")
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             var missingPermissions = permissionSeeds
@@ -61,34 +66,54 @@ namespace WebApp.Data
                 })
                 .ToList();
 
+            var now = DateTime.UtcNow;
+            foreach (var permission in existingPermissions)
+            {
+                var key = $"{permission.Resource}:{permission.Action}";
+                if (!seedMap.TryGetValue(key, out var seed))
+                {
+                    continue;
+                }
+
+                if (!string.Equals(permission.Description, seed.Description, StringComparison.Ordinal))
+                {
+                    permission.Description = seed.Description;
+                    permission.CreatedAt = now;
+                }
+            }
+
             if (missingPermissions.Count > 0)
             {
                 context.Permissions.AddRange(missingPermissions);
+            }
+
+            await context.SaveChangesAsync();
+
+            var adminRole = await context.Roles
+                .FirstOrDefaultAsync(r => r.Name == "super_admin");
+
+            if (adminRole == null)
+            {
+                adminRole = new Role
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "super_admin",
+                    DisplayName = "Super Admin",
+                    Description = "Full system access",
+                    IsSystem = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                context.Roles.Add(adminRole);
                 await context.SaveChangesAsync();
             }
 
-            if (!context.Users.Any(u => u.Username == "superadmin"))
+            var adminUser = await context.Users
+                .FirstOrDefaultAsync(u => u.Username == "superadmin");
+
+            if (adminUser == null)
             {
-                var adminRole = await context.Roles
-                    .FirstOrDefaultAsync(r => r.Name == "super_admin");
-
-                if (adminRole == null)
-                {
-                    adminRole = new Role
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "super_admin",
-                        DisplayName = "Super Admin",
-                        Description = "Full system access",
-                        IsSystem = true,
-                        CreatedAt = DateTime.UtcNow
-                    };
-
-                    context.Roles.Add(adminRole);
-                    await context.SaveChangesAsync();
-                }
-
-                var adminUser = new User
+                adminUser = new User
                 {
                     Id = Guid.NewGuid(),
                     Username = "superadmin",
@@ -102,21 +127,46 @@ namespace WebApp.Data
 
                 context.Users.Add(adminUser);
                 await context.SaveChangesAsync();
+            }
 
+            var adminUserRoleExists = await context.UserRoles
+                .AnyAsync(ur => ur.UserId == adminUser.Id && ur.RoleId == adminRole.Id);
+
+            if (!adminUserRoleExists)
+            {
                 context.UserRoles.Add(new UserRole
                 {
                     UserId = adminUser.Id,
                     RoleId = adminRole.Id
                 });
                 await context.SaveChangesAsync();
+            }
 
-                var allPermissions = await context.Permissions.ToListAsync();
-                var rolePermissions = allPermissions.Select(p => new RolePermission
+            var allPermissions = await context.Permissions
+                .AsNoTracking()
+                .Select(p => p.Id)
+                .ToListAsync();
+
+            var existingRolePermissionIds = await context.RolePermissions
+                .AsNoTracking()
+                .Where(rp => rp.RoleId == adminRole.Id)
+                .Select(rp => rp.PermissionId)
+                .ToListAsync();
+
+            var existingRolePermissionSet = existingRolePermissionIds.ToHashSet();
+
+            var missingRolePermissions = allPermissions
+                .Where(permissionId => !existingRolePermissionSet.Contains(permissionId))
+                .Select(permissionId => new RolePermission
                 {
                     RoleId = adminRole.Id,
-                    PermissionId = p.Id
-                }).ToList();
-                context.RolePermissions.AddRange(rolePermissions);
+                    PermissionId = permissionId
+                })
+                .ToList();
+
+            if (missingRolePermissions.Count > 0)
+            {
+                context.RolePermissions.AddRange(missingRolePermissions);
                 await context.SaveChangesAsync();
             }
         }

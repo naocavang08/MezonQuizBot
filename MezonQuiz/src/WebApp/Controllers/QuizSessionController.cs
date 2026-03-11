@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Application.Dtos;
 using WebApp.Application.Interface;
+using WebApp.Authorization;
 
 namespace WebApp.Controllers
 {
@@ -16,6 +17,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
+        [PermissionAuthorize(PermissionNames.Sessions.List)]
         public async Task<IActionResult> GetSessions([FromQuery] QuizSessionQuery query)
         {
             var sessions = await _sessionService.GetSessionsAsync(query);
@@ -23,6 +25,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet("{sessionId}")]
+        [PermissionAuthorize(PermissionNames.Sessions.View)]
         public async Task<IActionResult> GetSessionDetails(Guid sessionId)
         {
             var session = await _sessionService.GetSessionDetailsAsync(sessionId);
@@ -33,6 +36,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
+        [PermissionAuthorize(PermissionNames.Sessions.Create)]
         public async Task<IActionResult> CreateSession([FromBody] CreateQuizSessionDto request)
         {
             var (result, session) = await _sessionService.CreateSessionAsync(request);
@@ -43,6 +47,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{sessionId}/join")]
+        [PermissionAuthorize(PermissionNames.Sessions.View)]
         public async Task<IActionResult> JoinSession(Guid sessionId, [FromBody] JoinQuizSessionDto request)
         {
             var result = await _sessionService.JoinSessionAsync(sessionId, request);
@@ -53,6 +58,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{sessionId}/start")]
+        [PermissionAuthorize(PermissionNames.Sessions.Start)]
         public async Task<IActionResult> StartSession(Guid sessionId, [FromQuery] Guid hostId)
         {
             var result = await _sessionService.StartSessionAsync(sessionId, hostId);
@@ -63,6 +69,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{sessionId}/pause")]
+        [PermissionAuthorize(PermissionNames.Sessions.Start)]
         public async Task<IActionResult> PauseSession(Guid sessionId, [FromQuery] Guid hostId)
         {
             var result = await _sessionService.PauseSessionAsync(sessionId, hostId);
@@ -73,6 +80,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{sessionId}/resume")]
+        [PermissionAuthorize(PermissionNames.Sessions.Start)]
         public async Task<IActionResult> ResumeSession(Guid sessionId, [FromQuery] Guid hostId)
         {
             var result = await _sessionService.ResumeSessionAsync(sessionId, hostId);
@@ -83,6 +91,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{sessionId}/finish")]
+        [PermissionAuthorize(PermissionNames.Sessions.End)]
         public async Task<IActionResult> FinishSession(Guid sessionId, [FromQuery] Guid hostId)
         {
             var result = await _sessionService.FinishSessionAsync(sessionId, hostId);
@@ -93,6 +102,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{sessionId}/cancel")]
+        [PermissionAuthorize(PermissionNames.Sessions.End)]
         public async Task<IActionResult> CancelSession(Guid sessionId, [FromQuery] Guid hostId)
         {
             var result = await _sessionService.CancelSessionAsync(sessionId, hostId);
@@ -103,6 +113,7 @@ namespace WebApp.Controllers
         }
 
         [HttpDelete("{sessionId}")]
+        [PermissionAuthorize(PermissionNames.Sessions.Delete)]
         public async Task<IActionResult> DeleteSession(Guid sessionId, [FromQuery] Guid hostId)
         {
             var result = await _sessionService.DeleteSessionAsync(sessionId, hostId);
@@ -113,6 +124,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{sessionId}/next-question")]
+        [PermissionAuthorize(PermissionNames.Sessions.Start)]
         public async Task<IActionResult> NextQuestion(Guid sessionId, [FromQuery] Guid hostId)
         {
             var result = await _sessionService.NextQuestionAsync(sessionId, hostId);
@@ -123,6 +135,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{sessionId}/answers")]
+        [PermissionAuthorize(PermissionNames.Sessions.View)]
         public async Task<IActionResult> SubmitAnswer(Guid sessionId, [FromBody] SubmitAnswerDto request)
         {
             var result = await _sessionService.SubmitAnswerAsync(sessionId, request);
@@ -133,6 +146,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet("{sessionId}/leaderboard")]
+        [PermissionAuthorize(PermissionNames.Sessions.View)]
         public async Task<IActionResult> GetLeaderboard(Guid sessionId)
         {
             var leaderboard = await _sessionService.GetLeaderboardAsync(sessionId);

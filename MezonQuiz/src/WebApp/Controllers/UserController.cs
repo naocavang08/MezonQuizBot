@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using WebApp.Application.Dtos;
 using WebApp.Application.Interface;
+using WebApp.Authorization;
 
 namespace WebApp.Controllers
 {
@@ -16,6 +17,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
+        [PermissionAuthorize(PermissionNames.Users.List)]
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync();
@@ -23,6 +25,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet("{id}")]
+        [PermissionAuthorize(PermissionNames.Users.View)]
         public async Task<IActionResult> GetUserById(Guid id)
         {
             try
@@ -37,6 +40,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
+        [PermissionAuthorize(PermissionNames.Users.Create)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserRequestDto request)
         {
             try
@@ -55,6 +59,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{id}")]
+        [PermissionAuthorize(PermissionNames.Users.Update)]
         public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequestDto request)
         {
             try
@@ -77,6 +82,7 @@ namespace WebApp.Controllers
         }
 
         [HttpDelete("{id}")]
+        [PermissionAuthorize(PermissionNames.Users.Delete)]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
             try
@@ -91,6 +97,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet("{id}/roles")]
+        [PermissionAuthorize(PermissionNames.Users.View)]
         public async Task<IActionResult> GetUserRoleIds(Guid id)
         {
             try
@@ -105,6 +112,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("{id}/roles")]
+        [PermissionAuthorize(PermissionNames.Users.AssignRole)]
         public async Task<IActionResult> AssignRolesToUser(Guid id, [FromBody] List<Guid> roleIds)
         {
             var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
