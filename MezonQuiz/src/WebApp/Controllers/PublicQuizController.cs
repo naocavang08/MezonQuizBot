@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Application.Dtos;
 using WebApp.Application.Interface;
-using WebApp.Authorization;
 
 namespace WebApp.Controllers
 {
@@ -17,7 +16,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        [PermissionAuthorize(PermissionNames.Quizzes.List)]
+        [AllowAnonymous]
         public async Task<IActionResult> GetPublicQuizzes([FromQuery] QuizListQuery query)
         {
             var quizzes = await _publicQuizService.GetAllPublicQuizzesAsync(query);

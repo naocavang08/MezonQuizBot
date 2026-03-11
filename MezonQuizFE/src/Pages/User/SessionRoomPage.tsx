@@ -143,13 +143,13 @@ const SessionRoomPage = () => {
             let response;
 
             if (action === "start") {
-                response = await startQuizSession(sessionId, userId);
+                response = await startQuizSession(sessionId);
             } else if (action === "pause") {
-                response = await pauseQuizSession(sessionId, userId);
+                response = await pauseQuizSession(sessionId);
             } else if (action === "resume") {
-                response = await resumeQuizSession(sessionId, userId);
+                response = await resumeQuizSession(sessionId);
             } else {
-                response = await finishQuizSession(sessionId, userId);
+                response = await finishQuizSession(sessionId);
             }
 
             setMessage(response.message || "Session updated successfully.");

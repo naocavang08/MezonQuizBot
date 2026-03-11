@@ -5,7 +5,6 @@ namespace WebApp.Application.Dtos
     public class CreateQuizSessionDto
     {
         public Guid QuizId { get; set; }
-        public Guid HostId { get; set; }
         public int? MaxParticipants { get; set; }
         public string? DeepLink { get; set; }
         public string? QrCodeUrl { get; set; }

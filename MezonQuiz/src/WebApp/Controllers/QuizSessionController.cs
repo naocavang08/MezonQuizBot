@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using WebApp.Application.Dtos;
 using WebApp.Application.Interface;
 using WebApp.Authorization;
@@ -10,10 +11,12 @@ namespace WebApp.Controllers
     public class QuizSessionController : ControllerBase
     {
         private readonly IQuizSessionService _sessionService;
+        private readonly ILogger<QuizSessionController> _logger;
 
-        public QuizSessionController(IQuizSessionService sessionService)
+        public QuizSessionController(IQuizSessionService sessionService, ILogger<QuizSessionController> logger)
         {
             _sessionService = sessionService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -39,7 +42,12 @@ namespace WebApp.Controllers
         [PermissionAuthorize(PermissionNames.Sessions.Create)]
         public async Task<IActionResult> CreateSession([FromBody] CreateQuizSessionDto request)
         {
-            var (result, session) = await _sessionService.CreateSessionAsync(request);
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            var (result, session) = await _sessionService.CreateSessionAsync(request, currentUserId);
             if (!result.Success)
                 return BadRequest(new { Message = result.Message });
 
@@ -59,9 +67,14 @@ namespace WebApp.Controllers
 
         [HttpPost("{sessionId}/start")]
         [PermissionAuthorize(PermissionNames.Sessions.Start)]
-        public async Task<IActionResult> StartSession(Guid sessionId, [FromQuery] Guid hostId)
+        public async Task<IActionResult> StartSession(Guid sessionId)
         {
-            var result = await _sessionService.StartSessionAsync(sessionId, hostId);
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            var result = await _sessionService.StartSessionAsync(sessionId, currentUserId);
             if (!result.Success)
                 return BadRequest(new { Message = result.Message });
 
@@ -70,9 +83,14 @@ namespace WebApp.Controllers
 
         [HttpPost("{sessionId}/pause")]
         [PermissionAuthorize(PermissionNames.Sessions.Start)]
-        public async Task<IActionResult> PauseSession(Guid sessionId, [FromQuery] Guid hostId)
+        public async Task<IActionResult> PauseSession(Guid sessionId)
         {
-            var result = await _sessionService.PauseSessionAsync(sessionId, hostId);
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            var result = await _sessionService.PauseSessionAsync(sessionId, currentUserId);
             if (!result.Success)
                 return BadRequest(new { Message = result.Message });
 
@@ -81,9 +99,14 @@ namespace WebApp.Controllers
 
         [HttpPost("{sessionId}/resume")]
         [PermissionAuthorize(PermissionNames.Sessions.Start)]
-        public async Task<IActionResult> ResumeSession(Guid sessionId, [FromQuery] Guid hostId)
+        public async Task<IActionResult> ResumeSession(Guid sessionId)
         {
-            var result = await _sessionService.ResumeSessionAsync(sessionId, hostId);
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            var result = await _sessionService.ResumeSessionAsync(sessionId, currentUserId);
             if (!result.Success)
                 return BadRequest(new { Message = result.Message });
 
@@ -92,9 +115,14 @@ namespace WebApp.Controllers
 
         [HttpPost("{sessionId}/finish")]
         [PermissionAuthorize(PermissionNames.Sessions.End)]
-        public async Task<IActionResult> FinishSession(Guid sessionId, [FromQuery] Guid hostId)
+        public async Task<IActionResult> FinishSession(Guid sessionId)
         {
-            var result = await _sessionService.FinishSessionAsync(sessionId, hostId);
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            var result = await _sessionService.FinishSessionAsync(sessionId, currentUserId);
             if (!result.Success)
                 return BadRequest(new { Message = result.Message });
 
@@ -103,9 +131,14 @@ namespace WebApp.Controllers
 
         [HttpPost("{sessionId}/cancel")]
         [PermissionAuthorize(PermissionNames.Sessions.End)]
-        public async Task<IActionResult> CancelSession(Guid sessionId, [FromQuery] Guid hostId)
+        public async Task<IActionResult> CancelSession(Guid sessionId)
         {
-            var result = await _sessionService.CancelSessionAsync(sessionId, hostId);
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            var result = await _sessionService.CancelSessionAsync(sessionId, currentUserId);
             if (!result.Success)
                 return BadRequest(new { Message = result.Message });
 
@@ -114,9 +147,14 @@ namespace WebApp.Controllers
 
         [HttpDelete("{sessionId}")]
         [PermissionAuthorize(PermissionNames.Sessions.Delete)]
-        public async Task<IActionResult> DeleteSession(Guid sessionId, [FromQuery] Guid hostId)
+        public async Task<IActionResult> DeleteSession(Guid sessionId)
         {
-            var result = await _sessionService.DeleteSessionAsync(sessionId, hostId);
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            var result = await _sessionService.DeleteSessionAsync(sessionId, currentUserId);
             if (!result.Success)
                 return BadRequest(new { Message = result.Message });
 
@@ -125,9 +163,14 @@ namespace WebApp.Controllers
 
         [HttpPost("{sessionId}/next-question")]
         [PermissionAuthorize(PermissionNames.Sessions.Start)]
-        public async Task<IActionResult> NextQuestion(Guid sessionId, [FromQuery] Guid hostId)
+        public async Task<IActionResult> NextQuestion(Guid sessionId)
         {
-            var result = await _sessionService.NextQuestionAsync(sessionId, hostId);
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            var result = await _sessionService.NextQuestionAsync(sessionId, currentUserId);
             if (!result.Success)
                 return BadRequest(new { Message = result.Message });
 
@@ -151,6 +194,18 @@ namespace WebApp.Controllers
         {
             var leaderboard = await _sessionService.GetLeaderboardAsync(sessionId);
             return Ok(leaderboard);
+        }
+
+        private bool TryGetCurrentUserId(out Guid userId)
+        {
+            var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var parsed = Guid.TryParse(userIdClaimValue, out userId);
+            if (!parsed)
+            {
+                _logger.LogWarning("Unauthorized quiz session request: missing/invalid NameIdentifier claim.");
+            }
+
+            return parsed;
         }
     }
 }

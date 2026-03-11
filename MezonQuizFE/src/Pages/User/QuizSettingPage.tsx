@@ -242,7 +242,7 @@ const QuizSettingPage = () => {
 		try {
 			setDeletingSessionId(sessionId);
 			setSessionError(null);
-			const result = await deleteQuizSession(sessionId, userId);
+			const result = await deleteQuizSession(sessionId);
 			setSuccess(result.message || "Session deleted.");
 			await loadSessions();
 		} catch {

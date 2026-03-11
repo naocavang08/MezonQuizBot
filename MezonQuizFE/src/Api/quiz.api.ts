@@ -63,11 +63,9 @@ export const getQuizDetails = (id: string) => {
         });
 };
 
-export const createQuiz = (body: QuizDto, userId?: string) => {
+export const createQuiz = (body: QuizDto) => {
     return apiClient
-        .post<CreateQuizResponse>("/api/Quiz", body, {
-            params: userId ? { userId } : undefined,
-        })
+        .post<CreateQuizResponse>("/api/Quiz", body)
         .then((res) => {
             return res.data;
         });

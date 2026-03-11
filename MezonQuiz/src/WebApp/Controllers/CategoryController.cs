@@ -17,7 +17,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        [AllowAnonymous]
+        [PermissionAuthorize(PermissionNames.Categories.List)]
         public async Task<IActionResult> GetAllCategories()
         {
             var categories = await _categoryService.GetAllCategoriesAsync();
@@ -25,7 +25,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
-        [PermissionAuthorize(PermissionNames.Settings.Update)]
+        [PermissionAuthorize(PermissionNames.Categories.Create)]
         public async Task<IActionResult> CreateCategory([FromBody] SaveCategoryDto request)
         {
             var result = await _categoryService.CreateCategoryAsync(request);
@@ -34,7 +34,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPut("{id}")]
-        [PermissionAuthorize(PermissionNames.Settings.Update)]
+        [PermissionAuthorize(PermissionNames.Categories.Update)]
         public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] SaveCategoryDto request)
         {
             var result = await _categoryService.UpdateCategoryAsync(id, request);
@@ -43,7 +43,7 @@ namespace WebApp.Controllers
         }
 
         [HttpDelete("{id}")]
-        [PermissionAuthorize(PermissionNames.Settings.Update)]
+        [PermissionAuthorize(PermissionNames.Categories.Delete)]
         public async Task<IActionResult> DeleteCategory(Guid id)
         {
             var result = await _categoryService.DeleteCategoryAsync(id);

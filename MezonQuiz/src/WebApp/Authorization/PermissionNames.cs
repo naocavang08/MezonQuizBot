@@ -32,6 +32,14 @@ public static class PermissionNames
         public const string Moderate = "quizzes.moderate";
     }
 
+    public static class Categories
+    {
+        public const string List = "categories.list";
+        public const string Create = "categories.create";
+        public const string Update = "categories.update";
+        public const string Delete = "categories.delete";
+    }
+
     public static class Sessions
     {
         public const string List = "sessions.list";

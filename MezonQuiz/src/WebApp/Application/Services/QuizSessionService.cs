@@ -113,9 +113,9 @@ namespace WebApp.Application.Services
             };
         }
 
-        public async Task<(SessionOperationResult Result, QuizSessionDto? Session)> CreateSessionAsync(CreateQuizSessionDto request)
+        public async Task<(SessionOperationResult Result, QuizSessionDto? Session)> CreateSessionAsync(CreateQuizSessionDto request, Guid hostId)
         {
-            if (request is null || request.QuizId == Guid.Empty || request.HostId == Guid.Empty)
+            if (request is null || request.QuizId == Guid.Empty || hostId == Guid.Empty)
             {
                 return (Fail("Invalid create session request."), null);
             }
@@ -131,7 +131,7 @@ namespace WebApp.Application.Services
                 return (Fail("Only published quizzes can open sessions."), null);
             }
 
-            if (request.HostId != quiz.CreatorId)
+            if (hostId != quiz.CreatorId)
             {
                 return (Fail("HostId must be the quiz creatorId."), null);
             }
@@ -145,7 +145,7 @@ namespace WebApp.Application.Services
             {
                 Id = Guid.NewGuid(),
                 QuizId = request.QuizId,
-                HostId = request.HostId,
+                HostId = hostId,
                 Status = SessionStatus.Waiting,
                 CurrentQuestion = 0,
                 DeepLink = request.DeepLink,

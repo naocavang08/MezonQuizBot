@@ -6,7 +6,7 @@ namespace WebApp.Application.Interface
     {
         Task<PagedQuizListDto<QuizSessionDto>> GetSessionsAsync(QuizSessionQuery query);
         Task<QuizSessionDto?> GetSessionDetailsAsync(Guid sessionId);
-        Task<(SessionOperationResult Result, QuizSessionDto? Session)> CreateSessionAsync(CreateQuizSessionDto request);
+        Task<(SessionOperationResult Result, QuizSessionDto? Session)> CreateSessionAsync(CreateQuizSessionDto request, Guid hostId);
         Task<SessionOperationResult> JoinSessionAsync(Guid sessionId, JoinQuizSessionDto request);
         Task<SessionOperationResult> StartSessionAsync(Guid sessionId, Guid hostId);
         Task<SessionOperationResult> PauseSessionAsync(Guid sessionId, Guid hostId);

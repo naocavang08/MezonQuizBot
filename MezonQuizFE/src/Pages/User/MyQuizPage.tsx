@@ -144,7 +144,6 @@ const MyQuizPage = () => {
 
       const response = await createQuizSession({
         quizId,
-        hostId: userId,
       });
 
       const createdSessionId = response.session?.id;

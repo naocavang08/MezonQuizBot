@@ -31,7 +31,7 @@ const normalizePagedQuizList = (raw: unknown, fallbackPage = 1, fallbackPageSize
 
 export const getPublicQuizzes = (params?: QuizListQueryParams) => {
     return apiClient
-        .get("/api/Quiz", {
+        .get("/api/PublicQuiz", {
             params,
         })
         .then((res) => {

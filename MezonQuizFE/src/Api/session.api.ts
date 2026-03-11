@@ -60,44 +60,24 @@ export const getQuizSessions = (params?: QuizSessionQueryParams) => {
         .then((res) => normalizePagedSessions(res.data, params?.page ?? 1, params?.pageSize ?? 10));
 };
 
-export const startQuizSession = (sessionId: string, hostId: string) => {
-    return apiClient
-        .post<SessionApiResponse>(`/api/QuizSession/${sessionId}/start`, null, {
-            params: { hostId },
-        })
-        .then((res) => res.data);
+export const startQuizSession = (sessionId: string) => {
+    return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/start`).then((res) => res.data);
 };
 
-export const pauseQuizSession = (sessionId: string, hostId: string) => {
-    return apiClient
-        .post<SessionApiResponse>(`/api/QuizSession/${sessionId}/pause`, null, {
-            params: { hostId },
-        })
-        .then((res) => res.data);
+export const pauseQuizSession = (sessionId: string) => {
+    return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/pause`).then((res) => res.data);
 };
 
-export const resumeQuizSession = (sessionId: string, hostId: string) => {
-    return apiClient
-        .post<SessionApiResponse>(`/api/QuizSession/${sessionId}/resume`, null, {
-            params: { hostId },
-        })
-        .then((res) => res.data);
+export const resumeQuizSession = (sessionId: string) => {
+    return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/resume`).then((res) => res.data);
 };
 
-export const finishQuizSession = (sessionId: string, hostId: string) => {
-    return apiClient
-        .post<SessionApiResponse>(`/api/QuizSession/${sessionId}/finish`, null, {
-            params: { hostId },
-        })
-        .then((res) => res.data);
+export const finishQuizSession = (sessionId: string) => {
+    return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/finish`).then((res) => res.data);
 };
 
-export const deleteQuizSession = (sessionId: string, hostId: string) => {
-    return apiClient
-        .delete<SessionApiResponse>(`/api/QuizSession/${sessionId}`, {
-            params: { hostId },
-        })
-        .then((res) => res.data);
+export const deleteQuizSession = (sessionId: string) => {
+    return apiClient.delete<SessionApiResponse>(`/api/QuizSession/${sessionId}`).then((res) => res.data);
 };
 
 export const getSessionLeaderboard = (sessionId: string) => {

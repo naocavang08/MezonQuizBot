@@ -10,7 +10,6 @@ export const SessionStatusValue = {
 
 export interface CreateQuizSessionDto {
     quizId: string;
-    hostId: string;
     maxParticipants?: number;
     deepLink?: string;
     qrCodeUrl?: string;

@@ -27,6 +27,10 @@ namespace WebApp.Data
                 ("quizzes", "delete", "Delete quiz"),
                 ("quizzes", "publish", "Publish quiz"),
                 ("quizzes", "moderate", "Moderate quiz content"),
+                ("categories", "list", "View category list"),
+                ("categories", "create", "Create category"),
+                ("categories", "update", "Update category"),
+                ("categories", "delete", "Delete category"),
                 ("sessions", "list", "View session list"),
                 ("sessions", "view", "View session detail"),
                 ("sessions", "create", "Create session"),
@@ -66,7 +70,6 @@ namespace WebApp.Data
                 })
                 .ToList();
 
-            var now = DateTime.UtcNow;
             foreach (var permission in existingPermissions)
             {
                 var key = $"{permission.Resource}:{permission.Action}";
@@ -78,7 +81,6 @@ namespace WebApp.Data
                 if (!string.Equals(permission.Description, seed.Description, StringComparison.Ordinal))
                 {
                     permission.Description = seed.Description;
-                    permission.CreatedAt = now;
                 }
             }
 
