@@ -1,10 +1,11 @@
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
-using WebApp.Application.Interface;
 using WebApp.Application.Services;
+using WebApp.Authorization;
 using WebApp.Data;
 using static WebApp.Domain.Enums.Status;
 
@@ -47,6 +48,8 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Missing connection string: DefaultConnection.");
@@ -62,12 +65,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(dataSource);
 });
 
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IMezonAuthService, MezonAuthService>();
-builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IQuizService, QuizService>();
-builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.Scan(scan => scan
+    .FromAssemblyOf<QuizService>()
+    .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service")))
+    .AsMatchingInterface()
+    .WithScopedLifetime());
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
 

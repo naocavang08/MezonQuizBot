@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Alert,
 	Box,
@@ -17,6 +17,8 @@ import {
 	Select,
 	Stack,
 	Switch,
+	Tab,
+	Tabs,
 	TextField,
 	Typography,
 } from "@mui/material";
@@ -24,6 +26,7 @@ import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { getAllCategories } from "../../Api/category.api";
 import { deleteQuiz, getQuizDetails, updateQuiz, updateQuizSettings } from "../../Api/quiz.api";
+import { deleteQuizSession, getQuizSessions } from "../../Api/session.api";
 import type { CategoryDto } from "../../Interface/category.dto";
 import {
 	QuestionType,
@@ -33,6 +36,8 @@ import {
 	type QuizOptionDto,
 	type QuizQuestionDto,
 } from "../../Interface/quiz.dto";
+import { SessionStatusValue, type QuizSessionDto } from "../../Interface/session.dto";
+import useAuthStore from "../../Stores/login.store";
 
 type FormState = {
 	creatorId: string;
@@ -87,10 +92,20 @@ const questionTypeLabel: Record<QuizQuestionDto["questionType"], string> = {
 	[QuestionType.TrueFalse]: "True/False",
 };
 
+const sessionStatusLabel: Record<number, string> = {
+	[SessionStatusValue.Waiting]: "Waiting",
+	[SessionStatusValue.Active]: "Active",
+	[SessionStatusValue.Paused]: "Paused",
+	[SessionStatusValue.Finished]: "Finished",
+	[SessionStatusValue.Cancelled]: "Cancelled",
+};
+
 const QuizSettingPage = () => {
 	const navigate = useNavigate();
 	const { quizId } = useParams<{ quizId: string }>();
+	const userId = useAuthStore((state) => state.user?.id);
 
+	const [activeTab, setActiveTab] = useState<"quiz" | "sessions">("quiz");
 	const [categories, setCategories] = useState<CategoryDto[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isLoadingCategories, setIsLoadingCategories] = useState(false);
@@ -100,6 +115,10 @@ const QuizSettingPage = () => {
 	const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
+	const [sessionError, setSessionError] = useState<string | null>(null);
+	const [sessions, setSessions] = useState<QuizSessionDto[]>([]);
+	const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+	const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
 	const [form, setForm] = useState<FormState>({
 		creatorId: "",
 		title: "",
@@ -169,6 +188,69 @@ const QuizSettingPage = () => {
 			isMounted = false;
 		};
 	}, [quizId]);
+
+	const loadSessions = useCallback(async () => {
+		if (!quizId) {
+			return;
+		}
+
+		try {
+			setIsLoadingSessions(true);
+			setSessionError(null);
+			const data = await getQuizSessions({
+				quizId,
+				page: 1,
+				pageSize: 50,
+			});
+
+			setSessions(Array.isArray(data.items) ? data.items : []);
+		} catch {
+			setSessionError("Could not load created sessions for this quiz.");
+		} finally {
+			setIsLoadingSessions(false);
+		}
+	}, [quizId]);
+
+	useEffect(() => {
+		void loadSessions();
+	}, [loadSessions]);
+
+	const copyValue = async (value: string, message: string) => {
+		if (!value) {
+			return;
+		}
+
+		try {
+			await navigator.clipboard.writeText(value);
+			setSuccess(message);
+		} catch {
+			setSessionError("Can not copy value right now.");
+		}
+	};
+
+	const handleDeleteSession = async (sessionId: string) => {
+		if (!userId) {
+			setSessionError("User is not available. Please login again.");
+			return;
+		}
+
+		const confirmed = window.confirm("Are you sure you want to delete this session?");
+		if (!confirmed) {
+			return;
+		}
+
+		try {
+			setDeletingSessionId(sessionId);
+			setSessionError(null);
+			const result = await deleteQuizSession(sessionId, userId);
+			setSuccess(result.message || "Session deleted.");
+			await loadSessions();
+		} catch {
+			setSessionError("Failed to delete session.");
+		} finally {
+			setDeletingSessionId(null);
+		}
+	};
 
 	const totalPoints = useMemo(
 		() => form.questions.reduce((sum, question) => sum + Number(question.points || 0), 0),
@@ -519,7 +601,112 @@ const QuizSettingPage = () => {
 
 			{error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 			{success ? <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert> : null}
+			{sessionError ? <Alert severity="warning" sx={{ mb: 2 }}>{sessionError}</Alert> : null}
 
+			<Tabs
+				value={activeTab}
+				onChange={(_event, value: "quiz" | "sessions") => setActiveTab(value)}
+				sx={{ mb: 2 }}
+			>
+				<Tab value="quiz" label="Quiz Content" />
+				<Tab value="sessions" label="Sessions" />
+			</Tabs>
+
+			{activeTab === "sessions" ? (
+			<Card variant="outlined" sx={{ mb: 3, backgroundColor: "transparent" }}>
+				<CardContent>
+					<Stack spacing={1.5}>
+						<Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }}>
+							<Typography variant="h6" fontWeight={700}>
+								Created Sessions
+							</Typography>
+							<Typography variant="body2" color="text.secondary">
+								Total: {sessions.length}
+							</Typography>
+						</Stack>
+
+						{isLoadingSessions ? (
+							<Stack direction="row" justifyContent="center" sx={{ py: 2 }}>
+								<CircularProgress size={24} />
+							</Stack>
+						) : null}
+
+						{!isLoadingSessions && sessions.length === 0 ? (
+							<Typography variant="body2" color="text.secondary">
+								No sessions created for this quiz yet.
+							</Typography>
+						) : null}
+
+						{!isLoadingSessions && sessions.length > 0 ? (
+							<Stack spacing={1.2}>
+								{sessions.map((session) => {
+									const deepLink = session.deepLink || `${window.location.origin}/user/sessions/${session.id}`;
+									return (
+										<Box
+											key={session.id}
+											sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1.5 }}
+										>
+											<Stack spacing={0.8}>
+												<Typography variant="subtitle2" fontWeight={700}>
+													Session {session.id}
+												</Typography>
+												<Typography variant="body2" color="text.secondary">
+													Status: {sessionStatusLabel[session.status] ?? "Unknown"} | Participants: {session.participantCount}
+												</Typography>
+												<Typography variant="body2" color="text.secondary">
+													Created: {new Date(session.createdAt).toLocaleString()}
+												</Typography>
+												<Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+													<Button
+														size="small"
+														variant="contained"
+														onClick={() => navigate(`/user/sessions/${session.id}`)}
+													>
+														Open Session Room
+													</Button>
+													<Button
+														size="small"
+														variant="outlined"
+														onClick={() => {
+															void copyValue(session.id, "Session ID copied.");
+														}}
+													>
+														Copy Session ID
+													</Button>
+													<Button
+														size="small"
+														variant="outlined"
+														color="error"
+														disabled={deletingSessionId === session.id}
+														onClick={() => {
+															void handleDeleteSession(session.id);
+														}}
+													>
+														{deletingSessionId === session.id ? "Deleting..." : "Delete Session"}
+													</Button>
+													<Button
+														size="small"
+														variant="outlined"
+														onClick={() => {
+															void copyValue(deepLink, "Session deep link copied.");
+														}}
+													>
+														Copy Deep Link
+													</Button>
+												</Stack>
+											</Stack>
+										</Box>
+									);
+								})}
+							</Stack>
+						) : null}
+					</Stack>
+				</CardContent>
+			</Card>
+			) : null}
+
+			{activeTab === "quiz" ? (
+			<>
 			<Card variant="outlined" sx={{ mb: 3, backgroundColor: "transparent" }}>
 				<CardContent>
 					<Stack spacing={2}>
@@ -850,6 +1037,8 @@ const QuizSettingPage = () => {
 					{isSubmitting ? "Saving..." : "Save Quiz"}
 				</Button>
 			</Stack>
+			</>
+			) : null}
 		</Box>
 	);
 };

@@ -15,9 +15,11 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../../Api/category.api";
+import { createQuizSession } from "../../Api/session.api";
 import { getQuizzes } from "../../Api/quiz.api";
 import type { CategoryDto } from "../../Interface/category.dto";
 import { QuizStatus, type ListQuizDto } from "../../Interface/quiz.dto";
+import useAuthStore from "../../Stores/login.store";
 
 const statusLabel: Record<ListQuizDto["status"], string> = {
   [QuizStatus.Draft]: "Draft",
@@ -33,10 +35,13 @@ const statusBorderColor: Record<ListQuizDto["status"], string> = {
 
 const MyQuizPage = () => {
   const navigate = useNavigate();
+  const userId = useAuthStore((state) => state.user?.id);
   const [quizzes, setQuizzes] = useState<ListQuizDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [creatingSessionQuizId, setCreatingSessionQuizId] = useState<string | null>(null);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -122,6 +127,39 @@ const MyQuizPage = () => {
     };
   }, [page, pageSize, selectedCategory, searchTitle]);
 
+  const handleCreateSession = async (quizId: string, quizStatus: ListQuizDto["status"]) => {
+    if (!userId) {
+      setSessionError("User is not available. Please login again.");
+      return;
+    }
+
+    if (quizStatus !== QuizStatus.Published) {
+      setSessionError("Only published quiz can create a session.");
+      return;
+    }
+
+    try {
+      setCreatingSessionQuizId(quizId);
+      setSessionError(null);
+
+      const response = await createQuizSession({
+        quizId,
+        hostId: userId,
+      });
+
+      const createdSessionId = response.session?.id;
+      if (createdSessionId) {
+        navigate(`/user/sessions/${createdSessionId}`);
+      } else {
+        setSessionError(response.message || "Session created but missing session id.");
+      }
+    } catch {
+      setSessionError("Can not create session for this quiz right now.");
+    } finally {
+      setCreatingSessionQuizId(null);
+    }
+  };
+
   return (
     <Box sx={{ mt: 2 }}>
       <Stack
@@ -181,6 +219,7 @@ const MyQuizPage = () => {
       ) : null}
 
       {!isLoading && error ? <Alert severity="error">{error}</Alert> : null}
+      {!isLoading && !error && sessionError ? <Alert severity="error" sx={{ mb: 2 }}>{sessionError}</Alert> : null}
 
       {!isLoading && !error && quizzes.length === 0 ? (
         <Typography variant="body1" color="text.secondary">
@@ -218,6 +257,29 @@ const MyQuizPage = () => {
               <Typography variant="body2" color="text.secondary">
                 Quiz ID: {quiz.id}
               </Typography>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mt: 1.5 }}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  disabled={quiz.status !== QuizStatus.Published || creatingSessionQuizId === quiz.id}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleCreateSession(quiz.id, quiz.status);
+                  }}
+                >
+                  {creatingSessionQuizId === quiz.id ? "Creating..." : "Create Session"}
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    navigate(`/user/my-quizzes/${quiz.id}/settings`);
+                  }}
+                >
+                  Open Settings
+                </Button>
+              </Stack>
             </Box>
           ))}
 

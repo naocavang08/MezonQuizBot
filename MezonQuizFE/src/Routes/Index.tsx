@@ -15,6 +15,7 @@ import MyQuizPage from "../Pages/User/MyQuizPage";
 import CreateQuizPage from "../Pages/User/CreateQuizPage";
 import QuizSettingPage from "../Pages/User/QuizSettingPage";
 import FindQuizPage from "../Pages/User/FindQuizPage";
+import SessionRoomPage from "../Pages/User/SessionRoomPage";
 
 const AdminShell = () => {
   return (
@@ -64,6 +65,7 @@ const AppRoutes = () => {
           <Route path="find-quizzes" element={<FindQuizPage />} />
           <Route path="my-quizzes" element={<MyQuizPage />} />
           <Route path="my-quizzes/:quizId/settings" element={<QuizSettingPage />} />
+          <Route path="sessions/:sessionId" element={<SessionRoomPage />} />
           <Route path="create-quiz" element={<CreateQuizPage />} />
         </Route>
       </Route>

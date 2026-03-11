@@ -18,12 +18,15 @@ import {
 import { MdRefresh, MdSearch } from "react-icons/md";
 import { getAllCategories } from "../../Api/category.api";
 import { getPublicQuizzes } from "../../Api/publicquiz.api";
+import { joinQuizSession } from "../../Api/session.api";
 import type { CategoryDto } from "../../Interface/category.dto";
 import type { ListPublicQuizDto } from "../../Interface/quiz.dto";
+import useAuthStore from "../../Stores/login.store";
 
 const PAGE_SIZE = 9;
 
 const FindQuizPage = () => {
+    const userId = useAuthStore((state) => state.user?.id);
     const [categories, setCategories] = useState<CategoryDto[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [searchTitle, setSearchTitle] = useState("");
@@ -35,6 +38,10 @@ const FindQuizPage = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [sessionId, setSessionId] = useState("");
+    const [joinError, setJoinError] = useState<string | null>(null);
+    const [joinSuccess, setJoinSuccess] = useState<string | null>(null);
+    const [isJoining, setIsJoining] = useState(false);
 
     const categoryParam = selectedCategory === "all" ? undefined : selectedCategory;
     const titleParam = searchTitle.trim() || undefined;
@@ -97,6 +104,34 @@ const FindQuizPage = () => {
         void fetchQuizzes();
         // Intentionally include all query states to refetch as user changes filters.
     }, [fetchQuizzes]);
+
+    const handleJoinSession = async () => {
+        const normalizedSessionId = sessionId.trim();
+        if (!normalizedSessionId) {
+            setJoinError("Please enter a session ID.");
+            setJoinSuccess(null);
+            return;
+        }
+
+        if (!userId) {
+            setJoinError("User is not available. Please login again.");
+            setJoinSuccess(null);
+            return;
+        }
+
+        try {
+            setIsJoining(true);
+            setJoinError(null);
+            setJoinSuccess(null);
+
+            const response = await joinQuizSession(normalizedSessionId, { userId });
+            setJoinSuccess(response.message || "Joined session successfully.");
+        } catch {
+            setJoinError("Can not join this session now. Please check session ID and try again.");
+        } finally {
+            setIsJoining(false);
+        }
+    };
 
     return (
         <Box
@@ -221,6 +256,35 @@ const FindQuizPage = () => {
                                 {totalCount} quizzes found
                                 {activeFilterCount > 0 ? ` • ${activeFilterCount} active filter(s)` : ""}
                             </Typography>
+
+                            <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={1.2}
+                                alignItems={{ xs: "stretch", sm: "center" }}
+                            >
+                                <TextField
+                                    size="small"
+                                    label="Join by Session ID"
+                                    placeholder="Paste session id"
+                                    value={sessionId}
+                                    onChange={(event) => {
+                                        setSessionId(event.target.value);
+                                    }}
+                                    sx={{ maxWidth: { xs: "100%", sm: 360 } }}
+                                />
+                                <Chip
+                                    label={isJoining ? "Joining..." : "Join Session"}
+                                    color="primary"
+                                    clickable={!isJoining}
+                                    onClick={() => {
+                                        if (!isJoining) {
+                                            void handleJoinSession();
+                                        }
+                                    }}
+                                />
+                            </Stack>
+                            {joinError ? <Alert severity="error">{joinError}</Alert> : null}
+                            {joinSuccess ? <Alert severity="success">{joinSuccess}</Alert> : null}
                         </Stack>
                     </Box>
 
