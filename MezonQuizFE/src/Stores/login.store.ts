@@ -2,12 +2,18 @@ import { create } from "zustand";
 import type { LoginResponse, User } from "../Interface/login.dto";
 import {
 	getHasSystemRole,
+	getPermissionNames,
+	getRoleNames,
 	getTokenAccess,
 	getUser,
 	removeHasSystemRole,
+	removePermissionNames,
+	removeRoleNames,
 	removeTokenAccess,
 	removeUser,
 	setHasSystemRole,
+	setPermissionNames,
+	setRoleNames,
 	setTokenAccess,
 	setUser,
 } from "../Lib/Utils/localStorage";
@@ -26,24 +32,30 @@ type AuthState = {
 const initialToken = getTokenAccess();
 const initialHasSystemRole = getHasSystemRole();
 const initialUser = getUser();
+const initialRoleNames = getRoleNames();
+const initialPermissionNames = getPermissionNames();
 
 const useAuthStore = create<AuthState>((set) => ({
 	token: initialToken,
 	user: initialUser,
-	roleName: [],
-	permissionName: [],
+	roleName: initialRoleNames,
+	permissionName: initialPermissionNames,
 	hasSystemRole: initialHasSystemRole,
 	isAuthenticated: Boolean(initialToken),
 	setAuth: ({ token, user, roleName, permissionName, hasSystemRole }) => {
 		const resolvedHasSystemRole = hasSystemRole ?? false;
+		const resolvedRoleName = roleName ?? [];
+		const resolvedPermissionName = permissionName ?? [];
 		setTokenAccess(token);
 		setHasSystemRole(resolvedHasSystemRole);
 		setUser(user);
+		setRoleNames(resolvedRoleName);
+		setPermissionNames(resolvedPermissionName);
 		set({
 			token,
 			user,
-			roleName: roleName ?? [],
-			permissionName: permissionName ?? [],
+			roleName: resolvedRoleName,
+			permissionName: resolvedPermissionName,
 			hasSystemRole: resolvedHasSystemRole,
 			isAuthenticated: Boolean(token)
 		});
@@ -52,6 +64,8 @@ const useAuthStore = create<AuthState>((set) => ({
 		removeTokenAccess();
 		removeHasSystemRole();
 		removeUser();
+		removeRoleNames();
+		removePermissionNames();
 		set({ token: null, user: null, roleName: [], permissionName: [], hasSystemRole: false, isAuthenticated: false });
 	},
 }));

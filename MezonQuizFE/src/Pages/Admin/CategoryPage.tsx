@@ -19,6 +19,8 @@ import {
 } from "@mui/material";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
+import useAuthStore from "../../Stores/login.store";
+import { hasAnyPermission, PERMISSIONS } from "../../Lib/Utils/permissions";
 import { createCategory, deleteCategory, getAllCategories, updateCategory } from "../../Api/category.api";
 import type { CategoryDto, SaveCategoryDto } from "../../Interface/category.dto";
 
@@ -33,6 +35,12 @@ const CategoryPage = () => {
 	const [categories, setCategories] = useState<CategoryDto[]>([]);
 	const [loading, setLoading] = useState(false);
 	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
+	const permissionName = useAuthStore((state) => state.permissionName);
+	const hasSystemRole = useAuthStore((state) => state.hasSystemRole);
+	const canCreateCategory = hasAnyPermission(permissionName, [PERMISSIONS.CATEGORIES_CREATE], hasSystemRole);
+	const canUpdateCategory = hasAnyPermission(permissionName, [PERMISSIONS.CATEGORIES_UPDATE], hasSystemRole);
+	const canDeleteCategory = hasAnyPermission(permissionName, [PERMISSIONS.CATEGORIES_DELETE], hasSystemRole);
+	const hasAnyRowAction = canUpdateCategory || canDeleteCategory;
 
 	const [openCreateDialog, setOpenCreateDialog] = useState(false);
 	const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -74,6 +82,11 @@ const CategoryPage = () => {
 	};
 
 	const handleCreateCategory = async () => {
+		if (!canCreateCategory) {
+			showError("You do not have permission to create categories.");
+			return;
+		}
+
 		if (!validateForm(createForm)) {
 			return;
 		}
@@ -93,6 +106,11 @@ const CategoryPage = () => {
 	};
 
 	const handleOpenEditDialog = (category: CategoryDto) => {
+		if (!canUpdateCategory) {
+			showError("You do not have permission to update categories.");
+			return;
+		}
+
 		setSelectedCategory(category);
 		setEditForm({
 			name: category.name,
@@ -104,6 +122,11 @@ const CategoryPage = () => {
 	};
 
 	const handleUpdateCategory = async () => {
+		if (!canUpdateCategory) {
+			showError("You do not have permission to update categories.");
+			return;
+		}
+
 		if (!selectedCategory) {
 			return;
 		}
@@ -127,6 +150,11 @@ const CategoryPage = () => {
 	};
 
 	const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
+		if (!canDeleteCategory) {
+			showError("You do not have permission to delete categories.");
+			return;
+		}
+
 		if (!window.confirm(`Bạn có chắc muốn xóa category \\"${categoryName}\\"?`)) {
 			return;
 		}
@@ -149,9 +177,11 @@ const CategoryPage = () => {
 				<Typography variant="h5" fontWeight={700}>
 					Category Management
 				</Typography>
-				<Button variant="contained" onClick={() => setOpenCreateDialog(true)}>
-					Add Category
-				</Button>
+				{canCreateCategory ? (
+					<Button variant="contained" onClick={() => setOpenCreateDialog(true)}>
+						Add Category
+					</Button>
+				) : null}
 			</Box>
 
 			<Paper variant="outlined" sx={{ boxShadow: "none" }}>
@@ -167,7 +197,7 @@ const CategoryPage = () => {
 								<TableCell>Slug</TableCell>
 								<TableCell>Icon</TableCell>
 								<TableCell>Sort Order</TableCell>
-								<TableCell align="right">Actions</TableCell>
+								{hasAnyRowAction ? <TableCell align="right">Actions</TableCell> : null}
 							</TableRow>
 						</TableHead>
 						<TableBody>
@@ -177,26 +207,32 @@ const CategoryPage = () => {
 									<TableCell>{category.slug}</TableCell>
 									<TableCell>{category.icon || "-"}</TableCell>
 									<TableCell>{category.sortOrder ?? 0}</TableCell>
-									<TableCell align="right">
-										<Stack direction="row" spacing={1} justifyContent="flex-end">
-											<Button size="small" variant="outlined" onClick={() => handleOpenEditDialog(category)}>
-												Edit
-											</Button>
-											<Button
-												size="small"
-												variant="outlined"
-												color="error"
-												onClick={() => handleDeleteCategory(category.id, category.name)}
-											>
-												Delete
-											</Button>
-										</Stack>
-									</TableCell>
+									{hasAnyRowAction ? (
+										<TableCell align="right">
+											<Stack direction="row" spacing={1} justifyContent="flex-end">
+												{canUpdateCategory ? (
+													<Button size="small" variant="outlined" onClick={() => handleOpenEditDialog(category)}>
+														Edit
+													</Button>
+												) : null}
+												{canDeleteCategory ? (
+													<Button
+														size="small"
+														variant="outlined"
+														color="error"
+														onClick={() => handleDeleteCategory(category.id, category.name)}
+													>
+														Delete
+													</Button>
+												) : null}
+											</Stack>
+										</TableCell>
+									) : null}
 								</TableRow>
 							))}
 							{categories.length === 0 && (
 								<TableRow>
-									<TableCell colSpan={5} align="center">
+									<TableCell colSpan={hasAnyRowAction ? 5 : 4} align="center">
 										Chưa có category nào.
 									</TableCell>
 								</TableRow>
@@ -206,7 +242,7 @@ const CategoryPage = () => {
 				)}
 			</Paper>
 
-			<Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} maxWidth="sm" fullWidth>
+			<Dialog open={openCreateDialog && canCreateCategory} onClose={() => setOpenCreateDialog(false)} maxWidth="sm" fullWidth>
 				<DialogTitle>Create Category</DialogTitle>
 				<DialogContent>
 					<Stack spacing={2} sx={{ mt: 1 }}>
@@ -247,7 +283,7 @@ const CategoryPage = () => {
 				</DialogActions>
 			</Dialog>
 
-			<Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth>
+			<Dialog open={openEditDialog && canUpdateCategory} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth>
 				<DialogTitle>Edit Category</DialogTitle>
 				<DialogContent>
 					<Stack spacing={2} sx={{ mt: 1 }}>

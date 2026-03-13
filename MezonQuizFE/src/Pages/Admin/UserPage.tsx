@@ -23,6 +23,8 @@ import {
 } from "@mui/material";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
+import useAuthStore from "../../Stores/login.store";
+import { hasAnyPermission, PERMISSIONS } from "../../Lib/Utils/permissions";
 import {
 	assignRolesToUser,
 	createUser,
@@ -40,6 +42,13 @@ const UserPage = () => {
 	const [roles, setRoles] = useState<RoleResponse[]>([]);
 	const [loading, setLoading] = useState(false);
 	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
+	const permissionName = useAuthStore((state) => state.permissionName);
+	const hasSystemRole = useAuthStore((state) => state.hasSystemRole);
+	const canCreateUser = hasAnyPermission(permissionName, [PERMISSIONS.USERS_CREATE], hasSystemRole);
+	const canUpdateUser = hasAnyPermission(permissionName, [PERMISSIONS.USERS_UPDATE], hasSystemRole);
+	const canDeleteUser = hasAnyPermission(permissionName, [PERMISSIONS.USERS_DELETE], hasSystemRole);
+	const canAssignRole = hasAnyPermission(permissionName, [PERMISSIONS.USERS_ASSIGN_ROLE], hasSystemRole);
+	const hasAnyRowAction = canUpdateUser || canDeleteUser || canAssignRole;
 
 	const [openCreateDialog, setOpenCreateDialog] = useState(false);
 	const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -77,6 +86,11 @@ const UserPage = () => {
 	};
 
 	const fetchRoles = async () => {
+		if (!canAssignRole) {
+			setRoles([]);
+			return;
+		}
+
 		try {
 			const data = await getAllRoles();
 			setRoles(data);
@@ -91,6 +105,11 @@ const UserPage = () => {
 	}, []);
 
 	const handleOpenEditDialog = (user: UserResponse) => {
+		if (!canUpdateUser) {
+			showError("You do not have permission to update users.");
+			return;
+		}
+
 		setSelectedUser(user);
 		setEditForm({
 			email: user.email ?? "",
@@ -102,6 +121,11 @@ const UserPage = () => {
 	};
 
 	const handleCreateUser = async () => {
+		if (!canCreateUser) {
+			showError("You do not have permission to create users.");
+			return;
+		}
+
 		if (!createForm.username || !createForm.password) {
 			showError("Username và Password là bắt buộc.");
 			return;
@@ -128,6 +152,11 @@ const UserPage = () => {
 	};
 
 	const handleUpdateUser = async () => {
+		if (!canUpdateUser) {
+			showError("You do not have permission to update users.");
+			return;
+		}
+
 		if (!selectedUser) {
 			return;
 		}
@@ -147,6 +176,11 @@ const UserPage = () => {
 	};
 
 	const handleDeleteUser = async (id: string) => {
+		if (!canDeleteUser) {
+			showError("You do not have permission to delete users.");
+			return;
+		}
+
 		if (!window.confirm("Bạn có chắc chắn muốn xoá user này?")) {
 			return;
 		}
@@ -164,6 +198,11 @@ const UserPage = () => {
 	};
 
 	const handleOpenAssignRoleDialog = async (user: UserResponse) => {
+		if (!canAssignRole) {
+			showError("You do not have permission to assign roles.");
+			return;
+		}
+
 		setSelectedUser(user);
 		setOpenAssignRoleDialog(true);
 		setRoleDialogLoading(true);
@@ -185,6 +224,11 @@ const UserPage = () => {
 	};
 
 	const handleAssignRoles = async () => {
+		if (!canAssignRole) {
+			showError("You do not have permission to assign roles.");
+			return;
+		}
+
 		if (!selectedUser) {
 			return;
 		}
@@ -209,9 +253,11 @@ const UserPage = () => {
 				<Typography variant="h5" fontWeight={700}>
 					User Management
 				</Typography>
-				<Button variant="contained" onClick={() => setOpenCreateDialog(true)}>
-					Add User
-				</Button>
+				{canCreateUser ? (
+					<Button variant="contained" onClick={() => setOpenCreateDialog(true)}>
+						Add User
+					</Button>
+				) : null}
 			</Box>
 
 			<Paper variant="outlined" sx={{ boxShadow: "none" }}>
@@ -227,7 +273,7 @@ const UserPage = () => {
 								<TableCell>Display Name</TableCell>
 								<TableCell>Email</TableCell>
 								<TableCell>Status</TableCell>
-								<TableCell align="right">Actions</TableCell>
+								{hasAnyRowAction ? <TableCell align="right">Actions</TableCell> : null}
 							</TableRow>
 						</TableHead>
 						<TableBody>
@@ -243,33 +289,41 @@ const UserPage = () => {
 											size="small"
 										/>
 									</TableCell>
-									<TableCell align="right">
-										<Stack direction="row" spacing={1} justifyContent="flex-end">
-											<Button size="small" variant="outlined" onClick={() => handleOpenEditDialog(user)}>
-												Edit
-											</Button>
-											<Button
-												size="small"
-												variant="outlined"
-												onClick={() => handleOpenAssignRoleDialog(user)}
-											>
-												Roles
-											</Button>
-											<Button
-												size="small"
-												variant="outlined"
-												color="error"
-												onClick={() => handleDeleteUser(user.id)}
-											>
-												Delete
-											</Button>
-										</Stack>
-									</TableCell>
+									{hasAnyRowAction ? (
+										<TableCell align="right">
+											<Stack direction="row" spacing={1} justifyContent="flex-end">
+												{canUpdateUser ? (
+													<Button size="small" variant="outlined" onClick={() => handleOpenEditDialog(user)}>
+														Edit
+													</Button>
+												) : null}
+												{canAssignRole ? (
+													<Button
+														size="small"
+														variant="outlined"
+														onClick={() => handleOpenAssignRoleDialog(user)}
+													>
+														Roles
+													</Button>
+												) : null}
+												{canDeleteUser ? (
+													<Button
+														size="small"
+														variant="outlined"
+														color="error"
+														onClick={() => handleDeleteUser(user.id)}
+													>
+														Delete
+													</Button>
+												) : null}
+											</Stack>
+										</TableCell>
+									) : null}
 								</TableRow>
 							))}
 							{users.length === 0 && (
 								<TableRow>
-									<TableCell colSpan={5} align="center">
+									<TableCell colSpan={hasAnyRowAction ? 5 : 4} align="center">
 										No users found.
 									</TableCell>
 								</TableRow>
@@ -279,7 +333,7 @@ const UserPage = () => {
 				)}
 			</Paper>
 
-			<Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} maxWidth="sm" fullWidth>
+			<Dialog open={openCreateDialog && canCreateUser} onClose={() => setOpenCreateDialog(false)} maxWidth="sm" fullWidth>
 				<DialogTitle>Create User</DialogTitle>
 				<DialogContent>
 					<Stack spacing={2} sx={{ mt: 1 }}>
@@ -324,7 +378,7 @@ const UserPage = () => {
 				</DialogActions>
 			</Dialog>
 
-			<Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth>
+			<Dialog open={openEditDialog && canUpdateUser} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth>
 				<DialogTitle>Update User</DialogTitle>
 				<DialogContent>
 					<Stack spacing={2} sx={{ mt: 1 }}>
@@ -366,7 +420,7 @@ const UserPage = () => {
 			</Dialog>
 
 			<Dialog
-				open={openAssignRoleDialog}
+				open={openAssignRoleDialog && canAssignRole}
 				onClose={() => {
 					setOpenAssignRoleDialog(false);
 					setSelectedRoleIds([]);

@@ -14,6 +14,7 @@ import QuizSettingPage from "../Pages/QuizSettingPage";
 import FindQuizPage from "../Pages/FindQuizPage";
 import SessionRoomPage from "../Pages/SessionRoomPage";
 import Layout from "../Layouts/Layout";
+import { PERMISSIONS } from "../Lib/Utils/permissions";
 
 
 const AppRoutes = () => {
@@ -34,15 +35,36 @@ const AppRoutes = () => {
         <Route path="/app" element={<Layout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="users" element={<UserPage />} />
-          <Route path="roles" element={<RolePage />} />
-          <Route path="quizzes" element={<QuizPage />} />
-          <Route path="categories" element={<CategoryPage />} />
-          <Route path="find-quizzes" element={<FindQuizPage />} />
-          <Route path="my-quizzes" element={<MyQuizPage />} />
-          <Route path="my-quizzes/:quizId/settings" element={<QuizSettingPage />} />
-          <Route path="sessions/:sessionId" element={<SessionRoomPage />} />
-          <Route path="create-quiz" element={<CreateQuizPage />} />
+
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.USERS_LIST]} />}>
+            <Route path="users" element={<UserPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.ROLES_LIST]} />}>
+            <Route path="roles" element={<RolePage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.QUIZZES_LIST]} />}>
+            <Route path="quizzes" element={<QuizPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.CATEGORIES_LIST]} />}>
+            <Route path="categories" element={<CategoryPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.QUIZZES_VIEW]} />}>
+            <Route path="find-quizzes" element={<FindQuizPage />} />
+            <Route path="my-quizzes" element={<MyQuizPage />} />
+            <Route path="my-quizzes/:quizId/settings" element={<QuizSettingPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.SESSIONS_VIEW]} />}>
+            <Route path="sessions/:sessionId" element={<SessionRoomPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.QUIZZES_CREATE]} />}>
+            <Route path="create-quiz" element={<CreateQuizPage />} />
+          </Route>
         </Route>
       </Route>
 

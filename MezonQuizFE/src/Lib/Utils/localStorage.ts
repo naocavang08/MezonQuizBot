@@ -3,6 +3,22 @@ import type { User } from "../../Interface/login.dto";
 const ACCESS_TOKEN_KEY = 'accessToken';
 const HAS_SYSTEM_ROLE_KEY = 'hasSystemRole';
 const USER_KEY = 'user';
+const ROLE_NAMES_KEY = 'roleNames';
+const PERMISSION_NAMES_KEY = 'permissionNames';
+
+const parseStringArray = (rawValue: string | null): string[] => {
+  if (!rawValue) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue);
+    return Array.isArray(parsed) && parsed.every((item) => typeof item === 'string') ? parsed : [];
+  } catch (error) {
+    console.error('Error parsing string array from localStorage:', error);
+    return [];
+  }
+};
 
 export const getTokenAccess = (): string | null => {
   try {
@@ -81,5 +97,55 @@ export const removeUser = (): void => {
     localStorage.removeItem(USER_KEY);
   } catch (error) {
     console.error('Error removing user:', error);
+  }
+};
+
+export const getRoleNames = (): string[] => {
+  try {
+    return parseStringArray(localStorage.getItem(ROLE_NAMES_KEY));
+  } catch (error) {
+    console.error('Error getting roleNames:', error);
+    return [];
+  }
+};
+
+export const setRoleNames = (roleNames: string[]): void => {
+  try {
+    localStorage.setItem(ROLE_NAMES_KEY, JSON.stringify(roleNames));
+  } catch (error) {
+    console.error('Error setting roleNames:', error);
+  }
+};
+
+export const removeRoleNames = (): void => {
+  try {
+    localStorage.removeItem(ROLE_NAMES_KEY);
+  } catch (error) {
+    console.error('Error removing roleNames:', error);
+  }
+};
+
+export const getPermissionNames = (): string[] => {
+  try {
+    return parseStringArray(localStorage.getItem(PERMISSION_NAMES_KEY));
+  } catch (error) {
+    console.error('Error getting permissionNames:', error);
+    return [];
+  }
+};
+
+export const setPermissionNames = (permissionNames: string[]): void => {
+  try {
+    localStorage.setItem(PERMISSION_NAMES_KEY, JSON.stringify(permissionNames));
+  } catch (error) {
+    console.error('Error setting permissionNames:', error);
+  }
+};
+
+export const removePermissionNames = (): void => {
+  try {
+    localStorage.removeItem(PERMISSION_NAMES_KEY);
+  } catch (error) {
+    console.error('Error removing permissionNames:', error);
   }
 };

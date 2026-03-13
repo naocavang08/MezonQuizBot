@@ -17,6 +17,7 @@ import {
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { hasAnyPermission, PERMISSIONS } from '../Lib/Utils/permissions'
 import useAuthStore from '../Stores/login.store'
 import useThemeStore from '../Stores/theme.store'
 import { MdDarkMode, MdLightMode, MdLogout, MdSettings } from 'react-icons/md'
@@ -26,6 +27,7 @@ type NavItem = {
   path: string
   icon: string
   badge?: string
+  requiredPermissions?: string[]
 }
 
 type NavSection = {
@@ -46,21 +48,25 @@ const navSections: NavSection[] = [
         label: 'Users',
         path: '/app/users',
         icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+        requiredPermissions: [PERMISSIONS.USERS_LIST],
       },
       {
         label: 'Roles',
         path: '/app/roles',
         icon: 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422M12 14v7',
+        requiredPermissions: [PERMISSIONS.ROLES_LIST],
       },
       {
         label: 'Quizzes',
         path: '/app/quizzes',
         icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+        requiredPermissions: [PERMISSIONS.QUIZZES_LIST],
       },
       {
         label: 'Categories',
         path: '/app/categories',
         icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z',
+        requiredPermissions: [PERMISSIONS.CATEGORIES_LIST],
       },
     ],
   },
@@ -71,17 +77,20 @@ const navSections: NavSection[] = [
         label: 'Find Quizzes',
         path: '/app/find-quizzes',
         icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
+        requiredPermissions: [PERMISSIONS.QUIZZES_VIEW],
       },
       {
         label: 'My Quizzes',
         path: '/app/my-quizzes',
         icon: 'M4 6h16M4 12h16M4 18h10',
+        requiredPermissions: [PERMISSIONS.QUIZZES_VIEW],
       },
       {
         label: 'Create Quiz',
         path: '/app/create-quiz',
         icon: 'M12 4v16m8-8H4',
         badge: 'New',
+        requiredPermissions: [PERMISSIONS.QUIZZES_CREATE],
       },
     ],
   },
@@ -117,6 +126,8 @@ const Layout = () => {
   const location = useLocation()
   const clearAuth = useAuthStore((state) => state.clearAuth)
   const user = useAuthStore((state) => state.user)
+  const permissionName = useAuthStore((state) => state.permissionName)
+  const hasSystemRole = useAuthStore((state) => state.hasSystemRole)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const isResponsive = useMediaQuery('(max-width:900px)')
   const themeMode = useThemeStore((state) => state.themeMode)
@@ -160,6 +171,25 @@ const Layout = () => {
     themeMode === 'light'
       ? <MdLightMode size={16} color={colors.textSecondary} />
       : <MdDarkMode size={16} color={colors.textSecondary} />
+
+  const filteredNavSections = useMemo(
+    () =>
+      navSections
+        .map((section) => ({
+          ...section,
+          items: section.items.filter((item) =>
+            hasAnyPermission(permissionName, item.requiredPermissions, hasSystemRole),
+          ),
+        }))
+        .filter((section) => section.items.length > 0),
+    [permissionName, hasSystemRole],
+  )
+
+  const canCreateQuiz = hasAnyPermission(
+    permissionName,
+    [PERMISSIONS.QUIZZES_CREATE],
+    hasSystemRole,
+  )
 
   return (
     <>
@@ -227,7 +257,7 @@ const Layout = () => {
 
           <Box sx={{ px: 2, pb: 2, overflowY: 'auto', flex: 1 }}>
             <Stack spacing={3}>
-              {navSections.map((section) => (
+              {filteredNavSections.map((section) => (
                 <Box key={section.title}>
                   <Typography sx={{ color: colors.textSecondary, fontSize: 11, textTransform: 'uppercase', fontWeight: 700, letterSpacing: 1.1, px: 1, mb: 1.5 }}>
                     {section.title}
@@ -303,8 +333,19 @@ const Layout = () => {
             }}
           >
             <Stack direction="row" spacing={1.2} sx={{ alignItems: 'center' }}>
-              <Avatar sx={{ bgcolor: '#0ea5e9', width: 36, height: 36, fontWeight: 700, fontSize: 13 }}>
-                {(user?.username?.slice(0, 2) || 'U').toUpperCase()}
+              <Avatar
+                src={user?.avatarUrl}
+                alt={user?.username}
+                sx={{
+                    bgcolor: "#0ea5e9",
+                    width: 36,
+                    height: 36,
+                    fontWeight: 700,
+                    fontSize: 13
+                }}
+                >
+                {!user?.avatarUrl &&
+                    (user?.username?.slice(0, 2) || "U").toUpperCase()}
               </Avatar>
               <Box>
                 <Typography sx={{ fontSize: 14, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.2 }}>
@@ -367,14 +408,16 @@ const Layout = () => {
             </Stack>
 
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexShrink: 0 }}>
-              <Button
-                variant="contained"
-                startIcon={<SvgIconPath path="M12 4v16m8-8H4" size={14} color={colors.textPrimary} />}
-                sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 700 }}
-                onClick={() => navigate('/app/create-quiz')}
-              >
-                Create Quiz
-              </Button>
+              {canCreateQuiz ? (
+                <Button
+                  variant="contained"
+                  startIcon={<SvgIconPath path="M12 4v16m8-8H4" size={14} color={colors.textPrimary} />}
+                  sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 700 }}
+                  onClick={() => navigate('/app/create-quiz')}
+                >
+                  Create Quiz
+                </Button>
+              ) : null}
 
               <IconButton
                 onClick={toggleTheme}
@@ -390,10 +433,32 @@ const Layout = () => {
 
               <IconButton
                 onClick={(event) => setUserMenuAnchor(event.currentTarget)}
-                sx={{ p: 0, border: `1px solid ${colors.border}` }}
-              >
-                <Avatar sx={{ bgcolor: '#0ea5e9', width: 34, height: 34, fontWeight: 700, fontSize: 12 }}>
-                  {(user?.username?.slice(0, 2) || 'U').toUpperCase()}
+                sx={{
+                    p: 0,
+                    width: 34,
+                    height: 34,
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: "50%",
+                }}
+                >
+                <Avatar
+                    sx={{
+                    bgcolor: "#0ea5e9",
+                    width: "100%",
+                    height: "100%",
+                    fontWeight: 700,
+                    fontSize: 12,
+                    }}
+                >
+                    {user?.avatarUrl ? (
+                    <img
+                        src={user.avatarUrl}
+                        alt={user.username}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    ) : (
+                    (user?.username?.slice(0, 2) || "U").toUpperCase()
+                    )}
                 </Avatar>
               </IconButton>
               <Menu

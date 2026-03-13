@@ -17,6 +17,8 @@ import {
 } from "@mui/material";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
+import useAuthStore from "../../Stores/login.store";
+import { hasAnyPermission, PERMISSIONS } from "../../Lib/Utils/permissions";
 import { getAllRoles, getAllPermissions, getRolePermissions, assignPermissionsToRole, deleteRole, createRole } from "../../Api/role.api";
 import type { RoleResponse, PermissionResponse, RoleRequest } from "../../Interface/role.dto";
 
@@ -25,6 +27,12 @@ const RolePage = () => {
 	const [permissions, setPermissions] = useState<PermissionResponse[]>([]);
 	const [loading, setLoading] = useState(false);
 	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
+	const permissionName = useAuthStore((state) => state.permissionName);
+	const hasSystemRole = useAuthStore((state) => state.hasSystemRole);
+	const canCreateRole = hasAnyPermission(permissionName, [PERMISSIONS.ROLES_CREATE], hasSystemRole);
+	const canUpdateRole = hasAnyPermission(permissionName, [PERMISSIONS.ROLES_UPDATE], hasSystemRole);
+	const canDeleteRole = hasAnyPermission(permissionName, [PERMISSIONS.ROLES_DELETE], hasSystemRole);
+	const hasAnyRoleAction = canUpdateRole || canDeleteRole;
 
 	const [openPermissionDialog, setOpenPermissionDialog] = useState(false);
 	const [openCreateRoleDialog, setOpenCreateRoleDialog] = useState(false);
@@ -53,6 +61,11 @@ const RolePage = () => {
 	};
 
 	const fetchPermissions = async () => {
+		if (!canUpdateRole) {
+			setPermissions([]);
+			return;
+		}
+
 		try {
 			const data = await getAllPermissions();
 			setPermissions(data);
@@ -63,6 +76,11 @@ const RolePage = () => {
 	};
 
 	const fetchRolePermissions = async (roleId: string) => {
+		if (!canUpdateRole) {
+			setSelectedPermissions([]);
+			return;
+		}
+
 		setPermissionLoading(true);
 		try {
 			const data = await getRolePermissions(roleId);
@@ -100,12 +118,22 @@ const RolePage = () => {
 	}, []);
 
 	const handleEditPermissions = async (role: RoleResponse) => {
+		if (!canUpdateRole) {
+			showError("You do not have permission to update roles.");
+			return;
+		}
+
 		setSelectedRole(role);
 		setOpenPermissionDialog(true);
 		await fetchRolePermissions(role.id);
 	};
 
 	const handleSavePermissions = async () => {
+		if (!canUpdateRole) {
+			showError("You do not have permission to update roles.");
+			return;
+		}
+
 		if (!selectedRole) return;
 
 		setPermissionLoading(true);
@@ -129,6 +157,11 @@ const RolePage = () => {
 	};
 
 	const handleCreateRole = async () => {
+		if (!canCreateRole) {
+			showError("You do not have permission to create roles.");
+			return;
+		}
+
 		if (!newRole.name || !newRole.displayName) {
 			showError("Name and Display Name are required");
 			return;
@@ -155,6 +188,11 @@ const RolePage = () => {
 	};
 
 	const handleDeleteRole = async (roleId: string, roleName: string) => {
+		if (!canDeleteRole) {
+			showError("You do not have permission to delete roles.");
+			return;
+		}
+
 		if (window.confirm(`Are you sure you want to delete "${roleName}"?`)) {
 			setLoading(true);
 			try {
@@ -198,12 +236,14 @@ const RolePage = () => {
 				<Typography variant="h5" fontWeight={700}>
 					Role Management
 				</Typography>
-				<Button
-					variant="contained"
-					onClick={() => setOpenCreateRoleDialog(true)}
-				>
-					Add Role
-				</Button>
+				{canCreateRole ? (
+					<Button
+						variant="contained"
+						onClick={() => setOpenCreateRoleDialog(true)}
+					>
+						Add Role
+					</Button>
+				) : null}
 			</Box>
 
 			<Stack spacing={1.5}>
@@ -240,23 +280,31 @@ const RolePage = () => {
 									color={role.isSystem ? "primary" : "default"}
 									size="small"
 								/>
-								<Button
-									variant="outlined"
-									size="small"
-									onClick={() => handleEditPermissions(role)}
-								>
-									Permissions
-								</Button>
-								<Button
-									variant="outlined"
-									color="error"
-									size="small"
-									onClick={() => handleDeleteRole(role.id, role.displayName || role.name)}
-									disabled={role.isSystem}
-									title={role.isSystem ? "Cannot delete system roles" : ""}
-								>
-									Delete
-								</Button>
+								{hasAnyRoleAction ? (
+									<>
+										{canUpdateRole ? (
+											<Button
+												variant="outlined"
+												size="small"
+												onClick={() => handleEditPermissions(role)}
+											>
+												Permissions
+											</Button>
+										) : null}
+										{canDeleteRole ? (
+											<Button
+												variant="outlined"
+												color="error"
+												size="small"
+												onClick={() => handleDeleteRole(role.id, role.displayName || role.name)}
+												disabled={role.isSystem}
+												title={role.isSystem ? "Cannot delete system roles" : ""}
+											>
+												Delete
+											</Button>
+										) : null}
+									</>
+								) : null}
 							</Stack>
 						</Paper>
 					))
@@ -264,7 +312,7 @@ const RolePage = () => {
 			</Stack>
 
 			<Dialog
-				open={openPermissionDialog}
+				open={openPermissionDialog && canUpdateRole}
 				onClose={handleClosePermissionDialog}
 				maxWidth="sm"
 				fullWidth
@@ -319,7 +367,7 @@ const RolePage = () => {
 			</Dialog>
 
 			<Dialog
-				open={openCreateRoleDialog}
+				open={openCreateRoleDialog && canCreateRole}
 				onClose={() => setOpenCreateRoleDialog(false)}
 				maxWidth="sm"
 				fullWidth
