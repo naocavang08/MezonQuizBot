@@ -16,12 +16,12 @@ import {
     Typography,
 } from "@mui/material";
 import { MdRefresh, MdSearch } from "react-icons/md";
-import { getAllCategories } from "../../Api/category.api";
-import { getPublicQuizzes } from "../../Api/publicquiz.api";
-import { joinQuizSession } from "../../Api/session.api";
-import type { CategoryDto } from "../../Interface/category.dto";
-import type { ListPublicQuizDto } from "../../Interface/quiz.dto";
-import useAuthStore from "../../Stores/login.store";
+import { getAllCategories } from "../Api/category.api";
+import { getPublicQuizzes } from "../Api/publicquiz.api";
+import { joinQuizSession } from "../Api/session.api";
+import type { CategoryDto } from "../Interface/category.dto";
+import type { ListPublicQuizDto } from "../Interface/quiz.dto";
+import useAuthStore from "../Stores/login.store";
 
 const PAGE_SIZE = 9;
 
@@ -146,10 +146,9 @@ const FindQuizPage = () => {
                         sx={{
                             p: { xs: 2.5, md: 4 },
                             borderRadius: 4,
-                            background: "rgba(255, 255, 255, 0.72)",
-                            backdropFilter: "blur(6px)",
-                            border: "1px solid rgba(19, 36, 67, 0.08)",
-                            boxShadow: "0 20px 60px rgba(7, 24, 55, 0.09)",
+                            background: "linear-gradient(150deg, rgba(10,22,40,0.97) 0%, rgba(7,14,26,0.95) 100%)",
+                            border: "1px solid rgba(148,163,184,0.3)",
+                            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.35)",
                         }}
                     >
                         <Stack spacing={2.5}>
@@ -166,12 +165,12 @@ const FindQuizPage = () => {
                                             lineHeight: 1.1,
                                             fontWeight: 800,
                                             letterSpacing: "-0.03em",
-                                            color: "#12336b",
+                                            color: "#f8fafc",
                                         }}
                                     >
                                         Discover Quiz
                                     </Typography>
-                                    <Typography color="text.secondary" sx={{ mt: 1 }}>
+                                    <Typography sx={{ mt: 1, color: "#cbd5e1" }}>
                                         Search by title, filter by category, and start practicing quickly.
                                     </Typography>
                                 </Box>
@@ -182,10 +181,11 @@ const FindQuizPage = () => {
                                             void fetchQuizzes();
                                         }}
                                         sx={{
-                                            bgcolor: "#ffffff",
-                                            border: "1px solid rgba(18, 51, 107, 0.2)",
+                                            color: "#e2e8f0",
+                                            bgcolor: "rgba(15, 23, 42, 0.95)",
+                                            border: "1px solid rgba(148,163,184,0.35)",
                                             "&:hover": {
-                                                bgcolor: "#eef4ff",
+                                                bgcolor: "rgba(30, 41, 59, 0.95)",
                                             },
                                         }}
                                     >
@@ -204,14 +204,14 @@ const FindQuizPage = () => {
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
-                                            <MdSearch />
+                                            <MdSearch color="#94a3b8" />
                                         </InputAdornment>
                                     ),
                                 }}
                                 sx={{
                                     "& .MuiOutlinedInput-root": {
                                         borderRadius: 3,
-                                        backgroundColor: "#fff",
+                                        backgroundColor: "rgba(15, 23, 42, 0.95)",
                                     },
                                 }}
                             />
@@ -219,7 +219,7 @@ const FindQuizPage = () => {
                             <Box>
                                 <Typography
                                     variant="subtitle2"
-                                    sx={{ mb: 1.2, color: "text.secondary", fontWeight: 700 }}
+                                    sx={{ mb: 1.2, color: "#cbd5e1", fontWeight: 700 }}
                                 >
                                     Category
                                 </Typography>
@@ -229,6 +229,7 @@ const FindQuizPage = () => {
                                         clickable
                                         color={selectedCategory === "all" ? "primary" : "default"}
                                         variant={selectedCategory === "all" ? "filled" : "outlined"}
+                                        sx={{ color: selectedCategory === "all" ? "#fff" : "#cbd5e1" }}
                                         onClick={() => {
                                             setSelectedCategory("all");
                                         }}
@@ -243,6 +244,7 @@ const FindQuizPage = () => {
                                                 clickable
                                                 color={selected ? "primary" : "default"}
                                                 variant={selected ? "filled" : "outlined"}
+                                                sx={{ color: selected ? "#fff" : "#cbd5e1" }}
                                                 onClick={() => {
                                                     setSelectedCategory(category.id);
                                                 }}
@@ -252,7 +254,7 @@ const FindQuizPage = () => {
                                 </Stack>
                             </Box>
 
-                            <Typography color="text.secondary" sx={{ fontSize: "0.92rem" }}>
+                            <Typography sx={{ fontSize: "0.92rem", color: "#cbd5e1" }}>
                                 {totalCount} quizzes found
                                 {activeFilterCount > 0 ? ` • ${activeFilterCount} active filter(s)` : ""}
                             </Typography>
@@ -276,6 +278,7 @@ const FindQuizPage = () => {
                                     label={isJoining ? "Joining..." : "Join Session"}
                                     color="primary"
                                     clickable={!isJoining}
+                                    sx={{ color: "#fff", fontWeight: 600 }}
                                     onClick={() => {
                                         if (!isJoining) {
                                             void handleJoinSession();
@@ -299,15 +302,15 @@ const FindQuizPage = () => {
                         <Card
                             sx={{
                                 borderRadius: 3,
-                                border: "1px dashed rgba(18, 51, 107, 0.28)",
-                                backgroundColor: "rgba(255, 255, 255, 0.66)",
+                                border: "1px dashed rgba(148,163,184,0.4)",
+                                background: "rgba(15, 23, 42, 0.88)",
                             }}
                         >
                             <CardContent>
-                                <Typography variant="h6" fontWeight={700}>
+                                <Typography variant="h6" fontWeight={700} sx={{ color: "#f8fafc" }}>
                                     No quizzes matched your filter
                                 </Typography>
-                                <Typography color="text.secondary" sx={{ mt: 1 }}>
+                                <Typography sx={{ mt: 1, color: "#cbd5e1" }}>
                                     Try another category or use fewer keywords.
                                 </Typography>
                             </CardContent>
@@ -331,9 +334,9 @@ const FindQuizPage = () => {
                                             key={quiz.id}
                                             sx={{
                                                 borderRadius: 3,
-                                                border: "1px solid rgba(18, 51, 107, 0.12)",
+                                                border: "1px solid rgba(148,163,184,0.28)",
                                                 background:
-                                                    "linear-gradient(160deg, rgba(255,255,255,0.94) 0%, rgba(246,251,255,0.92) 100%)",
+                                                    "linear-gradient(160deg, rgba(15,23,42,0.94) 0%, rgba(10,18,33,0.92) 100%)",
                                                 transition: "transform 0.25s ease, box-shadow 0.25s ease",
                                                 animation: `fade-up 300ms ease ${Math.min(index * 45, 280)}ms both`,
                                                 "@keyframes fade-up": {
@@ -342,19 +345,19 @@ const FindQuizPage = () => {
                                                 },
                                                 "&:hover": {
                                                     transform: "translateY(-3px)",
-                                                    boxShadow: "0 14px 28px rgba(8, 25, 56, 0.14)",
+                                                    boxShadow: "0 14px 28px rgba(2, 6, 23, 0.45)",
                                                 },
                                             }}
                                         >
                                             <CardContent>
                                                 <Stack spacing={1.3}>
-                                                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                                    <Typography variant="h6" sx={{ fontWeight: 700, color: "#f8fafc" }}>
                                                         {quiz.title}
                                                     </Typography>
                                                     <Typography
                                                         sx={{
                                                             fontSize: "0.8rem",
-                                                            color: "text.secondary",
+                                                            color: "#94a3b8",
                                                             wordBreak: "break-all",
                                                         }}
                                                     >

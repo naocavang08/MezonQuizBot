@@ -10,9 +10,9 @@ import {
 } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { MdLogin } from "react-icons/md";
-import CopyWrite from "../Components/CopyWrite";
-import useLoginPage, { type LoginFormValues } from "../Hooks/useLoginPage";
-import { generateMezonState } from "../Lib/Utils/auth";
+import CopyWrite from "../../Components/CopyWrite";
+import useLoginPage, { type LoginFormValues } from "../../Hooks/useLoginPage";
+import { generateMezonState } from "../../Lib/Utils/auth";
 
 const fadeIn = keyframes`
     from {

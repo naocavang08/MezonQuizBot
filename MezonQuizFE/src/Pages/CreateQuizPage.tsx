@@ -21,9 +21,9 @@ import {
 } from "@mui/material";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { getAllCategories } from "../../Api/category.api";
-import { createQuiz } from "../../Api/quiz.api";
-import type { CategoryDto } from "../../Interface/category.dto";
+import { getAllCategories } from "../Api/category.api";
+import { createQuiz } from "../Api/quiz.api";
+import type { CategoryDto } from "../Interface/category.dto";
 import {
     QuestionType,
     QuizStatus,
@@ -31,7 +31,7 @@ import {
     type QuizDto,
     type QuizOptionDto,
     type QuizQuestionDto,
-} from "../../Interface/quiz.dto";
+} from "../Interface/quiz.dto";
 
 type FormState = {
     title: string;
@@ -388,7 +388,7 @@ const CreateQuizPage = () => {
 			setSubmitSuccess(result.message || "Quiz created successfully.");
 
 			setTimeout(() => {
-				navigate("/user/my-quizzes", { replace: true });
+				navigate("/app/my-quizzes", { replace: true });
 			}, 800);
 		} catch {
 			setSubmitError("Failed to create quiz. Please check your data and try again.");
@@ -403,7 +403,7 @@ const CreateQuizPage = () => {
 				<Typography variant="h4" fontWeight={700} mb={1}>
 				Create Quiz
 				</Typography>
-				<Button variant="outlined" onClick={() => navigate("/user/my-quizzes")}>
+				<Button variant="outlined" onClick={() => navigate("/app/my-quizzes")}>
 					Back to My Quizzes
 				</Button>
 			</Stack>

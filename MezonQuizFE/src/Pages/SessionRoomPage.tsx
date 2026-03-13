@@ -26,9 +26,9 @@ import {
     pauseQuizSession,
     resumeQuizSession,
     startQuizSession,
-} from "../../Api/session.api";
-import { SessionStatusValue, type QuizSessionDto, type SessionParticipantDto } from "../../Interface/session.dto";
-import useAuthStore from "../../Stores/login.store";
+} from "../Api/session.api";
+import { SessionStatusValue, type QuizSessionDto, type SessionParticipantDto } from "../Interface/session.dto";
+import useAuthStore from "../Stores/login.store";
 
 const statusLabel: Record<number, string> = {
     [SessionStatusValue.Waiting]: "Waiting",
@@ -66,7 +66,7 @@ const SessionRoomPage = () => {
             return "";
         }
 
-        return `${window.location.origin}/user/sessions/${sessionId}`;
+        return `${window.location.origin}/app/sessions/${sessionId}`;
     }, [session?.deepLink, sessionId]);
 
     const copyToClipboard = async (value: string, successText: string) => {

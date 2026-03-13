@@ -14,12 +14,12 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { getAllCategories } from "../../Api/category.api";
-import { createQuizSession } from "../../Api/session.api";
-import { getQuizzes } from "../../Api/quiz.api";
-import type { CategoryDto } from "../../Interface/category.dto";
-import { QuizStatus, type ListQuizDto } from "../../Interface/quiz.dto";
-import useAuthStore from "../../Stores/login.store";
+import { getAllCategories } from "../Api/category.api";
+import { createQuizSession } from "../Api/session.api";
+import { getQuizzes } from "../Api/quiz.api";
+import type { CategoryDto } from "../Interface/category.dto";
+import { QuizStatus, type ListQuizDto } from "../Interface/quiz.dto";
+import useAuthStore from "../Stores/login.store";
 
 const statusLabel: Record<ListQuizDto["status"], string> = {
   [QuizStatus.Draft]: "Draft",
@@ -148,7 +148,7 @@ const MyQuizPage = () => {
 
       const createdSessionId = response.session?.id;
       if (createdSessionId) {
-        navigate(`/user/sessions/${createdSessionId}`);
+        navigate(`/app/sessions/${createdSessionId}`);
       } else {
         setSessionError(response.message || "Session created but missing session id.");
       }
@@ -174,7 +174,7 @@ const MyQuizPage = () => {
 
         <Button
           variant="contained"
-          onClick={() => navigate("/user/create-quiz")}
+          onClick={() => navigate("/app/create-quiz")}
           sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
         >
           Create Quiz
@@ -231,7 +231,7 @@ const MyQuizPage = () => {
           {quizzes.map((quiz) => (
             <Box
               key={quiz.id}
-              onClick={() => navigate(`/user/my-quizzes/${quiz.id}/settings`)}
+              onClick={() => navigate(`/app/my-quizzes/${quiz.id}/settings`)}
               data-status={statusLabel[quiz.status] ?? "Unknown"}
               sx={{
                 border: "1px solid",
@@ -273,7 +273,7 @@ const MyQuizPage = () => {
                   variant="outlined"
                   onClick={(event) => {
                     event.stopPropagation();
-                    navigate(`/user/my-quizzes/${quiz.id}/settings`);
+                    navigate(`/app/my-quizzes/${quiz.id}/settings`);
                   }}
                 >
                   Open Settings

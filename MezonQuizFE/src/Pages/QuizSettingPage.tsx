@@ -24,10 +24,10 @@ import {
 } from "@mui/material";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
-import { getAllCategories } from "../../Api/category.api";
-import { deleteQuiz, getQuizDetails, updateQuiz, updateQuizSettings } from "../../Api/quiz.api";
-import { deleteQuizSession, getQuizSessions } from "../../Api/session.api";
-import type { CategoryDto } from "../../Interface/category.dto";
+import { getAllCategories } from "../Api/category.api";
+import { deleteQuiz, getQuizDetails, updateQuiz, updateQuizSettings } from "../Api/quiz.api";
+import { deleteQuizSession, getQuizSessions } from "../Api/session.api";
+import type { CategoryDto } from "../Interface/category.dto";
 import {
 	QuestionType,
 	QuizStatus,
@@ -35,9 +35,9 @@ import {
 	type QuizDto,
 	type QuizOptionDto,
 	type QuizQuestionDto,
-} from "../../Interface/quiz.dto";
-import { SessionStatusValue, type QuizSessionDto } from "../../Interface/session.dto";
-import useAuthStore from "../../Stores/login.store";
+} from "../Interface/quiz.dto";
+import { SessionStatusValue, type QuizSessionDto } from "../Interface/session.dto";
+import useAuthStore from "../Stores/login.store";
 
 type FormState = {
 	creatorId: string;
@@ -572,7 +572,7 @@ const QuizSettingPage = () => {
 			setIsDeletingQuiz(true);
 			const result = await deleteQuiz(quizId);
 			setSuccess(result.message || "Quiz removed.");
-			navigate("/user/my-quizzes", { replace: true });
+			navigate("/app/my-quizzes", { replace: true });
 		} catch {
 			setError("Failed to remove quiz.");
 		} finally {
@@ -594,7 +594,7 @@ const QuizSettingPage = () => {
 				<Typography variant="h4" fontWeight={700} mb={1}>
 					Quiz Setting - {form.title}
 				</Typography>
-				<Button variant="outlined" onClick={() => navigate("/user/my-quizzes")}>
+				<Button variant="outlined" onClick={() => navigate("/app/my-quizzes")}>
 					Back to My Quizzes
 				</Button>
 			</Stack>
@@ -640,7 +640,7 @@ const QuizSettingPage = () => {
 						{!isLoadingSessions && sessions.length > 0 ? (
 							<Stack spacing={1.2}>
 								{sessions.map((session) => {
-									const deepLink = session.deepLink || `${window.location.origin}/user/sessions/${session.id}`;
+									const deepLink = session.deepLink || `${window.location.origin}/app/sessions/${session.id}`;
 									return (
 										<Box
 											key={session.id}
@@ -660,7 +660,7 @@ const QuizSettingPage = () => {
 													<Button
 														size="small"
 														variant="contained"
-														onClick={() => navigate(`/user/sessions/${session.id}`)}
+														onClick={() => navigate(`/app/sessions/${session.id}`)}
 													>
 														Open Session Room
 													</Button>
