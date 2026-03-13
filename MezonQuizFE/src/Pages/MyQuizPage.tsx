@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -13,6 +12,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import AppSnackbar from "../Components/AppSnackbar";
+import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
 import { createQuizSession } from "../Api/session.api";
@@ -39,9 +40,8 @@ const MyQuizPage = () => {
   const [quizzes, setQuizzes] = useState<ListQuizDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sessionError, setSessionError] = useState<string | null>(null);
   const [creatingSessionQuizId, setCreatingSessionQuizId] = useState<string | null>(null);
+  const { snackbar, showError, closeSnackbar } = useAppSnackbar();
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -96,7 +96,6 @@ const MyQuizPage = () => {
     const fetchQuizzes = async () => {
       try {
         setIsLoading(true);
-        setError(null);
         const data = await getQuizzes({
           page,
           pageSize,
@@ -111,7 +110,7 @@ const MyQuizPage = () => {
         }
       } catch {
         if (isMounted) {
-          setError("Could not load your quizzes. Please try again.");
+          showError("Could not load your quizzes. Please try again.");
         }
       } finally {
         if (isMounted) {
@@ -129,18 +128,17 @@ const MyQuizPage = () => {
 
   const handleCreateSession = async (quizId: string, quizStatus: ListQuizDto["status"]) => {
     if (!userId) {
-      setSessionError("User is not available. Please login again.");
+      showError("User is not available. Please login again.");
       return;
     }
 
     if (quizStatus !== QuizStatus.Published) {
-      setSessionError("Only published quiz can create a session.");
+      showError("Only published quiz can create a session.");
       return;
     }
 
     try {
       setCreatingSessionQuizId(quizId);
-      setSessionError(null);
 
       const response = await createQuizSession({
         quizId,
@@ -150,10 +148,10 @@ const MyQuizPage = () => {
       if (createdSessionId) {
         navigate(`/app/sessions/${createdSessionId}`);
       } else {
-        setSessionError(response.message || "Session created but missing session id.");
+        showError(response.message || "Session created but missing session id.");
       }
     } catch {
-      setSessionError("Can not create session for this quiz right now.");
+      showError("Can not create session for this quiz right now.");
     } finally {
       setCreatingSessionQuizId(null);
     }
@@ -217,16 +215,13 @@ const MyQuizPage = () => {
         </Stack>
       ) : null}
 
-      {!isLoading && error ? <Alert severity="error">{error}</Alert> : null}
-      {!isLoading && !error && sessionError ? <Alert severity="error" sx={{ mb: 2 }}>{sessionError}</Alert> : null}
-
-      {!isLoading && !error && quizzes.length === 0 ? (
+      {!isLoading && quizzes.length === 0 ? (
         <Typography variant="body1" color="text.secondary">
           You do not have any quizzes yet.
         </Typography>
       ) : null}
 
-      {!isLoading && !error && quizzes.length > 0 ? (
+      {!isLoading && quizzes.length > 0 ? (
         <Stack spacing={2}>
           {quizzes.map((quiz) => (
             <Box
@@ -302,6 +297,13 @@ const MyQuizPage = () => {
           </Stack>
         </Stack>
       ) : null}
+
+      <AppSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Alert,
     Box,
     Card,
     CardContent,
@@ -15,6 +14,9 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+import AppSnackbar from "../Components/AppSnackbar";
+import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdRefresh, MdSearch } from "react-icons/md";
 import { getAllCategories } from "../Api/category.api";
 import { getPublicQuizzes } from "../Api/publicquiz.api";
@@ -26,6 +28,18 @@ import useAuthStore from "../Stores/login.store";
 const PAGE_SIZE = 9;
 
 const FindQuizPage = () => {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
+    const panelBackground = isDark
+        ? "linear-gradient(150deg, rgba(10,22,40,0.97) 0%, rgba(7,14,26,0.95) 100%)"
+        : "linear-gradient(150deg, rgba(255,255,255,0.96) 0%, rgba(241,245,249,0.96) 100%)";
+    const panelBorder = alpha(theme.palette.text.secondary, isDark ? 0.35 : 0.25);
+    const panelShadow = isDark
+        ? "0 20px 60px rgba(0, 0, 0, 0.35)"
+        : "0 18px 42px rgba(15, 23, 42, 0.12)";
+    const strongText = theme.palette.text.primary;
+    const softText = theme.palette.text.secondary;
+
     const userId = useAuthStore((state) => state.user?.id);
     const [categories, setCategories] = useState<CategoryDto[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -37,11 +51,9 @@ const FindQuizPage = () => {
     const [totalCount, setTotalCount] = useState(0);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [sessionId, setSessionId] = useState("");
-    const [joinError, setJoinError] = useState<string | null>(null);
-    const [joinSuccess, setJoinSuccess] = useState<string | null>(null);
     const [isJoining, setIsJoining] = useState(false);
+    const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 
     const categoryParam = selectedCategory === "all" ? undefined : selectedCategory;
     const titleParam = searchTitle.trim() || undefined;
@@ -77,7 +89,6 @@ const FindQuizPage = () => {
 
     const fetchQuizzes = useCallback(async () => {
         setIsLoading(true);
-        setError(null);
 
         try {
             const data = await getPublicQuizzes({
@@ -91,14 +102,14 @@ const FindQuizPage = () => {
             setTotalPages(data.totalPages);
             setTotalCount(data.totalCount);
         } catch {
-            setError("Can not load quiz list right now. Please try again.");
+            showError("Can not load quiz list right now. Please try again.");
             setItems([]);
             setTotalPages(0);
             setTotalCount(0);
         } finally {
             setIsLoading(false);
         }
-    }, [categoryParam, page, titleParam]);
+    }, [categoryParam, page, titleParam, showError]);
 
     useEffect(() => {
         void fetchQuizzes();
@@ -108,26 +119,22 @@ const FindQuizPage = () => {
     const handleJoinSession = async () => {
         const normalizedSessionId = sessionId.trim();
         if (!normalizedSessionId) {
-            setJoinError("Please enter a session ID.");
-            setJoinSuccess(null);
+            showError("Please enter a session ID.");
             return;
         }
 
         if (!userId) {
-            setJoinError("User is not available. Please login again.");
-            setJoinSuccess(null);
+            showError("User is not available. Please login again.");
             return;
         }
 
         try {
             setIsJoining(true);
-            setJoinError(null);
-            setJoinSuccess(null);
 
             const response = await joinQuizSession(normalizedSessionId, { userId });
-            setJoinSuccess(response.message || "Joined session successfully.");
+            showSuccess(response.message || "Joined session successfully.");
         } catch {
-            setJoinError("Can not join this session now. Please check session ID and try again.");
+            showError("Can not join this session now. Please check session ID and try again.");
         } finally {
             setIsJoining(false);
         }
@@ -146,9 +153,9 @@ const FindQuizPage = () => {
                         sx={{
                             p: { xs: 2.5, md: 4 },
                             borderRadius: 4,
-                            background: "linear-gradient(150deg, rgba(10,22,40,0.97) 0%, rgba(7,14,26,0.95) 100%)",
-                            border: "1px solid rgba(148,163,184,0.3)",
-                            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.35)",
+                            background: panelBackground,
+                            border: `1px solid ${panelBorder}`,
+                            boxShadow: panelShadow,
                         }}
                     >
                         <Stack spacing={2.5}>
@@ -165,12 +172,12 @@ const FindQuizPage = () => {
                                             lineHeight: 1.1,
                                             fontWeight: 800,
                                             letterSpacing: "-0.03em",
-                                            color: "#f8fafc",
+                                            color: strongText,
                                         }}
                                     >
                                         Discover Quiz
                                     </Typography>
-                                    <Typography sx={{ mt: 1, color: "#cbd5e1" }}>
+                                    <Typography sx={{ mt: 1, color: softText }}>
                                         Search by title, filter by category, and start practicing quickly.
                                     </Typography>
                                 </Box>
@@ -181,11 +188,15 @@ const FindQuizPage = () => {
                                             void fetchQuizzes();
                                         }}
                                         sx={{
-                                            color: "#e2e8f0",
-                                            bgcolor: "rgba(15, 23, 42, 0.95)",
-                                            border: "1px solid rgba(148,163,184,0.35)",
+                                            color: strongText,
+                                            bgcolor: isDark
+                                                ? "rgba(15, 23, 42, 0.95)"
+                                                : alpha(theme.palette.background.paper, 0.98),
+                                            border: `1px solid ${alpha(theme.palette.text.secondary, 0.3)}`,
                                             "&:hover": {
-                                                bgcolor: "rgba(30, 41, 59, 0.95)",
+                                                bgcolor: isDark
+                                                    ? "rgba(30, 41, 59, 0.95)"
+                                                    : alpha(theme.palette.background.paper, 0.9),
                                             },
                                         }}
                                     >
@@ -204,14 +215,19 @@ const FindQuizPage = () => {
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
-                                            <MdSearch color="#94a3b8" />
+                                            <MdSearch color={theme.palette.text.secondary} />
                                         </InputAdornment>
                                     ),
                                 }}
                                 sx={{
                                     "& .MuiOutlinedInput-root": {
                                         borderRadius: 3,
-                                        backgroundColor: "rgba(15, 23, 42, 0.95)",
+                                        backgroundColor: isDark
+                                            ? "rgba(15, 23, 42, 0.95)"
+                                            : alpha(theme.palette.background.paper, 0.98),
+                                    },
+                                    "& .MuiOutlinedInput-input": {
+                                        color: theme.palette.text.primary,
                                     },
                                 }}
                             />
@@ -219,7 +235,7 @@ const FindQuizPage = () => {
                             <Box>
                                 <Typography
                                     variant="subtitle2"
-                                    sx={{ mb: 1.2, color: "#cbd5e1", fontWeight: 700 }}
+                                    sx={{ mb: 1.2, color: softText, fontWeight: 700 }}
                                 >
                                     Category
                                 </Typography>
@@ -229,7 +245,7 @@ const FindQuizPage = () => {
                                         clickable
                                         color={selectedCategory === "all" ? "primary" : "default"}
                                         variant={selectedCategory === "all" ? "filled" : "outlined"}
-                                        sx={{ color: selectedCategory === "all" ? "#fff" : "#cbd5e1" }}
+                                        sx={{ color: selectedCategory === "all" ? "#fff" : softText }}
                                         onClick={() => {
                                             setSelectedCategory("all");
                                         }}
@@ -244,7 +260,7 @@ const FindQuizPage = () => {
                                                 clickable
                                                 color={selected ? "primary" : "default"}
                                                 variant={selected ? "filled" : "outlined"}
-                                                sx={{ color: selected ? "#fff" : "#cbd5e1" }}
+                                                sx={{ color: selected ? "#fff" : softText }}
                                                 onClick={() => {
                                                     setSelectedCategory(category.id);
                                                 }}
@@ -254,7 +270,7 @@ const FindQuizPage = () => {
                                 </Stack>
                             </Box>
 
-                            <Typography sx={{ fontSize: "0.92rem", color: "#cbd5e1" }}>
+                            <Typography sx={{ fontSize: "0.92rem", color: softText }}>
                                 {totalCount} quizzes found
                                 {activeFilterCount > 0 ? ` • ${activeFilterCount} active filter(s)` : ""}
                             </Typography>
@@ -286,12 +302,8 @@ const FindQuizPage = () => {
                                     }}
                                 />
                             </Stack>
-                            {joinError ? <Alert severity="error">{joinError}</Alert> : null}
-                            {joinSuccess ? <Alert severity="success">{joinSuccess}</Alert> : null}
                         </Stack>
                     </Box>
-
-                    {error && <Alert severity="error">{error}</Alert>}
 
                     {isLoading ? (
                         <Stack alignItems="center" justifyContent="center" py={8} spacing={1.5}>
@@ -302,15 +314,17 @@ const FindQuizPage = () => {
                         <Card
                             sx={{
                                 borderRadius: 3,
-                                border: "1px dashed rgba(148,163,184,0.4)",
-                                background: "rgba(15, 23, 42, 0.88)",
+                                border: `1px dashed ${alpha(theme.palette.text.secondary, 0.45)}`,
+                                background: isDark
+                                    ? "rgba(15, 23, 42, 0.88)"
+                                    : alpha(theme.palette.background.paper, 0.96),
                             }}
                         >
                             <CardContent>
-                                <Typography variant="h6" fontWeight={700} sx={{ color: "#f8fafc" }}>
+                                <Typography variant="h6" fontWeight={700} sx={{ color: strongText }}>
                                     No quizzes matched your filter
                                 </Typography>
-                                <Typography sx={{ mt: 1, color: "#cbd5e1" }}>
+                                <Typography sx={{ mt: 1, color: softText }}>
                                     Try another category or use fewer keywords.
                                 </Typography>
                             </CardContent>
@@ -334,9 +348,10 @@ const FindQuizPage = () => {
                                             key={quiz.id}
                                             sx={{
                                                 borderRadius: 3,
-                                                border: "1px solid rgba(148,163,184,0.28)",
-                                                background:
-                                                    "linear-gradient(160deg, rgba(15,23,42,0.94) 0%, rgba(10,18,33,0.92) 100%)",
+                                                border: `1px solid ${alpha(theme.palette.text.secondary, 0.3)}`,
+                                                background: isDark
+                                                    ? "linear-gradient(160deg, rgba(15,23,42,0.94) 0%, rgba(10,18,33,0.92) 100%)"
+                                                    : "linear-gradient(160deg, rgba(255,255,255,0.96) 0%, rgba(241,245,249,0.94) 100%)",
                                                 transition: "transform 0.25s ease, box-shadow 0.25s ease",
                                                 animation: `fade-up 300ms ease ${Math.min(index * 45, 280)}ms both`,
                                                 "@keyframes fade-up": {
@@ -345,19 +360,21 @@ const FindQuizPage = () => {
                                                 },
                                                 "&:hover": {
                                                     transform: "translateY(-3px)",
-                                                    boxShadow: "0 14px 28px rgba(2, 6, 23, 0.45)",
+                                                    boxShadow: isDark
+                                                        ? "0 14px 28px rgba(2, 6, 23, 0.45)"
+                                                        : "0 12px 24px rgba(15, 23, 42, 0.18)",
                                                 },
                                             }}
                                         >
                                             <CardContent>
                                                 <Stack spacing={1.3}>
-                                                    <Typography variant="h6" sx={{ fontWeight: 700, color: "#f8fafc" }}>
+                                                    <Typography variant="h6" sx={{ fontWeight: 700, color: strongText }}>
                                                         {quiz.title}
                                                     </Typography>
                                                     <Typography
                                                         sx={{
                                                             fontSize: "0.8rem",
-                                                            color: "#94a3b8",
+                                                            color: softText,
                                                             wordBreak: "break-all",
                                                         }}
                                                     >
@@ -387,6 +404,13 @@ const FindQuizPage = () => {
                     )}
                 </Stack>
             </Container>
+
+            <AppSnackbar
+                open={snackbar.open}
+                message={snackbar.message}
+                severity={snackbar.severity}
+                onClose={closeSnackbar}
+            />
         </Box>
     );
 };

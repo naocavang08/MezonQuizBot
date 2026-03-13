@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-	Alert,
 	Box,
 	Button,
 	Card,
@@ -22,6 +21,8 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
+import AppSnackbar from "../Components/AppSnackbar";
+import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
@@ -113,9 +114,7 @@ const QuizSettingPage = () => {
 	const [isSavingSettings, setIsSavingSettings] = useState(false);
 	const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 	const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [success, setSuccess] = useState<string | null>(null);
-	const [sessionError, setSessionError] = useState<string | null>(null);
+	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 	const [sessions, setSessions] = useState<QuizSessionDto[]>([]);
 	const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 	const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
@@ -140,7 +139,7 @@ const QuizSettingPage = () => {
 
 		const loadData = async () => {
 			if (!quizId) {
-				setError("Quiz id is missing.");
+				showError("Quiz id is missing.");
 				setIsLoading(false);
 				return;
 			}
@@ -148,7 +147,6 @@ const QuizSettingPage = () => {
 			try {
 				setIsLoading(true);
 				setIsLoadingCategories(true);
-				setError(null);
 
 				const [categoriesData, quizData] = await Promise.all([
 					getAllCategories(),
@@ -172,7 +170,7 @@ const QuizSettingPage = () => {
 				});
 			} catch {
 				if (isMounted) {
-					setError("Could not load quiz details.");
+					showError("Could not load quiz details.");
 				}
 			} finally {
 				if (isMounted) {
@@ -187,7 +185,7 @@ const QuizSettingPage = () => {
 		return () => {
 			isMounted = false;
 		};
-	}, [quizId]);
+	}, [quizId, showError]);
 
 	const loadSessions = useCallback(async () => {
 		if (!quizId) {
@@ -196,7 +194,6 @@ const QuizSettingPage = () => {
 
 		try {
 			setIsLoadingSessions(true);
-			setSessionError(null);
 			const data = await getQuizSessions({
 				quizId,
 				page: 1,
@@ -205,11 +202,11 @@ const QuizSettingPage = () => {
 
 			setSessions(Array.isArray(data.items) ? data.items : []);
 		} catch {
-			setSessionError("Could not load created sessions for this quiz.");
+			showError("Could not load created sessions for this quiz.");
 		} finally {
 			setIsLoadingSessions(false);
 		}
-	}, [quizId]);
+	}, [quizId, showError]);
 
 	useEffect(() => {
 		void loadSessions();
@@ -222,15 +219,15 @@ const QuizSettingPage = () => {
 
 		try {
 			await navigator.clipboard.writeText(value);
-			setSuccess(message);
+			showSuccess(message);
 		} catch {
-			setSessionError("Can not copy value right now.");
+			showError("Can not copy value right now.");
 		}
 	};
 
 	const handleDeleteSession = async (sessionId: string) => {
 		if (!userId) {
-			setSessionError("User is not available. Please login again.");
+			showError("User is not available. Please login again.");
 			return;
 		}
 
@@ -241,12 +238,11 @@ const QuizSettingPage = () => {
 
 		try {
 			setDeletingSessionId(sessionId);
-			setSessionError(null);
 			const result = await deleteQuizSession(sessionId);
-			setSuccess(result.message || "Session deleted.");
+			showSuccess(result.message || "Session deleted.");
 			await loadSessions();
 		} catch {
-			setSessionError("Failed to delete session.");
+			showError("Failed to delete session.");
 		} finally {
 			setDeletingSessionId(null);
 		}
@@ -499,21 +495,18 @@ const QuizSettingPage = () => {
 			return;
 		}
 
-		setError(null);
-		setSuccess(null);
-
 		const validationError = validateBeforeSubmit();
 		if (validationError) {
-			setError(validationError);
+			showError(validationError);
 			return;
 		}
 
 		try {
 			setIsSubmitting(true);
 			const result = await updateQuiz(quizId, toPayload());
-			setSuccess(result.message || "Quiz updated successfully.");
+			showSuccess(result.message || "Quiz updated successfully.");
 		} catch {
-			setError("Failed to update quiz. Please check your data and try again.");
+			showError("Failed to update quiz. Please check your data and try again.");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -525,13 +518,11 @@ const QuizSettingPage = () => {
 		}
 
 		try {
-			setSuccess(null);
-			setError(null);
 			setIsSavingSettings(true);
 			const result = await updateQuizSettings(quizId, form.settings);
-			setSuccess(result.message || "Quiz settings updated.");
+			showSuccess(result.message || "Quiz settings updated.");
 		} catch {
-			setError("Failed to update quiz settings.");
+			showError("Failed to update quiz settings.");
 		} finally {
 			setIsSavingSettings(false);
 		}
@@ -543,14 +534,12 @@ const QuizSettingPage = () => {
 		}
 
 		try {
-			setSuccess(null);
-			setError(null);
 			setIsUpdatingStatus(true);
 			const result = await updateQuiz(quizId, toPayload(status));
 			setForm((prev) => ({ ...prev, status }));
-			setSuccess(result.message || "Quiz status updated.");
+			showSuccess(result.message || "Quiz status updated.");
 		} catch {
-			setError("Failed to update quiz status.");
+			showError("Failed to update quiz status.");
 		} finally {
 			setIsUpdatingStatus(false);
 		}
@@ -567,14 +556,12 @@ const QuizSettingPage = () => {
 		}
 
 		try {
-			setSuccess(null);
-			setError(null);
 			setIsDeletingQuiz(true);
 			const result = await deleteQuiz(quizId);
-			setSuccess(result.message || "Quiz removed.");
+			showSuccess(result.message || "Quiz removed.");
 			navigate("/app/my-quizzes", { replace: true });
 		} catch {
-			setError("Failed to remove quiz.");
+			showError("Failed to remove quiz.");
 		} finally {
 			setIsDeletingQuiz(false);
 		}
@@ -598,10 +585,6 @@ const QuizSettingPage = () => {
 					Back to My Quizzes
 				</Button>
 			</Stack>
-
-			{error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
-			{success ? <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert> : null}
-			{sessionError ? <Alert severity="warning" sx={{ mb: 2 }}>{sessionError}</Alert> : null}
 
 			<Tabs
 				value={activeTab}
@@ -1039,6 +1022,13 @@ const QuizSettingPage = () => {
 			</Stack>
 			</>
 			) : null}
+
+			<AppSnackbar
+				open={snackbar.open}
+				message={snackbar.message}
+				severity={snackbar.severity}
+				onClose={closeSnackbar}
+			/>
 		</Box>
 	);
 };

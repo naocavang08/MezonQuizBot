@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Alert,
     Box,
     Button,
     Card,
@@ -17,6 +16,8 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
+import AppSnackbar from "../Components/AppSnackbar";
+import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdContentCopy, MdRefresh } from "react-icons/md";
 import { useParams } from "react-router-dom";
 import {
@@ -46,8 +47,7 @@ const SessionRoomPage = () => {
     const [leaderboard, setLeaderboard] = useState<SessionParticipantDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isActionLoading, setIsActionLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [message, setMessage] = useState<string | null>(null);
+    const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 
     const isHost = useMemo(() => {
         if (!session || !userId) {
@@ -76,15 +76,15 @@ const SessionRoomPage = () => {
 
         try {
             await navigator.clipboard.writeText(value);
-            setMessage(successText);
+            showSuccess(successText);
         } catch {
-            setError("Can not copy to clipboard right now.");
+            showError("Can not copy to clipboard right now.");
         }
     };
 
     const loadSession = useCallback(async (silent = false) => {
         if (!sessionId) {
-            setError("Session id is invalid.");
+            showError("Session id is invalid.");
             setIsLoading(false);
             return;
         }
@@ -101,15 +101,14 @@ const SessionRoomPage = () => {
 
             setSession(sessionData);
             setLeaderboard(Array.isArray(leaderboardData) ? leaderboardData : []);
-            setError(null);
         } catch {
-            setError("Can not load session room right now.");
+            showError("Can not load session room right now.");
         } finally {
             if (!silent) {
                 setIsLoading(false);
             }
         }
-    }, [sessionId]);
+    }, [sessionId, showError]);
 
     useEffect(() => {
         void loadSession();
@@ -131,14 +130,12 @@ const SessionRoomPage = () => {
 
     const runHostAction = async (action: "start" | "pause" | "resume" | "finish") => {
         if (!sessionId || !userId) {
-            setError("Host info is invalid.");
+            showError("Host info is invalid.");
             return;
         }
 
         try {
             setIsActionLoading(true);
-            setMessage(null);
-            setError(null);
 
             let response;
 
@@ -152,10 +149,10 @@ const SessionRoomPage = () => {
                 response = await finishQuizSession(sessionId);
             }
 
-            setMessage(response.message || "Session updated successfully.");
+            showSuccess(response.message || "Session updated successfully.");
             await loadSession(true);
         } catch {
-            setError("Can not update session status right now.");
+            showError("Can not update session status right now.");
         } finally {
             setIsActionLoading(false);
         }
@@ -195,9 +192,6 @@ const SessionRoomPage = () => {
                         </IconButton>
                     </Tooltip>
                 </Stack>
-
-                {error ? <Alert severity="error">{error}</Alert> : null}
-                {message ? <Alert severity="success">{message}</Alert> : null}
 
                 {isLoading ? (
                     <Stack alignItems="center" py={8}>
@@ -343,6 +337,13 @@ const SessionRoomPage = () => {
                     </Card>
                 ) : null}
             </Stack>
+
+            <AppSnackbar
+                open={snackbar.open}
+                message={snackbar.message}
+                severity={snackbar.severity}
+                onClose={closeSnackbar}
+            />
         </Box>
     );
 };

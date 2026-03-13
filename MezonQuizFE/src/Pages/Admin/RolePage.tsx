@@ -12,10 +12,11 @@ import {
 	Stack,
 	TextField,
 	Typography,
-	Alert,
 	CircularProgress,
 	FormControlLabel,
 } from "@mui/material";
+import AppSnackbar from "../../Components/AppSnackbar";
+import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import { getAllRoles, getAllPermissions, getRolePermissions, assignPermissionsToRole, deleteRole, createRole } from "../../Api/role.api";
 import type { RoleResponse, PermissionResponse, RoleRequest } from "../../Interface/role.dto";
 
@@ -23,8 +24,7 @@ const RolePage = () => {
 	const [roles, setRoles] = useState<RoleResponse[]>([]);
 	const [permissions, setPermissions] = useState<PermissionResponse[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [success, setSuccess] = useState<string | null>(null);
+	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 
 	const [openPermissionDialog, setOpenPermissionDialog] = useState(false);
 	const [openCreateRoleDialog, setOpenCreateRoleDialog] = useState(false);
@@ -44,9 +44,8 @@ const RolePage = () => {
 		try {
 			const data = await getAllRoles();
 			setRoles(data);
-			setError(null);
 		} catch (err) {
-			setError("Failed to load roles");
+			showError("Failed to load roles");
 			console.error(err);
 		} finally {
 			setLoading(false);
@@ -58,7 +57,7 @@ const RolePage = () => {
 			const data = await getAllPermissions();
 			setPermissions(data);
 		} catch (err) {
-			setError("Failed to load permissions");
+			showError("Failed to load permissions");
 			console.error(err);
 		}
 	};
@@ -115,14 +114,14 @@ const RolePage = () => {
 				id: selectedRole.id,
 				permissions: selectedPermissions,
 			});
-			setSuccess(`Permissions updated for ${selectedRole.displayName}`);
+			showSuccess(`Permissions updated for ${selectedRole.displayName}`);
 			setOpenPermissionDialog(false);
 			setSelectedRole(null);
 			setSelectedPermissions([]);
 
 			await fetchRoles();
 		} catch (err) {
-			setError("Failed to save permissions");
+			showError("Failed to save permissions");
 			console.error(err);
 		} finally {
 			setPermissionLoading(false);
@@ -131,14 +130,14 @@ const RolePage = () => {
 
 	const handleCreateRole = async () => {
 		if (!newRole.name || !newRole.displayName) {
-			setError("Name and Display Name are required");
+			showError("Name and Display Name are required");
 			return;
 		}
 
 		setLoading(true);
 		try {
 			await createRole(newRole);
-			setSuccess(`Role ${newRole.displayName} created successfully`);
+			showSuccess(`Role ${newRole.displayName} created successfully`);
 			setOpenCreateRoleDialog(false);
 			setNewRole({
 				name: "",
@@ -148,7 +147,7 @@ const RolePage = () => {
 			});
 			await fetchRoles();
 		} catch (err) {
-			setError("Failed to create role");
+			showError("Failed to create role");
 			console.error(err);
 		} finally {
 			setLoading(false);
@@ -160,10 +159,10 @@ const RolePage = () => {
 			setLoading(true);
 			try {
 				await deleteRole(roleId);
-				setSuccess(`Role ${roleName} deleted successfully`);
+				showSuccess(`Role ${roleName} deleted successfully`);
 				await fetchRoles();
 			} catch (err) {
-				setError("Failed to delete role");
+				showError("Failed to delete role");
 				console.error(err);
 			} finally {
 				setLoading(false);
@@ -184,13 +183,6 @@ const RolePage = () => {
 		setSelectedRole(null);
 		setSelectedPermissions([]);
 	};
-
-	useEffect(() => {
-		if (success) {
-			const timer = setTimeout(() => setSuccess(null), 3000);
-			return () => clearTimeout(timer);
-		}
-	}, [success]);
 
 	if (loading && roles.length === 0) {
 		return (
@@ -213,18 +205,6 @@ const RolePage = () => {
 					Add Role
 				</Button>
 			</Box>
-
-			{error && (
-				<Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
-					{error}
-				</Alert>
-			)}
-
-			{success && (
-				<Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 2 }}>
-					{success}
-				</Alert>
-			)}
 
 			<Stack spacing={1.5}>
 				{roles.length === 0 ? (
@@ -392,6 +372,13 @@ const RolePage = () => {
 					</Button>
 				</DialogActions>
 			</Dialog>
+
+			<AppSnackbar
+				open={snackbar.open}
+				message={snackbar.message}
+				severity={snackbar.severity}
+				onClose={closeSnackbar}
+			/>
 		</Box>
 	);
 };

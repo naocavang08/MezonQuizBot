@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-    Alert,
     Box,
     Button,
     Card,
@@ -19,6 +18,8 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
+import AppSnackbar from "../Components/AppSnackbar";
+import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
@@ -90,8 +91,7 @@ const CreateQuizPage = () => {
 	const [categories, setCategories] = useState<CategoryDto[]>([]);
 	const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [submitError, setSubmitError] = useState<string | null>(null);
-	const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 	const [form, setForm] = useState<FormState>({
 		title: "",
 		description: "",
@@ -119,7 +119,7 @@ const CreateQuizPage = () => {
 				}
 			} catch {
 				if (isMounted) {
-					setSubmitError("Failed to load categories.");
+					showError("Failed to load categories.");
 				}
 			} finally {
 				if (isMounted) {
@@ -133,7 +133,7 @@ const CreateQuizPage = () => {
 		return () => {
 			isMounted = false;
 		};
-	}, []);
+	}, [showError]);
 
 	const totalPoints = useMemo(
 		() => form.questions.reduce((sum, question) => sum + Number(question.points || 0), 0),
@@ -353,12 +353,9 @@ const CreateQuizPage = () => {
 	};
 
 	const onSubmit = async () => {
-		setSubmitError(null);
-		setSubmitSuccess(null);
-
 		const validationError = validateBeforeSubmit();
 		if (validationError) {
-			setSubmitError(validationError);
+			showError(validationError);
 			return;
 		}
 
@@ -385,13 +382,13 @@ const CreateQuizPage = () => {
 		try {
 			setIsSubmitting(true);
 			const result = await createQuiz(payload);
-			setSubmitSuccess(result.message || "Quiz created successfully.");
+			showSuccess(result.message || "Quiz created successfully.");
 
 			setTimeout(() => {
 				navigate("/app/my-quizzes", { replace: true });
 			}, 800);
 		} catch {
-			setSubmitError("Failed to create quiz. Please check your data and try again.");
+			showError("Failed to create quiz. Please check your data and try again.");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -407,9 +404,6 @@ const CreateQuizPage = () => {
 					Back to My Quizzes
 				</Button>
 			</Stack>
-
-			{submitError ? <Alert severity="error" sx={{ mb: 2 }}>{submitError}</Alert> : null}
-			{submitSuccess ? <Alert severity="success" sx={{ mb: 2 }}>{submitSuccess}</Alert> : null}
 
 			<Card variant="outlined" sx={{ mb: 3, backgroundColor: "transparent" }}>
 				<CardContent>
@@ -693,6 +687,13 @@ const CreateQuizPage = () => {
 					{isSubmitting ? "Creating..." : "Create Quiz"}
 				</Button>
 			</Stack>
+
+			<AppSnackbar
+				open={snackbar.open}
+				message={snackbar.message}
+				severity={snackbar.severity}
+				onClose={closeSnackbar}
+			/>
 		</Box>
 	);
 };

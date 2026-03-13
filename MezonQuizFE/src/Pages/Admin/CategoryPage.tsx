@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-	Alert,
 	Box,
 	Button,
 	CircularProgress,
@@ -18,6 +17,8 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
+import AppSnackbar from "../../Components/AppSnackbar";
+import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import { createCategory, deleteCategory, getAllCategories, updateCategory } from "../../Api/category.api";
 import type { CategoryDto, SaveCategoryDto } from "../../Interface/category.dto";
 
@@ -31,8 +32,7 @@ const defaultForm: SaveCategoryDto = {
 const CategoryPage = () => {
 	const [categories, setCategories] = useState<CategoryDto[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [success, setSuccess] = useState<string | null>(null);
+	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 
 	const [openCreateDialog, setOpenCreateDialog] = useState(false);
 	const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -46,9 +46,8 @@ const CategoryPage = () => {
 		try {
 			const data = await getAllCategories();
 			setCategories(data);
-			setError(null);
 		} catch {
-			setError("Không thể tải danh sách category.");
+			showError("Không thể tải danh sách category.");
 		} finally {
 			setLoading(false);
 		}
@@ -57,15 +56,6 @@ const CategoryPage = () => {
 	useEffect(() => {
 		fetchCategories();
 	}, []);
-
-	useEffect(() => {
-		if (!success) {
-			return;
-		}
-
-		const timer = setTimeout(() => setSuccess(null), 2500);
-		return () => clearTimeout(timer);
-	}, [success]);
 
 	const normalizeForm = (form: SaveCategoryDto): SaveCategoryDto => ({
 		name: form.name.trim(),
@@ -76,7 +66,7 @@ const CategoryPage = () => {
 
 	const validateForm = (form: SaveCategoryDto): boolean => {
 		if (!form.name.trim() || !form.slug.trim()) {
-			setError("Name và Slug là bắt buộc.");
+			showError("Name và Slug là bắt buộc.");
 			return false;
 		}
 
@@ -91,12 +81,12 @@ const CategoryPage = () => {
 		setLoading(true);
 		try {
 			await createCategory(normalizeForm(createForm));
-			setSuccess("Tạo category thành công.");
+			showSuccess("Tạo category thành công.");
 			setOpenCreateDialog(false);
 			setCreateForm(defaultForm);
 			await fetchCategories();
 		} catch {
-			setError("Tạo category thất bại.");
+			showError("Tạo category thất bại.");
 		} finally {
 			setLoading(false);
 		}
@@ -125,12 +115,12 @@ const CategoryPage = () => {
 		setLoading(true);
 		try {
 			await updateCategory(selectedCategory.id, normalizeForm(editForm));
-			setSuccess("Cập nhật category thành công.");
+			showSuccess("Cập nhật category thành công.");
 			setOpenEditDialog(false);
 			setSelectedCategory(null);
 			await fetchCategories();
 		} catch {
-			setError("Cập nhật category thất bại.");
+			showError("Cập nhật category thất bại.");
 		} finally {
 			setLoading(false);
 		}
@@ -144,10 +134,10 @@ const CategoryPage = () => {
 		setLoading(true);
 		try {
 			await deleteCategory(categoryId);
-			setSuccess("Xóa category thành công.");
+			showSuccess("Xóa category thành công.");
 			await fetchCategories();
 		} catch {
-			setError("Xóa category thất bại.");
+			showError("Xóa category thất bại.");
 		} finally {
 			setLoading(false);
 		}
@@ -163,18 +153,6 @@ const CategoryPage = () => {
 					Add Category
 				</Button>
 			</Box>
-
-			{error && (
-				<Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-					{error}
-				</Alert>
-			)}
-
-			{success && (
-				<Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
-					{success}
-				</Alert>
-			)}
 
 			<Paper variant="outlined" sx={{ boxShadow: "none" }}>
 				{loading && categories.length === 0 ? (
@@ -307,6 +285,13 @@ const CategoryPage = () => {
 					</Button>
 				</DialogActions>
 			</Dialog>
+
+			<AppSnackbar
+				open={snackbar.open}
+				message={snackbar.message}
+				severity={snackbar.severity}
+				onClose={closeSnackbar}
+			/>
 		</Box>
 	);
 };

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-	Alert,
 	Box,
 	Button,
 	Checkbox,
@@ -22,6 +21,8 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
+import AppSnackbar from "../../Components/AppSnackbar";
+import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import {
 	assignRolesToUser,
 	createUser,
@@ -38,8 +39,7 @@ const UserPage = () => {
 	const [users, setUsers] = useState<UserResponse[]>([]);
 	const [roles, setRoles] = useState<RoleResponse[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [success, setSuccess] = useState<string | null>(null);
+	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 
 	const [openCreateDialog, setOpenCreateDialog] = useState(false);
 	const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -69,9 +69,8 @@ const UserPage = () => {
 		try {
 			const data = await getAllUsers();
 			setUsers(data);
-			setError(null);
 		} catch {
-			setError("Failed to load users.");
+			showError("Failed to load users.");
 		} finally {
 			setLoading(false);
 		}
@@ -82,7 +81,7 @@ const UserPage = () => {
 			const data = await getAllRoles();
 			setRoles(data);
 		} catch {
-			setError("Failed to load roles.");
+			showError("Failed to load roles.");
 		}
 	};
 
@@ -90,15 +89,6 @@ const UserPage = () => {
 		fetchUsers();
 		fetchRoles();
 	}, []);
-
-	useEffect(() => {
-		if (!success) {
-			return;
-		}
-
-		const timer = setTimeout(() => setSuccess(null), 2500);
-		return () => clearTimeout(timer);
-	}, [success]);
 
 	const handleOpenEditDialog = (user: UserResponse) => {
 		setSelectedUser(user);
@@ -113,14 +103,14 @@ const UserPage = () => {
 
 	const handleCreateUser = async () => {
 		if (!createForm.username || !createForm.password) {
-			setError("Username và Password là bắt buộc.");
+			showError("Username và Password là bắt buộc.");
 			return;
 		}
 
 		setLoading(true);
 		try {
 			await createUser(createForm);
-			setSuccess("Create user thành công.");
+			showSuccess("Create user thành công.");
 			setOpenCreateDialog(false);
 			setCreateForm({
 				email: "",
@@ -131,7 +121,7 @@ const UserPage = () => {
 			});
 			await fetchUsers();
 		} catch {
-			setError("Create user thất bại.");
+			showError("Create user thất bại.");
 		} finally {
 			setLoading(false);
 		}
@@ -145,12 +135,12 @@ const UserPage = () => {
 		setLoading(true);
 		try {
 			await updateUser(selectedUser.id, editForm);
-			setSuccess("Update user thành công.");
+			showSuccess("Update user thành công.");
 			setOpenEditDialog(false);
 			setSelectedUser(null);
 			await fetchUsers();
 		} catch {
-			setError("Update user thất bại.");
+			showError("Update user thất bại.");
 		} finally {
 			setLoading(false);
 		}
@@ -164,10 +154,10 @@ const UserPage = () => {
 		setLoading(true);
 		try {
 			await deleteUser(id);
-			setSuccess("Delete user thành công.");
+			showSuccess("Delete user thành công.");
 			await fetchUsers();
 		} catch {
-			setError("Delete user thất bại.");
+			showError("Delete user thất bại.");
 		} finally {
 			setLoading(false);
 		}
@@ -182,7 +172,7 @@ const UserPage = () => {
 			setSelectedRoleIds(Array.isArray(roleIds) ? roleIds : []);
 		} catch {
 			setSelectedRoleIds([]);
-			setError("Không tải được danh sách role của user.");
+			showError("Không tải được danh sách role của user.");
 		} finally {
 			setRoleDialogLoading(false);
 		}
@@ -202,12 +192,12 @@ const UserPage = () => {
 		setLoading(true);
 		try {
 			await assignRolesToUser({ id: selectedUser.id, roleIds: selectedRoleIds });
-			setSuccess("Assign roles thành công.");
+			showSuccess("Assign roles thành công.");
 			setOpenAssignRoleDialog(false);
 			setSelectedUser(null);
 			setSelectedRoleIds([]);
 		} catch {
-			setError("Assign roles thất bại.");
+			showError("Assign roles thất bại.");
 		} finally {
 			setLoading(false);
 		}
@@ -223,18 +213,6 @@ const UserPage = () => {
 					Add User
 				</Button>
 			</Box>
-
-			{error && (
-				<Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-					{error}
-				</Alert>
-			)}
-
-			{success && (
-				<Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
-					{success}
-				</Alert>
-			)}
 
 			<Paper variant="outlined" sx={{ boxShadow: "none" }}>
 				{loading && users.length === 0 ? (
@@ -429,6 +407,13 @@ const UserPage = () => {
 					</Button>
 				</DialogActions>
 			</Dialog>
+
+			<AppSnackbar
+				open={snackbar.open}
+				message={snackbar.message}
+				severity={snackbar.severity}
+				onClose={closeSnackbar}
+			/>
 		</Box>
 	);
 };

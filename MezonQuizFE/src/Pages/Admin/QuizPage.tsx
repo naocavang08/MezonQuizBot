@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-	Alert,
 	Box,
 	Chip,
 	CircularProgress,
@@ -19,6 +18,8 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
+import AppSnackbar from "../../Components/AppSnackbar";
+import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import { getAllCategories } from "../../Api/category.api";
 import { getQuizDetails, getQuizzes } from "../../Api/quiz.api";
 import type { CategoryDto } from "../../Interface/category.dto";
@@ -42,7 +43,7 @@ const QuizPage = () => {
 	const [loading, setLoading] = useState(false);
 	const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 	const [detailsLoading, setDetailsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+    const { snackbar, showError, closeSnackbar } = useAppSnackbar();
     const [categories, setCategories] = useState<CategoryDto[]>([]);
     const [selectedCategory, setSelectedCategory] = useState("");
     const [searchInput, setSearchInput] = useState("");
@@ -64,9 +65,8 @@ const QuizPage = () => {
 			setQuizzes(Array.isArray(data.items) ? data.items : []);
 			setTotalPages(Number(data.totalPages ?? 0));
 			setTotalCount(Number(data.totalCount ?? 0));
-			setError(null);
 		} catch {
-			setError("Could not load quizzes.");
+			showError("Could not load quizzes.");
 		} finally {
 			setLoading(false);
 		}
@@ -77,9 +77,8 @@ const QuizPage = () => {
 		try {
 			const details = await getQuizDetails(quizId);
 			setSelectedQuiz(details);
-			setError(null);
 		} catch {
-			setError("Could not load quiz details.");
+			showError("Could not load quiz details.");
 		} finally {
 			setDetailsLoading(false);
 		}
@@ -134,12 +133,6 @@ const QuizPage = () => {
 			<Typography variant="h5" fontWeight={700} mb={2}>
 				Quiz Management
 			</Typography>
-
-			{error && (
-				<Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-					{error}
-				</Alert>
-			)}
 
 			<Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={2}>
 				<TextField
@@ -257,6 +250,13 @@ const QuizPage = () => {
 					</Typography>
 				)}
 			</Paper>
+
+			<AppSnackbar
+				open={snackbar.open}
+				message={snackbar.message}
+				severity={snackbar.severity}
+				onClose={closeSnackbar}
+			/>
 		</Box>
 	);
 };

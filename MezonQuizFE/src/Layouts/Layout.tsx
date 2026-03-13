@@ -1,18 +1,25 @@
+import { useMemo, useState } from 'react'
 import {
   Avatar,
   Box,
   Button,
   Chip,
-  CssBaseline,
+  Divider,
   GlobalStyles,
+  IconButton,
+  InputAdornment,
+  Menu,
+  MenuItem,
   Stack,
-  ThemeProvider,
+  TextField,
   Typography,
-  createTheme,
+  useMediaQuery,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import useAuthStore from '../Stores/login.store'
+import useThemeStore from '../Stores/theme.store'
+import { MdDarkMode, MdLightMode, MdLogout, MdSettings } from 'react-icons/md'
 
 type NavItem = {
   label: string
@@ -91,67 +98,6 @@ const pageTitleMap: Record<string, string> = {
   '/app/create-quiz': 'Create Quiz',
 }
 
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: { main: '#0ea5e9' },
-    secondary: { main: '#fb923c' },
-    background: {
-      default: '#08111f',
-      paper: '#0e1a2b',
-    },
-    text: {
-      primary: '#e2e8f0',
-      secondary: '#94a3b8',
-    },
-  },
-  shape: { borderRadius: 14 },
-  typography: {
-    fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
-  },
-  components: {
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-          backgroundColor: '#0e1a2b',
-          border: '1px solid rgba(148,163,184,0.18)',
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-          backgroundColor: '#0e1a2b',
-          border: '1px solid rgba(148,163,184,0.18)',
-        },
-      },
-    },
-    MuiOutlinedInput: {
-      styleOverrides: {
-        root: {
-          backgroundColor: 'rgba(15, 23, 42, 0.8)',
-          '& fieldset': { borderColor: 'rgba(148,163,184,0.35)' },
-          '&:hover fieldset': { borderColor: 'rgba(148,163,184,0.55)' },
-          '&.Mui-focused fieldset': { borderColor: '#0ea5e9' },
-        },
-      },
-    },
-    MuiTableCell: {
-      styleOverrides: {
-        root: {
-          borderBottom: '1px solid rgba(148,163,184,0.2)',
-        },
-        head: {
-          color: '#cbd5e1',
-          fontWeight: 700,
-        },
-      },
-    },
-  },
-})
-
 function SvgIconPath({ path, size = 20, color = '#64748b' }: { path: string; size?: number; color?: string }) {
   return (
     <Box
@@ -171,35 +117,90 @@ const Layout = () => {
   const location = useLocation()
   const clearAuth = useAuthStore((state) => state.clearAuth)
   const user = useAuthStore((state) => state.user)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const isResponsive = useMediaQuery('(max-width:900px)')
+  const themeMode = useThemeStore((state) => state.themeMode)
+  const toggleTheme = useThemeStore((state) => state.toggleTheme)
+  const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null)
+
+  // Get colors from current theme - use palette from theme provider if available
+  const colors = useMemo(
+    () =>
+      themeMode === 'dark'
+        ? {
+            defaultBg: '#08111f',
+            paperBg: '#0e1a2b',
+            sideBg: '#0a1626',
+            textPrimary: '#e2e8f0',
+            textSecondary: '#94a3b8',
+            border: 'rgba(148,163,184,0.18)',
+            fieldBg: 'rgba(15, 23, 42, 0.8)',
+            bodyBg:
+              'radial-gradient(circle at 10% 0%, rgba(14,165,233,0.22), transparent 36%), radial-gradient(circle at 95% 0%, rgba(251,146,60,0.16), transparent 40%), #08111f',
+          }
+        : {
+            defaultBg: '#eef4fb',
+            paperBg: '#ffffff',
+            sideBg: '#f8fbff',
+            textPrimary: '#0f172a',
+            textSecondary: '#475569',
+            border: 'rgba(71,85,105,0.22)',
+            fieldBg: 'rgba(255, 255, 255, 0.95)',
+            bodyBg:
+              'radial-gradient(circle at 10% 0%, rgba(14,165,233,0.16), transparent 38%), radial-gradient(circle at 95% 0%, rgba(251,146,60,0.12), transparent 40%), #eef4fb',
+          },
+    [themeMode],
+  )
 
   const currentTitle =
     pageTitleMap[location.pathname] ??
     (location.pathname.includes('/settings') ? 'Quiz Settings' : location.pathname.includes('/sessions/') ? 'Session Room' : 'Workspace')
 
+  const currentThemeIcon =
+    themeMode === 'light'
+      ? <MdLightMode size={16} color={colors.textSecondary} />
+      : <MdDarkMode size={16} color={colors.textSecondary} />
+
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <>
       <GlobalStyles
         styles={{
           '*': { boxSizing: 'border-box' },
           '#root': { width: '100%', height: '100%' },
           body: {
-            background:
-              'radial-gradient(circle at 10% 0%, rgba(14,165,233,0.22), transparent 36%), radial-gradient(circle at 95% 0%, rgba(251,146,60,0.16), transparent 40%), #08111f',
+            background: colors.bodyBg,
           },
           '::-webkit-scrollbar': { width: '6px', height: '6px' },
           '::-webkit-scrollbar-thumb': { backgroundColor: '#1e293b', borderRadius: '10px' },
         }}
       />
       <Box sx={{ color: '#cbd5e1', display: 'flex', height: '100vh', overflow: 'hidden' }}>
+        {isResponsive && mobileSidebarOpen ? (
+          <Box
+            onClick={() => setMobileSidebarOpen(false)}
+            sx={{
+              position: 'fixed',
+              inset: 0,
+              bgcolor: 'rgba(2,6,23,0.55)',
+              zIndex: 1190,
+            }}
+          />
+        ) : null}
+
         <Box
           component="aside"
           sx={{
             width: 270,
             flexShrink: 0,
-            borderRight: '1px solid rgba(148,163,184,0.18)',
-            bgcolor: '#0a1626',
-            display: { xs: 'none', md: 'flex' },
+            borderRight: `1px solid ${colors.border}`,
+            bgcolor: colors.sideBg,
+            display: !isResponsive || mobileSidebarOpen ? 'flex' : 'none',
+            position: isResponsive ? 'fixed' : 'relative',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: 1200,
+            boxShadow: isResponsive ? '0 24px 48px rgba(2,6,23,0.45)' : 'none',
             flexDirection: 'column',
           }}
         >
@@ -217,8 +218,8 @@ const Layout = () => {
               <SvgIconPath path="M13 10V3L4 14h7v7l9-11h-7z" color="#fff" />
             </Box>
             <Box>
-              <Typography sx={{ fontWeight: 700, color: '#f8fafc', lineHeight: 1.1 }}>Mezon Quiz</Typography>
-              <Typography sx={{ color: '#64748b', fontSize: 10, mt: 0.5, textTransform: 'uppercase', letterSpacing: 1.1 }}>
+              <Typography sx={{ fontWeight: 700, color: colors.textPrimary, lineHeight: 1.1 }}>Mezon Quiz</Typography>
+              <Typography sx={{ color: colors.textSecondary, fontSize: 10, mt: 0.5, textTransform: 'uppercase', letterSpacing: 1.1 }}>
                 Workspace
               </Typography>
             </Box>
@@ -228,7 +229,7 @@ const Layout = () => {
             <Stack spacing={3}>
               {navSections.map((section) => (
                 <Box key={section.title}>
-                  <Typography sx={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase', fontWeight: 700, letterSpacing: 1.1, px: 1, mb: 1.5 }}>
+                  <Typography sx={{ color: colors.textSecondary, fontSize: 11, textTransform: 'uppercase', fontWeight: 700, letterSpacing: 1.1, px: 1, mb: 1.5 }}>
                     {section.title}
                   </Typography>
                   <Stack spacing={0.5}>
@@ -242,6 +243,11 @@ const Layout = () => {
                           key={item.path}
                           component={NavLink}
                           to={item.path}
+                          onClick={() => {
+                            if (isResponsive) {
+                              setMobileSidebarOpen(false)
+                            }
+                          }}
                           fullWidth
                           disableRipple
                           sx={{
@@ -251,7 +257,7 @@ const Layout = () => {
                             px: 1.5,
                             borderRadius: 2,
                             minHeight: 40,
-                            color: active ? '#fff' : '#cbd5e1',
+                            color: active ? colors.textPrimary : colors.textSecondary,
                             bgcolor: active ? alpha('#0ea5e9', 0.22) : 'transparent',
                             border: active ? '1px solid rgba(14,165,233,0.45)' : '1px solid transparent',
                             '&:hover': {
@@ -260,7 +266,7 @@ const Layout = () => {
                           }}
                         >
                           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                            <SvgIconPath path={item.icon} color={active ? '#38bdf8' : '#64748b'} />
+                            <SvgIconPath path={item.icon} color={active ? '#38bdf8' : colors.textSecondary} />
                             <Typography sx={{ fontSize: 14, fontWeight: active ? 700 : 500 }}>{item.label}</Typography>
                           </Stack>
                           {item.badge ? (
@@ -293,7 +299,7 @@ const Layout = () => {
               justifyContent: 'space-between',
               px: 2,
               py: 1.5,
-              borderTop: '1px solid rgba(148,163,184,0.18)',
+              borderTop: `1px solid ${colors.border}`,
             }}
           >
             <Stack direction="row" spacing={1.2} sx={{ alignItems: 'center' }}>
@@ -301,10 +307,10 @@ const Layout = () => {
                 {(user?.username?.slice(0, 2) || 'U').toUpperCase()}
               </Avatar>
               <Box>
-                <Typography sx={{ fontSize: 14, color: '#fff', fontWeight: 600, lineHeight: 1.2 }}>
+                <Typography sx={{ fontSize: 14, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.2 }}>
                   {user?.displayName || user?.username || 'Quiz User'}
                 </Typography>
-                <Typography sx={{ color: '#64748b', fontSize: 11, lineHeight: 1.1 }}>Signed in</Typography>
+                <Typography sx={{ color: colors.textSecondary, fontSize: 11, lineHeight: 1.1 }}>Signed in</Typography>
               </Box>
             </Stack>
             <Button
@@ -313,7 +319,7 @@ const Layout = () => {
                 clearAuth()
                 navigate('/login', { replace: true })
               }}
-              sx={{ color: '#94a3b8', textTransform: 'none', minWidth: 0, px: 1 }}
+              sx={{ color: colors.textSecondary, textTransform: 'none', minWidth: 0, px: 1 }}
             >
               Logout
             </Button>
@@ -326,34 +332,129 @@ const Layout = () => {
             sx={{
               minHeight: 68,
               px: { xs: 2, md: 4 },
-              borderBottom: '1px solid rgba(148,163,184,0.18)',
+              borderBottom: `1px solid ${colors.border}`,
               alignItems: 'center',
               justifyContent: 'space-between',
+              gap: 1.5,
             }}
           >
-            <Box>
-              <Typography sx={{ color: '#f8fafc', fontSize: 24, fontWeight: 800 }}>{currentTitle}</Typography>
-              <Typography sx={{ color: '#64748b', fontSize: 12 }}>Manage your quiz operations from one place</Typography>
-            </Box>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flex: 1, minWidth: 0 }}>
+              {isResponsive ? (
+                <IconButton
+                  onClick={() => setMobileSidebarOpen((prev) => !prev)}
+                  sx={{ color: colors.textPrimary, border: `1px solid ${colors.border}`, borderRadius: 2 }}
+                >
+                  <SvgIconPath
+                    path={mobileSidebarOpen ? 'M6 6l12 12M18 6L6 18' : 'M4 6h16M4 12h16M4 18h16'}
+                    size={18}
+                    color={colors.textPrimary}
+                  />
+                </IconButton>
+              ) : null}
+
+              <TextField
+                size="small"
+                placeholder={`Search in ${currentTitle}`}
+                sx={{ maxWidth: 420, width: '100%' }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SvgIconPath path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" size={16} color={colors.textSecondary} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Stack>
+
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexShrink: 0 }}>
+              <Button
+                variant="contained"
+                startIcon={<SvgIconPath path="M12 4v16m8-8H4" size={14} color={colors.textPrimary} />}
+                sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 700 }}
+                onClick={() => navigate('/app/create-quiz')}
+              >
+                Create Quiz
+              </Button>
+
+              <IconButton
+                onClick={toggleTheme}
+                sx={{
+                    border: `1px solid ${colors.border}`,
+                    color: colors.textPrimary,
+                    width: 34,
+                    height: 34,
+                }}
+                >
+                {currentThemeIcon}
+              </IconButton>
+
+              <IconButton
+                onClick={(event) => setUserMenuAnchor(event.currentTarget)}
+                sx={{ p: 0, border: `1px solid ${colors.border}` }}
+              >
+                <Avatar sx={{ bgcolor: '#0ea5e9', width: 34, height: 34, fontWeight: 700, fontSize: 12 }}>
+                  {(user?.username?.slice(0, 2) || 'U').toUpperCase()}
+                </Avatar>
+              </IconButton>
+              <Menu
+                anchorEl={userMenuAnchor}
+                open={Boolean(userMenuAnchor)}
+                onClose={() => setUserMenuAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              >
+                <MenuItem disabled sx={{ flexDirection: "column", alignItems: "flex-start" }}>
+                    <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        color={colors.textPrimary}
+                    >
+                        {user?.displayName || user?.username || "Quiz User"}
+                    </Typography>
+
+                    <Typography
+                        variant="caption"
+                        color={colors.textSecondary}
+                    >
+                        {user?.email}
+                    </Typography>
+                </MenuItem>
+                <Divider sx={{ my: 0.5 }} />
+                <MenuItem
+                  onClick={() => {
+                    setUserMenuAnchor(null)
+                    navigate('/app/my-quizzes')
+                  }}
+                >
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <MdSettings size={16} color={colors.textSecondary} />
+                    <Typography variant="body2">Setting</Typography>
+                  </Stack>
+                </MenuItem>
+
+                <Divider sx={{ my: 0.5 }} />
+                <MenuItem
+                  onClick={() => {
+                    setUserMenuAnchor(null)
+                    clearAuth()
+                    navigate('/login', { replace: true })
+                  }}
+                >
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <MdLogout size={16} color={colors.textSecondary} />
+                    <Typography variant="body2">Logout</Typography>
+                  </Stack>
+                </MenuItem>
+              </Menu>
+            </Stack>
           </Stack>
 
           <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, md: 3 } }}>
-            <Box
-              sx={{
-                borderRadius: 4,
-                border: '1px solid rgba(148,163,184,0.2)',
-                background:
-                  'linear-gradient(160deg, rgba(14,26,43,0.95) 0%, rgba(8,17,31,0.92) 100%)',
-                p: { xs: 2, md: 3 },
-                minHeight: '100%',
-              }}
-            >
-              <Outlet />
-            </Box>
+            <Outlet />
           </Box>
         </Box>
       </Box>
-    </ThemeProvider>
+    </>
   )
 }
 
