@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Mezon-sdk/Mezon-sdk.csproj" Id="9d46b3f3-0ba9-47dd-9592-6602184e4855" />
     <Project Path="src/WebApp/WebApp.csproj" />
   </Folder>
 </Solution>
