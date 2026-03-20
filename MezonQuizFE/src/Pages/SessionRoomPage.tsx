@@ -7,6 +7,7 @@ import {
     Chip,
     CircularProgress,
     IconButton,
+    Link,
     Stack,
     Table,
     TableBody,
@@ -57,17 +58,8 @@ const SessionRoomPage = () => {
         return session.hostId === userId;
     }, [session, userId]);
 
-    const shareLink = useMemo(() => {
-        if (session?.deepLink) {
-            return session.deepLink;
-        }
-
-        if (!sessionId) {
-            return "";
-        }
-
-        return `${window.location.origin}/app/sessions/${sessionId}`;
-    }, [session?.deepLink, sessionId]);
+    const shareLink = useMemo(() => session?.deepLink ?? "", [session?.deepLink]);
+    const qrCodeUrl = useMemo(() => session?.qrCodeUrl ?? "", [session?.qrCodeUrl]);
 
     const copyToClipboard = async (value: string, successText: string) => {
         if (!value.trim()) {
@@ -242,6 +234,45 @@ const SessionRoomPage = () => {
                                         >
                                             Copy Deep Link
                                         </Button>
+                                    </Stack>
+
+                                    <Stack spacing={0.8}>
+                                        <Typography variant="body2" color="text.secondary">
+                                            QR Code: {qrCodeUrl ? "Available" : "N/A"}
+                                        </Typography>
+                                        {qrCodeUrl ? (
+                                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} alignItems={{ xs: "flex-start", sm: "center" }}>
+                                                <Box
+                                                    component="img"
+                                                    src={qrCodeUrl}
+                                                    alt="Session QR code"
+                                                    sx={{
+                                                        width: 140,
+                                                        height: 140,
+                                                        borderRadius: 1,
+                                                        border: "1px solid",
+                                                        borderColor: "divider",
+                                                        objectFit: "cover",
+                                                        backgroundColor: "background.paper",
+                                                    }}
+                                                />
+                                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                                    <Button
+                                                        size="small"
+                                                        variant="text"
+                                                        startIcon={<MdContentCopy />}
+                                                        onClick={() => {
+                                                            void copyToClipboard(qrCodeUrl, "QR code URL copied.");
+                                                        }}
+                                                    >
+                                                        Copy QR URL
+                                                    </Button>
+                                                    <Link href={qrCodeUrl} target="_blank" rel="noopener noreferrer" underline="hover">
+                                                        Open QR
+                                                    </Link>
+                                                </Stack>
+                                            </Stack>
+                                        ) : null}
                                     </Stack>
                                 </Stack>
 

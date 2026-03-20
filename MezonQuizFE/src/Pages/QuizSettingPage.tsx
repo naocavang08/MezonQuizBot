@@ -10,6 +10,7 @@ import {
 	FormControlLabel,
 	FormLabel,
 	IconButton,
+	Link,
 	MenuItem,
 	Radio,
 	RadioGroup,
@@ -623,7 +624,8 @@ const QuizSettingPage = () => {
 						{!isLoadingSessions && sessions.length > 0 ? (
 							<Stack spacing={1.2}>
 								{sessions.map((session) => {
-									const deepLink = session.deepLink || `${window.location.origin}/app/sessions/${session.id}`;
+									const deepLink = session.deepLink ?? "";
+									const qrCodeUrl = session.qrCodeUrl ?? "";
 									return (
 										<Box
 											key={session.id}
@@ -639,6 +641,27 @@ const QuizSettingPage = () => {
 												<Typography variant="body2" color="text.secondary">
 													Created: {new Date(session.createdAt).toLocaleString()}
 												</Typography>
+												<Typography variant="body2" color="text.secondary">
+													Deep Link: {deepLink || "N/A"}
+												</Typography>
+												<Typography variant="body2" color="text.secondary">
+													QR Code: {qrCodeUrl ? "Available" : "N/A"}
+												</Typography>
+												{qrCodeUrl ? (
+													<Box
+														component="img"
+														src={qrCodeUrl}
+														alt={`Session ${session.id} QR code`}
+														sx={{
+															width: 96,
+															height: 96,
+															borderRadius: 1,
+															border: "1px solid",
+															borderColor: "divider",
+															backgroundColor: "background.paper",
+														}}
+													/>
+												) : null}
 												<Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
 													<Button
 														size="small"
@@ -670,12 +693,28 @@ const QuizSettingPage = () => {
 													<Button
 														size="small"
 														variant="outlined"
+														disabled={!deepLink}
 														onClick={() => {
 															void copyValue(deepLink, "Session deep link copied.");
 														}}
 													>
 														Copy Deep Link
 													</Button>
+													<Button
+														size="small"
+														variant="outlined"
+														disabled={!qrCodeUrl}
+														onClick={() => {
+															void copyValue(qrCodeUrl, "Session QR URL copied.");
+														}}
+													>
+														Copy QR URL
+													</Button>
+													{qrCodeUrl ? (
+														<Link href={qrCodeUrl} target="_blank" rel="noopener noreferrer" underline="hover" sx={{ alignSelf: "center" }}>
+															Open QR
+														</Link>
+													) : null}
 												</Stack>
 											</Stack>
 										</Box>

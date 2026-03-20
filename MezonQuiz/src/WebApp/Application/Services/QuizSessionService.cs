@@ -10,10 +10,12 @@ namespace WebApp.Application.Services
     public class QuizSessionService : IQuizSessionService
     {
         private readonly AppDbContext _dbContext;
+        private readonly IDynamicLinkService _dynamicLinkService;
 
-        public QuizSessionService(AppDbContext dbContext)
+        public QuizSessionService(AppDbContext dbContext, IDynamicLinkService dynamicLinkService)
         {
             _dbContext = dbContext;
+            _dynamicLinkService = dynamicLinkService;
         }
 
         public async Task<PagedQuizListDto<QuizSessionDto>> GetSessionsAsync(QuizSessionQuery query)
@@ -148,12 +150,14 @@ namespace WebApp.Application.Services
                 HostId = hostId,
                 Status = SessionStatus.Waiting,
                 CurrentQuestion = 0,
-                DeepLink = request.DeepLink,
-                QrCodeUrl = request.QrCodeUrl,
                 MezonChannelId = request.MezonChannelId,
                 MaxParticipants = request.MaxParticipants,
                 CreatedAt = DateTime.UtcNow
             };
+
+            var links = _dynamicLinkService.BuildSessionLinks(session.Id, session.QuizId, session.HostId);
+            session.DeepLink = links.DeepLink;
+            session.QrCodeUrl = links.QrCodeUrl;
 
             _dbContext.QuizSessions.Add(session);
             await _dbContext.SaveChangesAsync();
