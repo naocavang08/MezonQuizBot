@@ -34,6 +34,11 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public Guid UserId { get; set; }
     }
 
+    public class ClearParticipantDto
+    {
+        public Guid UserId { get; set; }
+    }
+
     public class SubmitAnswerDto
     {
         public Guid UserId { get; set; }

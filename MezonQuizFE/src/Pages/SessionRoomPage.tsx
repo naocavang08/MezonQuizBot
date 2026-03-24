@@ -22,7 +22,7 @@ import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdContentCopy, MdRefresh } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { HubConnectionBuilder, LogLevel, type HubConnection } from "@microsoft/signalr";
-import { getSessionDetails, getSessionLeaderboard, startQuizSession } from "../Api/session.api";
+import { getSessionDetails, getSessionLeaderboard, clearSessionParticipant, startQuizSession } from "../Api/session.api";
 import {
     SessionStatusValue,
     type QuizSessionDto,
@@ -53,6 +53,7 @@ const SessionRoomPage = () => {
     const [leaderboard, setLeaderboard] = useState<SessionParticipantDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isActionLoading, setIsActionLoading] = useState(false);
+    const [clearingUserId, setClearingUserId] = useState<string | null>(null);
     const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 
     const isHost = useMemo(() => {
@@ -186,6 +187,23 @@ const SessionRoomPage = () => {
             showError("Can not update session status right now.");
         } finally {
             setIsActionLoading(false);
+        }
+    };
+
+    const clearParticipant = async (participantUserId: string) => {
+        if (!sessionId || !isHost) {
+            return;
+        }
+
+        try {
+            setClearingUserId(participantUserId);
+            const response = await clearSessionParticipant(sessionId, { userId: participantUserId });
+            showSuccess(response.message || "Participant cleared successfully.");
+            await loadSession(true);
+        } catch {
+            showError("Can not clear this participant right now.");
+        } finally {
+            setClearingUserId(null);
         }
     };
 
@@ -365,6 +383,7 @@ const SessionRoomPage = () => {
                                             <TableCell align="right">Score</TableCell>
                                             <TableCell align="right">Correct</TableCell>
                                             <TableCell align="right">Answers</TableCell>
+                                            {isHost ? <TableCell align="right">Action</TableCell> : null}
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -375,6 +394,24 @@ const SessionRoomPage = () => {
                                                 <TableCell align="right">{participant.totalScore}</TableCell>
                                                 <TableCell align="right">{participant.correctCount}</TableCell>
                                                 <TableCell align="right">{participant.answersCount}</TableCell>
+                                                {isHost ? (
+                                                    <TableCell align="right">
+                                                        <Button
+                                                            size="small"
+                                                            color="error"
+                                                            variant="outlined"
+                                                            disabled={
+                                                                clearingUserId === participant.userId ||
+                                                                participant.userId === session?.hostId
+                                                            }
+                                                            onClick={() => {
+                                                                void clearParticipant(participant.userId);
+                                                            }}
+                                                        >
+                                                            {clearingUserId === participant.userId ? "Clearing..." : "Clear"}
+                                                        </Button>
+                                                    </TableCell>
+                                                ) : null}
                                             </TableRow>
                                         ))}
                                     </TableBody>

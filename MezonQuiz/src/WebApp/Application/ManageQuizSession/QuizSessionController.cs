@@ -67,6 +67,22 @@ namespace WebApp.Application.ManageQuizSession
             return Ok(new { Message = result.Message });
         }
 
+        [HttpPost("{sessionId}/clear")]
+        [PermissionAuthorize(PermissionNames.Sessions.Start)]
+        public async Task<IActionResult> ClearParticipant(Guid sessionId, [FromBody] ClearParticipantDto request)
+        {
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            var result = await _sessionService.ClearParticipant(sessionId, currentUserId, request);
+            if (!result.Success)
+                return BadRequest(new { Message = result.Message });
+
+            return Ok(new { Message = result.Message });
+        }
+
         [HttpPost("{sessionId}/start")]
         [PermissionAuthorize(PermissionNames.Sessions.Start)]
         public async Task<IActionResult> StartSession(Guid sessionId)

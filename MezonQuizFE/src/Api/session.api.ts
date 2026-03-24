@@ -2,6 +2,7 @@ import apiClient from "./ApiClient";
 import type {
     CreateQuizSessionDto,
     CreateSessionApiResponse,
+    ClearParticipantDto,
     JoinQuizSessionDto,
     PagedQuizSessionDto,
     QuizSessionQueryParams,
@@ -50,6 +51,10 @@ export const createQuizSession = (body: CreateQuizSessionDto) => {
 
 export const joinQuizSession = (sessionId: string, body: JoinQuizSessionDto) => {
     return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/join`, body).then((res) => res.data);
+};
+
+export const clearSessionParticipant = (sessionId: string, body: ClearParticipantDto) => {
+    return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/clear`, body).then((res) => res.data);
 };
 
 export const getSessionDetails = (sessionId: string) => {

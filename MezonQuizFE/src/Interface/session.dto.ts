@@ -61,6 +61,10 @@ export interface JoinQuizSessionDto {
     userId: string;
 }
 
+export interface ClearParticipantDto {
+    userId: string;
+}
+
 export interface SubmitAnswerDto {
     userId: string;
     selectedOption: number;

@@ -251,6 +251,24 @@ const PlayerQuizPage = () => {
         void autoJoin();
     }, [isHost, loadSession, navigate, session, sessionId, showError, showSuccess, userId]);
 
+    useEffect(() => {
+        if (!session || !userId || isHost) {
+            return;
+        }
+
+        const isLiveSession =
+            session.status === SessionStatusValue.Active || session.status === SessionStatusValue.Paused;
+        if (!isLiveSession) {
+            return;
+        }
+
+        const stillInSession = leaderboard.some((participant) => participant.userId === userId);
+        if (!stillInSession) {
+            showError("You were removed from this session by host.");
+            navigate("/app/find-quizzes", { replace: true });
+        }
+    }, [isHost, leaderboard, navigate, session, showError, userId]);
+
     const submitAnswer = async () => {
         if (!sessionId || !userId) {
             showError("User info is invalid.");

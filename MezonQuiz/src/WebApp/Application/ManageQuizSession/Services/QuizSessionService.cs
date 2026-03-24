@@ -219,6 +219,39 @@ namespace WebApp.Application.ManageQuizSession.Services
             return Success("Joined session successfully.");
         }
 
+        public async Task<SessionOperationResult> ClearParticipant(Guid sessionId, Guid hostId, ClearParticipantDto request)
+        {
+            if (request is null || request.UserId == Guid.Empty)
+            {
+                return Fail("Invalid clear participant request.");
+            }
+
+            var session = await GetSessionForHostAction(sessionId, hostId);
+            if (session is null)
+            {
+                return Fail("Session not found or host is not allowed.");
+            }
+
+            if (session.Status == SessionStatus.Finished || session.Status == SessionStatus.Cancelled)
+            {
+                return Fail("Can not clear participant from closed session.");
+            }
+
+            var participant = await _dbContext.SessionParticipants
+                .FirstOrDefaultAsync(p => p.SessionId == sessionId && p.UserId == request.UserId);
+
+            if (participant is null)
+            {
+                return Fail("Participant is not in this session.");
+            }
+
+            _dbContext.SessionParticipants.Remove(participant);
+            await _dbContext.SaveChangesAsync();
+
+            await BroadcastSessionStateChanged(session);
+            return Success("Participant cleared successfully.");
+        }
+
         public async Task<SessionOperationResult> StartSession(Guid sessionId, Guid hostId)
         {
             var session = await GetSessionForHostAction(sessionId, hostId);
