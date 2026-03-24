@@ -61,19 +61,35 @@ namespace WebApp.Application.ManageQuizSession.Services
             return sessions;
         }
 
-        public async Task<QuizSession?> GetSession(Guid sessionId)
+        public async Task<QuizSessionDto?> GetSession(Guid sessionId)
         {
             var session = await _dbContext.QuizSessions
                 .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Id == sessionId);
+                .Include(s => s.Quiz)
+                .Where(s => s.Id == sessionId)
+                .Select(s => new QuizSessionDto
+                {
+                    Id = s.Id,
+                    QuizId = s.QuizId,
+                    QuizTitle = s.Quiz.Title,
+                    HostId = s.HostId,
+                    Status = s.Status,
+                    CurrentQuestion = s.CurrentQuestion,
+                    DeepLink = s.DeepLink,
+                    QrCodeUrl = s.QrCodeUrl,
+                    MezonChannelId = s.MezonChannelId,
+                    MaxParticipants = s.MaxParticipants,
+                    ParticipantCount = _dbContext.SessionParticipants.Count(p => p.SessionId == s.Id),
+                    StartedAt = s.StartedAt,
+                    FinishedAt = s.FinishedAt,
+                    CreatedAt = s.CreatedAt
+                })
+                .FirstOrDefaultAsync();
 
             if (session is null)
             {
                 return null;
             }
-
-            var participantCount = await _dbContext.SessionParticipants.CountAsync(p => p.SessionId == session.Id);
-
             return session;
         }
 
@@ -484,6 +500,7 @@ namespace WebApp.Application.ManageQuizSession.Services
             participant.TotalScore += points;
 
             await _dbContext.SaveChangesAsync();
+            await BroadcastSessionStateChanged(session);
             return Success("Answer submitted successfully.");
         }
 
@@ -498,6 +515,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 .Select(p => new SessionParticipantDto
                 {
                     UserId = p.UserId,
+                    DisplayName = string.IsNullOrEmpty(p.User.DisplayName) ? p.User.Username : p.User.DisplayName,
                     TotalScore = p.TotalScore,
                     AnswersCount = p.AnswersCount,
                     CorrectCount = p.CorrectCount,
@@ -552,15 +570,15 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return null;
             }
 
+            if (currentQuestion >= 0 && currentQuestion < quiz.Questions.Count)
+            {
+                return quiz.Questions[currentQuestion];
+            }
+
             var byQuestionIndexField = quiz.Questions.FirstOrDefault(q => q.Index == currentQuestion);
             if (byQuestionIndexField is not null)
             {
                 return byQuestionIndexField;
-            }
-
-            if (currentQuestion >= 0 && currentQuestion < quiz.Questions.Count)
-            {
-                return quiz.Questions[currentQuestion];
             }
 
             return null;

@@ -7,7 +7,7 @@ namespace WebApp.Application.ManageQuizSession
     public interface IQuizSessionService
     {
         Task<List<QuizSessionDto>> GetAllSessions(Guid? QuizId);
-        Task<QuizSession?> GetSession(Guid sessionId);
+        Task<QuizSessionDto?> GetSession(Guid sessionId);
         Task<(SessionOperationResult Result, QuizSessionDto? Session)> CreateSession(CreateQuizSessionDto request, Guid hostId);
         Task<SessionOperationResult> JoinSession(Guid sessionId, JoinQuizSessionDto request);
         Task<SessionOperationResult> StartSession(Guid sessionId, Guid hostId);

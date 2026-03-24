@@ -15,6 +15,8 @@ import FindQuizPage from "../Pages/FindQuizPage";
 import SessionRoomPage from "../Pages/SessionRoomPage";
 import Layout from "../Layouts/Layout";
 import { PERMISSIONS } from "../Lib/Utils/permissions";
+import StartQuizPage from "../Pages/StartQuizPage";
+import PlayerQuizPage from "../Pages/PlayerQuizPage";
 
 
 const AppRoutes = () => {
@@ -60,6 +62,8 @@ const AppRoutes = () => {
 
           <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.SESSIONS_VIEW]} />}>
             <Route path="sessions/:sessionId" element={<SessionRoomPage />} />
+            <Route path="sessions/:sessionId/play" element={<PlayerQuizPage />} />
+            <Route path="sessions/:sessionId/start-quiz" element={<StartQuizPage />} />
           </Route>
 
           <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.QUIZZES_CREATE]} />}>

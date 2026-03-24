@@ -21,7 +21,7 @@ namespace WebApp.Application.ManageQuizSession.Services
             var qrTemplate = _configuration["DynamicLink:QrCodeApiTemplate"]
                              ?? "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={0}";
 
-            var targetLink = $"{targetBaseUrl}/{sessionId}?quizId={quizId}&hostId={hostId}";
+            var targetLink = $"{targetBaseUrl}/{sessionId}/play?quizId={quizId}&hostId={hostId}";
 
             if (useTargetAsDeepLink)
             {

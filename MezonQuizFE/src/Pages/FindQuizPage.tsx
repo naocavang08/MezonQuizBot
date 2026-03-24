@@ -135,7 +135,7 @@ const FindQuizPage = () => {
 
             const response = await joinQuizSession(normalizedSessionId, { userId });
             showSuccess(response.message || "Joined session successfully.");
-            navigate(`/app/sessions/${normalizedSessionId}`);
+            navigate(`/app/sessions/${normalizedSessionId}/play`);
         } catch {
             showError("Can not join this session now. Please check session ID and try again.");
         } finally {

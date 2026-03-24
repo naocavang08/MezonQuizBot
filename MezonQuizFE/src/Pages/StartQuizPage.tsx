@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Box,
     Button,
@@ -7,7 +7,6 @@ import {
     Chip,
     CircularProgress,
     IconButton,
-    Link,
     Stack,
     Table,
     TableBody,
@@ -17,15 +16,25 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
-import AppSnackbar from "../Components/AppSnackbar";
-import useAppSnackbar from "../Hooks/useAppSnackbar";
-import { MdContentCopy, MdRefresh } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { HubConnectionBuilder, LogLevel, type HubConnection } from "@microsoft/signalr";
-import { getSessionDetails, getSessionLeaderboard, startQuizSession } from "../Api/session.api";
+import AppSnackbar from "../Components/AppSnackbar";
+import useAppSnackbar from "../Hooks/useAppSnackbar";
+import { MdRefresh } from "react-icons/md";
+import {
+    finishQuizSession,
+    getCurrentSessionQuestion,
+    getSessionDetails,
+    getSessionLeaderboard,
+    nextSessionQuestion,
+    pauseQuizSession,
+    resumeQuizSession,
+    startQuizSession,
+} from "../Api/session.api";
 import {
     SessionStatusValue,
     type QuizSessionDto,
+    type QuizSessionQuestionDto,
     type SessionParticipantDto,
     type SessionStateChangedDto,
 } from "../Interface/session.dto";
@@ -44,16 +53,18 @@ const resolveHubUrl = () => {
     return `${base}/hubs/quiz-session`;
 };
 
-const SessionRoomPage = () => {
+const StartQuizPage = () => {
     const { sessionId = "" } = useParams();
     const navigate = useNavigate();
     const userId = useAuthStore((state) => state.user?.id);
 
     const [session, setSession] = useState<QuizSessionDto | null>(null);
     const [leaderboard, setLeaderboard] = useState<SessionParticipantDto[]>([]);
+    const [currentQuestion, setCurrentQuestion] = useState<QuizSessionQuestionDto | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
+    const questionIndexRef = useRef<number | null>(null);
 
     const isHost = useMemo(() => {
         if (!session || !userId) {
@@ -63,21 +74,27 @@ const SessionRoomPage = () => {
         return session.hostId === userId;
     }, [session, userId]);
 
-    const shareLink = useMemo(() => session?.deepLink ?? "", [session?.deepLink]);
-    const qrCodeUrl = useMemo(() => session?.qrCodeUrl ?? "", [session?.qrCodeUrl]);
-
-    const copyToClipboard = async (value: string, successText: string) => {
-        if (!value.trim()) {
+    const loadCurrentQuestion = useCallback(async () => {
+        if (!sessionId) {
             return;
         }
 
         try {
-            await navigator.clipboard.writeText(value);
-            showSuccess(successText);
+            const data = await getCurrentSessionQuestion(sessionId);
+            const previousQuestionIndex = questionIndexRef.current;
+
+            setCurrentQuestion(data);
+
+            if (previousQuestionIndex !== data.questionIndex) {
+                questionIndexRef.current = data.questionIndex;
+            } else if (questionIndexRef.current === null) {
+                questionIndexRef.current = data.questionIndex;
+            }
         } catch {
-            showError("Can not copy to clipboard right now.");
+            setCurrentQuestion(null);
+            questionIndexRef.current = null;
         }
-    };
+    }, [sessionId]);
 
     const loadSession = useCallback(async (silent = false) => {
         if (!sessionId) {
@@ -98,14 +115,24 @@ const SessionRoomPage = () => {
 
             setSession(sessionData);
             setLeaderboard(Array.isArray(leaderboardData) ? leaderboardData : []);
+
+            if (
+                sessionData.status === SessionStatusValue.Active ||
+                sessionData.status === SessionStatusValue.Paused
+            ) {
+                await loadCurrentQuestion();
+            } else {
+                setCurrentQuestion(null);
+                questionIndexRef.current = null;
+            }
         } catch {
-            showError("Can not load session room right now.");
+            showError("Can not load quiz room right now.");
         } finally {
             if (!silent) {
                 setIsLoading(false);
             }
         }
-    }, [sessionId, showError]);
+    }, [loadCurrentQuestion, sessionId, showError]);
 
     useEffect(() => {
         void loadSession();
@@ -170,7 +197,7 @@ const SessionRoomPage = () => {
         }
     }, [isHost, navigate, session, sessionId, userId]);
 
-    const startSession = async () => {
+    const runHostAction = async (action: "start" | "pause" | "resume" | "finish" | "next") => {
         if (!sessionId || !userId) {
             showError("Host info is invalid.");
             return;
@@ -178,10 +205,23 @@ const SessionRoomPage = () => {
 
         try {
             setIsActionLoading(true);
-            const response = await startQuizSession(sessionId);
-            showSuccess(response.message || "Session started successfully.");
+
+            let response;
+
+            if (action === "start") {
+                response = await startQuizSession(sessionId);
+            } else if (action === "next") {
+                response = await nextSessionQuestion(sessionId);
+            } else if (action === "pause") {
+                response = await pauseQuizSession(sessionId);
+            } else if (action === "resume") {
+                response = await resumeQuizSession(sessionId);
+            } else {
+                response = await finishQuizSession(sessionId);
+            }
+
+            showSuccess(response.message || "Session updated successfully.");
             await loadSession(true);
-            navigate(`/app/sessions/${sessionId}/start-quiz`);
         } catch {
             showError("Can not update session status right now.");
         } finally {
@@ -190,7 +230,12 @@ const SessionRoomPage = () => {
     };
 
     const canStart = isHost && session?.status === SessionStatusValue.Waiting;
-    const canGoToStartRoom = isHost && session?.status !== SessionStatusValue.Waiting;
+    const canPause = isHost && session?.status === SessionStatusValue.Active;
+    const canResume = isHost && session?.status === SessionStatusValue.Paused;
+    const canNext = isHost && session?.status === SessionStatusValue.Active;
+    const canFinish =
+        isHost &&
+        (session?.status === SessionStatusValue.Active || session?.status === SessionStatusValue.Paused);
 
     return (
         <Box sx={{ mt: 2 }}>
@@ -203,21 +248,31 @@ const SessionRoomPage = () => {
                 >
                     <Box>
                         <Typography variant="h4" fontWeight={800}>
-                            Session Room
+                            Start Quiz
                         </Typography>
                         <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                            Share the link, wait for players, then start the quiz.
+                            Control the session and monitor the leaderboard.
                         </Typography>
                     </Box>
-                    <Tooltip title="Refresh now">
-                        <IconButton
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <Button
+                            variant="text"
                             onClick={() => {
-                                void loadSession();
+                                navigate(`/app/sessions/${sessionId}`);
                             }}
                         >
-                            <MdRefresh />
-                        </IconButton>
-                    </Tooltip>
+                            Back to Waiting Room
+                        </Button>
+                        <Tooltip title="Refresh now">
+                            <IconButton
+                                onClick={() => {
+                                    void loadSession();
+                                }}
+                            >
+                                <MdRefresh />
+                            </IconButton>
+                        </Tooltip>
+                    </Stack>
                 </Stack>
 
                 {isLoading ? (
@@ -238,97 +293,52 @@ const SessionRoomPage = () => {
                                     {isHost ? <Chip label="Host" color="success" size="small" /> : null}
                                 </Stack>
 
-                                <Stack spacing={1}>
-                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Session ID: {session.id}
-                                        </Typography>
-                                        <Button
-                                            size="small"
-                                            variant="text"
-                                            startIcon={<MdContentCopy />}
-                                            onClick={() => {
-                                                void copyToClipboard(session.id, "Session ID copied.");
-                                            }}
-                                        >
-                                            Copy Session ID
-                                        </Button>
-                                    </Stack>
-
-                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Deep Link: {shareLink || "N/A"}
-                                        </Typography>
-                                        <Button
-                                            size="small"
-                                            variant="text"
-                                            startIcon={<MdContentCopy />}
-                                            onClick={() => {
-                                                void copyToClipboard(shareLink, "Deep link copied.");
-                                            }}
-                                        >
-                                            Copy Deep Link
-                                        </Button>
-                                    </Stack>
-
-                                    <Stack spacing={0.8}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            QR Code: {qrCodeUrl ? "Available" : "N/A"}
-                                        </Typography>
-                                        {qrCodeUrl ? (
-                                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} alignItems={{ xs: "flex-start", sm: "center" }}>
-                                                <Box
-                                                    component="img"
-                                                    src={qrCodeUrl}
-                                                    alt="Session QR code"
-                                                    sx={{
-                                                        width: 140,
-                                                        height: 140,
-                                                        borderRadius: 1,
-                                                        border: "1px solid",
-                                                        borderColor: "divider",
-                                                        objectFit: "cover",
-                                                        backgroundColor: "background.paper",
-                                                    }}
-                                                />
-                                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                                                    <Button
-                                                        size="small"
-                                                        variant="text"
-                                                        startIcon={<MdContentCopy />}
-                                                        onClick={() => {
-                                                            void copyToClipboard(qrCodeUrl, "QR code URL copied.");
-                                                        }}
-                                                    >
-                                                        Copy QR URL
-                                                    </Button>
-                                                    <Link href={qrCodeUrl} target="_blank" rel="noopener noreferrer" underline="hover">
-                                                        Open QR
-                                                    </Link>
-                                                </Stack>
-                                            </Stack>
-                                        ) : null}
-                                    </Stack>
-                                </Stack>
-
                                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
                                     <Button
                                         variant="contained"
                                         disabled={!canStart || isActionLoading}
                                         onClick={() => {
-                                            void startSession();
+                                            void runHostAction("start");
                                         }}
                                     >
                                         Start
                                     </Button>
                                     <Button
-                                        variant="outlined"
-                                        disabled={!canGoToStartRoom}
+                                        variant="contained"
+                                        disabled={!canNext || isActionLoading}
                                         onClick={() => {
-                                            navigate(`/app/sessions/${sessionId}/start-quiz`);
+                                            void runHostAction("next");
                                         }}
                                     >
-                                        Go to Start Room
+                                        Next Question
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        disabled={!canPause || isActionLoading}
+                                        onClick={() => {
+                                            void runHostAction("pause");
+                                        }}
+                                    >
+                                        Pause
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        disabled={!canResume || isActionLoading}
+                                        onClick={() => {
+                                            void runHostAction("resume");
+                                        }}
+                                    >
+                                        Resume
+                                    </Button>
+                                    <Button
+                                        color="error"
+                                        variant="contained"
+                                        disabled={!canFinish || isActionLoading}
+                                        onClick={() => {
+                                            void runHostAction("finish");
+                                        }}
+                                    >
+                                        Finish
                                     </Button>
                                 </Stack>
 
@@ -343,6 +353,17 @@ const SessionRoomPage = () => {
                                         Created: {new Date(session.createdAt).toLocaleString()}
                                     </Typography>
                                 </Stack>
+
+                                {currentQuestion ? (
+                                    <Stack spacing={1}>
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                            Current Question Preview
+                                        </Typography>
+                                        <Typography variant="h6" fontWeight={700}>
+                                            {currentQuestion.content}
+                                        </Typography>
+                                    </Stack>
+                                ) : null}
                             </Stack>
                         </CardContent>
                     </Card>
@@ -352,7 +373,7 @@ const SessionRoomPage = () => {
                     <Card>
                         <CardContent>
                             <Typography variant="h6" fontWeight={700} sx={{ mb: 1.5 }}>
-                                Participants
+                                Leaderboard
                             </Typography>
                             {leaderboard.length === 0 ? (
                                 <Typography color="text.secondary">No participants yet.</Typography>
@@ -395,4 +416,4 @@ const SessionRoomPage = () => {
     );
 };
 
-export default SessionRoomPage;
+export default StartQuizPage;
