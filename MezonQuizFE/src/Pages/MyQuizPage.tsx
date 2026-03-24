@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -17,27 +17,27 @@ import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
 import { createQuizSession } from "../Api/session.api";
-import { getQuizzes } from "../Api/quiz.api";
+import { getAllQuizzes } from "../Api/quiz.api";
 import type { CategoryDto } from "../Interface/category.dto";
-import { QuizStatus, type ListQuizDto } from "../Interface/quiz.dto";
+import { QuizStatus, QuizVisibility, type QuizDto } from "../Interface/quiz.dto";
 import useAuthStore from "../Stores/login.store";
 
-const statusLabel: Record<ListQuizDto["status"], string> = {
+const QUIZ_VISIBILITY_LABELS: Record<QuizVisibility, string> = {
+  [QuizVisibility.Private]: "Private",
+  [QuizVisibility.Public]: "Public",
+  [QuizVisibility.Unlisted]: "Unlisted",
+};
+
+const QUIZ_STATUS_LABELS: Record<QuizStatus, string> = {
   [QuizStatus.Draft]: "Draft",
   [QuizStatus.Published]: "Published",
   [QuizStatus.Archived]: "Archived",
 };
 
-const statusBorderColor: Record<ListQuizDto["status"], string> = {
-  [QuizStatus.Draft]: "warning.main",
-  [QuizStatus.Published]: "success.main",
-  [QuizStatus.Archived]: "text.disabled",
-};
-
 const MyQuizPage = () => {
   const navigate = useNavigate();
   const userId = useAuthStore((state) => state.user?.id);
-  const [quizzes, setQuizzes] = useState<ListQuizDto[]>([]);
+  const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [creatingSessionQuizId, setCreatingSessionQuizId] = useState<string | null>(null);
@@ -96,7 +96,9 @@ const MyQuizPage = () => {
     const fetchQuizzes = async () => {
       try {
         setIsLoading(true);
-        const data = await getQuizzes({
+        // Truyền userId để API lọc quiz của người dùng hiện tại (QuizListQueryParams.userId)
+        const data = await getAllQuizzes({
+          userId: userId || undefined,
           page,
           pageSize,
           category: selectedCategory || undefined,
@@ -104,7 +106,9 @@ const MyQuizPage = () => {
         });
 
         if (isMounted) {
-          setQuizzes(Array.isArray(data?.items) ? data.items : []);
+          const items = Array.isArray(data?.items) ? data.items : [];
+          const normalized = items.filter((item): item is QuizDto => Boolean(item?.id));
+          setQuizzes(normalized);
           setTotalPages(Number(data?.totalPages ?? 0));
           setTotalCount(Number(data?.totalCount ?? 0));
         }
@@ -119,14 +123,14 @@ const MyQuizPage = () => {
       }
     };
 
-    fetchQuizzes();
+    void fetchQuizzes();
 
     return () => {
       isMounted = false;
     };
-  }, [page, pageSize, selectedCategory, searchTitle]);
+  }, [page, pageSize, selectedCategory, searchTitle, userId, showError]);
 
-  const handleCreateSession = async (quizId: string, quizStatus: ListQuizDto["status"]) => {
+  const handleCreateSession = async (quizId: string, quizStatus: QuizDto["status"]) => {
     if (!userId) {
       showError("User is not available. Please login again.");
       return;
@@ -140,10 +144,12 @@ const MyQuizPage = () => {
     try {
       setCreatingSessionQuizId(quizId);
 
+      // Payload theo CreateQuizSessionDto: { quizId }
       const response = await createQuizSession({
         quizId,
       });
 
+      // Response theo CreateSessionApiResponse: { message, session: QuizSessionDto }
       const createdSessionId = response.session?.id;
       if (createdSessionId) {
         navigate(`/app/sessions/${createdSessionId}`);
@@ -156,6 +162,16 @@ const MyQuizPage = () => {
       setCreatingSessionQuizId(null);
     }
   };
+
+  const categoryNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    categories.forEach((category) => {
+      if (category.id) {
+        map.set(category.id, category.name || "Unknown");
+      }
+    });
+    return map;
+  }, [categories]);
 
   return (
     <Box sx={{ mt: 2 }}>
@@ -222,57 +238,98 @@ const MyQuizPage = () => {
       ) : null}
 
       {!isLoading && quizzes.length > 0 ? (
-        <Stack spacing={2}>
-          {quizzes.map((quiz) => (
+        <Stack spacing={2.5}>
+          {quizzes
+            .filter((quiz): quiz is QuizDto & { id: string } => typeof quiz.id === "string")
+            .map((quiz) => (
             <Box
               key={quiz.id}
               onClick={() => navigate(`/app/my-quizzes/${quiz.id}/settings`)}
-              data-status={statusLabel[quiz.status] ?? "Unknown"}
+              data-status={quiz.status ?? "Unknown"}
               sx={{
                 border: "1px solid",
-                borderColor: statusBorderColor[quiz.status] ?? "divider",
+                borderColor: "divider",
                 borderRadius: 2,
-                p: 2,
-                backgroundColor: "transparent",
+                p: { xs: 2, sm: 2.5 },
+                backgroundColor: "background.paper",
                 cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(16, 24, 40, 0.06)",
                 transition: "all 0.2s ease",
                 '&:hover': {
-                  borderColor: statusBorderColor[quiz.status] ?? "primary.main",
-                  transform: "translateY(-1px)",
+                  borderColor: "primary.main",
+                  boxShadow: "0 8px 24px rgba(16, 24, 40, 0.12)",
+                  transform: "translateY(-2px)",
                 },
               }}
             >
-              <Typography variant="h6" fontWeight={600}>
-                {quiz.title}
-              </Typography>
-              <Typography variant="body2" sx={{ color: statusBorderColor[quiz.status] ?? "text.secondary", fontWeight: 600 }}>
-                Status: {statusLabel[quiz.status] ?? "Unknown"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Quiz ID: {quiz.id}
-              </Typography>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mt: 1.5 }}>
-                <Button
-                  size="small"
-                  variant="contained"
-                  disabled={quiz.status !== QuizStatus.Published || creatingSessionQuizId === quiz.id}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void handleCreateSession(quiz.id, quiz.status);
-                  }}
-                >
-                  {creatingSessionQuizId === quiz.id ? "Creating..." : "Create Session"}
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    navigate(`/app/my-quizzes/${quiz.id}/settings`);
-                  }}
-                >
-                  Open Settings
-                </Button>
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                spacing={2}
+                alignItems={{ xs: "flex-start", md: "center" }}
+                justifyContent="space-between"
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="h6" fontWeight={700} noWrap>
+                    {quiz.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {quiz.description || "No description"}
+                  </Typography>
+                  <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Category: {quiz.categoryId ? (categoryNameById.get(quiz.categoryId) ?? "Unknown") : "Unknown"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Visibility: {QUIZ_VISIBILITY_LABELS[quiz.visibility] ?? "Unknown"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Points: {quiz.totalPoints ?? 0}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                      Status: {QUIZ_STATUS_LABELS[quiz.status] ?? "Unknown"}
+                    </Typography>
+                  </Stack>
+                </Box>
+
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: { xs: 1, md: 0 } }}>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    disabled={quiz.status !== QuizStatus.Published || creatingSessionQuizId === quiz.id}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleCreateSession(quiz.id, quiz.status);
+                    }}
+                  >
+                    {creatingSessionQuizId === quiz.id ? "Creating..." : "Create Session"}
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate(`/app/my-quizzes/${quiz.id}/settings`);
+                    }}
+                  >
+                    Open Settings
+                  </Button>
+                </Stack>
+              </Stack>
+
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={{ xs: 0.5, sm: 2 }}
+                sx={{ mt: 1.5, color: "text.secondary" }}
+              >
+                <Typography variant="caption">
+                  Created: {quiz.createdAt || "Unknown"}
+                </Typography>
+                <Typography variant="caption">
+                  Updated: {quiz.updatedAt || "Unknown"}
+                </Typography>
+                <Typography variant="caption">
+                  ID: {quiz.id}
+                </Typography>
               </Stack>
             </Box>
           ))}

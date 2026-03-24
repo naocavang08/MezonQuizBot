@@ -67,6 +67,28 @@ export interface SubmitAnswerDto {
     responseTimeMs?: number;
 }
 
+export interface QuizSessionQuestionOptionDto {
+    index: number;
+    content: string;
+}
+
+export interface QuizSessionQuestionDto {
+    sessionId: string;
+    questionIndex: number;
+    content: string;
+    mediaUrl?: string;
+    timeLimitSeconds: number;
+    points: number;
+    options: QuizSessionQuestionOptionDto[];
+}
+
+export interface SessionStateChangedDto {
+    sessionId: string;
+    status: SessionStatus;
+    currentQuestion: number;
+    sentAt: string;
+}
+
 export interface SessionParticipantDto {
     userId: string;
     totalScore: number;

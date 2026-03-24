@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Text.Json;
-using WebApp.Application.Dtos;
+using WebApp.Application.ManageQuiz.Dtos;
 using WebApp.Domain.Entites;
 using static WebApp.Domain.Enums.Status;
 

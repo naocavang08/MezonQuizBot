@@ -4,10 +4,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
-using WebApp.Application.Services;
-using WebApp.Authorization;
 using WebApp.Data;
+using WebApp.Realtime;
 using static WebApp.Domain.Enums.Status;
+using WebApp.Application.ManageQuiz.Services;
+using WebApp.Application.Auth.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -104,5 +106,6 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<QuizHub>("/hubs/quiz-session");
 
 app.Run();

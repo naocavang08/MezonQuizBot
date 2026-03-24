@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
-using WebApp.Application.Dtos;
+using WebApp.Application.ManageQuiz.Dtos;
 using static WebApp.Domain.Enums.Status;
 
 namespace WebApp.Domain.Entites

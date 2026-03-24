@@ -47,28 +47,52 @@ export interface QuizSettingsDto {
     maxAttempts: number;
 }
 
+export interface AvailableQuizDto {
+    id: string;
+    creatorId: string;
+    title: string;
+    description?: string;
+    categoryId?: string;
+    totalPoints: number;
+}
+
 export interface QuizDto {
     id?: string;
     creatorId?: string;
     title: string;
     description?: string;
     categoryId?: string;
-    questions: QuizQuestionDto[];
     totalPoints?: number;
-    settings: QuizSettingsDto;
     visibility: QuizVisibility;
     status: QuizStatus;
     createdAt?: string;
     updatedAt?: string;
 }
 
-export interface ListQuizDto extends ListPublicQuizDto {
+export interface Quiz {
+    id: string;
+    creatorId: string;
+    title: string;
+    description?: string;
+    categoryId?: string;
+    questions: QuizQuestionDto[];
+    totalPoints: number;
+    settings: QuizSettingsDto;
+    visibility: QuizVisibility;
     status: QuizStatus;
+    createdAt: string;
+    updatedAt: string;
 }
 
-export interface ListPublicQuizDto {
-    id: string;
+export interface SaveQuizDto {
+    id?: string;
     title: string;
+    description?: string;
+    categoryId?: string;
+    questions: QuizQuestionDto[];
+    settings: QuizSettingsDto;
+    visibility: QuizVisibility;
+    status: QuizStatus;
 }
 
 export interface QuizListQueryParams {
@@ -79,7 +103,7 @@ export interface QuizListQueryParams {
     pageSize?: number;
 }
 
-export interface PagedQuizListDto<T extends ListQuizDto | ListPublicQuizDto> {
+export interface PagedQuizListDto<T extends AvailableQuizDto | QuizDto> {
     items: T[];
     totalCount: number;
     page: number;

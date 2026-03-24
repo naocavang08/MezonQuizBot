@@ -7,6 +7,8 @@ import type {
     QuizSessionQueryParams,
     SessionApiResponse,
     SessionParticipantDto,
+    SubmitAnswerDto,
+    QuizSessionQuestionDto,
     QuizSessionDto,
 } from "../Interface/session.dto";
 
@@ -76,10 +78,22 @@ export const finishQuizSession = (sessionId: string) => {
     return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/finish`).then((res) => res.data);
 };
 
+export const nextSessionQuestion = (sessionId: string) => {
+    return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/next-question`).then((res) => res.data);
+};
+
 export const deleteQuizSession = (sessionId: string) => {
     return apiClient.delete<SessionApiResponse>(`/api/QuizSession/${sessionId}`).then((res) => res.data);
 };
 
 export const getSessionLeaderboard = (sessionId: string) => {
     return apiClient.get<SessionParticipantDto[]>(`/api/QuizSession/${sessionId}/leaderboard`).then((res) => res.data);
+};
+
+export const getCurrentSessionQuestion = (sessionId: string) => {
+    return apiClient.get<QuizSessionQuestionDto>(`/api/QuizSession/${sessionId}/current-question`).then((res) => res.data);
+};
+
+export const submitSessionAnswer = (sessionId: string, body: SubmitAnswerDto) => {
+    return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/answers`, body).then((res) => res.data);
 };

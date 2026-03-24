@@ -21,9 +21,9 @@ import {
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import { getAllCategories } from "../../Api/category.api";
-import { getQuizDetails, getQuizzes } from "../../Api/quiz.api";
+import { getQuiz, getAllQuizzes } from "../../Api/quiz.api";
 import type { CategoryDto } from "../../Interface/category.dto";
-import { QuizStatus, type ListQuizDto, type QuizDto } from "../../Interface/quiz.dto";
+import { QuizStatus, type Quiz, type QuizDto } from "../../Interface/quiz.dto";
 
 const statusLabel: Record<QuizStatus, string> = {
 	[QuizStatus.Draft]: "Draft",
@@ -38,8 +38,8 @@ const statusColor: Record<QuizStatus, "default" | "warning" | "success"> = {
 };
 
 const QuizPage = () => {
-	const [quizzes, setQuizzes] = useState<ListQuizDto[]>([]);
-	const [selectedQuiz, setSelectedQuiz] = useState<QuizDto | null>(null);
+	const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
+	const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 	const [detailsLoading, setDetailsLoading] = useState(false);
@@ -56,7 +56,7 @@ const QuizPage = () => {
 	const fetchQuizzes = useCallback(async () => {
 		setLoading(true);
 		try {
-			const data = await getQuizzes({
+			const data = await getAllQuizzes({
 				page,
 				pageSize,
 				title: searchTitle || undefined,
@@ -70,12 +70,16 @@ const QuizPage = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [page, pageSize, searchTitle, selectedCategory]);
+	}, [page, pageSize, searchTitle, selectedCategory, showError]);
 
-	const handleSelectQuiz = async (quizId: string) => {
+	const handleSelectQuiz = async (quizId?: string) => {
+		if (!quizId) {
+			return;
+		}
+
 		setDetailsLoading(true);
 		try {
-			const details = await getQuizDetails(quizId);
+			const details = await getQuiz(quizId);
 			setSelectedQuiz(details);
 		} catch {
 			showError("Could not load quiz details.");

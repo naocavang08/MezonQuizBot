@@ -18,16 +18,18 @@ import { alpha, useTheme } from "@mui/material/styles";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdRefresh, MdSearch } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
-import { getPublicQuizzes } from "../Api/publicquiz.api";
+import { getAvailableQuizzes } from "../Api/quiz.api";
 import { joinQuizSession } from "../Api/session.api";
 import type { CategoryDto } from "../Interface/category.dto";
-import type { ListPublicQuizDto } from "../Interface/quiz.dto";
+import type { AvailableQuizDto } from "../Interface/quiz.dto";
 import useAuthStore from "../Stores/login.store";
 
 const PAGE_SIZE = 9;
 
 const FindQuizPage = () => {
+    const navigate = useNavigate();
     const theme = useTheme();
     const isDark = theme.palette.mode === "dark";
     const panelBackground = isDark
@@ -46,7 +48,7 @@ const FindQuizPage = () => {
     const [searchTitle, setSearchTitle] = useState("");
     const [page, setPage] = useState(1);
 
-    const [items, setItems] = useState<ListPublicQuizDto[]>([]);
+    const [items, setItems] = useState<AvailableQuizDto[]>([]);
     const [totalPages, setTotalPages] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
 
@@ -91,7 +93,7 @@ const FindQuizPage = () => {
         setIsLoading(true);
 
         try {
-            const data = await getPublicQuizzes({
+            const data = await getAvailableQuizzes({
                 category: categoryParam,
                 title: titleParam,
                 page,
@@ -133,6 +135,7 @@ const FindQuizPage = () => {
 
             const response = await joinQuizSession(normalizedSessionId, { userId });
             showSuccess(response.message || "Joined session successfully.");
+            navigate(`/app/sessions/${normalizedSessionId}`);
         } catch {
             showError("Can not join this session now. Please check session ID and try again.");
         } finally {

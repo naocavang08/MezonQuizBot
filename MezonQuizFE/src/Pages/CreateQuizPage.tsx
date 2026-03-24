@@ -29,18 +29,18 @@ import {
     QuestionType,
     QuizStatus,
     QuizVisibility,
-    type QuizDto,
     type QuizOptionDto,
     type QuizQuestionDto,
+	type SaveQuizDto,
 } from "../Interface/quiz.dto";
 
 type FormState = {
     title: string;
     description: string;
 	categoryId: string;
-    visibility: QuizDto["visibility"];
-    status: QuizDto["status"];
-    settings: QuizDto["settings"];
+    visibility: SaveQuizDto["visibility"];
+    status: SaveQuizDto["status"];
+    settings: SaveQuizDto["settings"];
     questions: QuizQuestionDto[];
 };
 
@@ -68,13 +68,13 @@ const makeDefaultQuestion = (index: number): QuizQuestionDto => ({
     options: makeDefaultOptions(QuestionType.SingleChoice),
 });
 
-const visibilityLabel: Record<QuizDto["visibility"], string> = {
+const visibilityLabel: Record<SaveQuizDto["visibility"], string> = {
     [QuizVisibility.Private]: "Private",
     [QuizVisibility.Public]: "Public",
     [QuizVisibility.Unlisted]: "Unlisted",
 };
 
-const statusLabel: Record<QuizDto["status"], string> = {
+const statusLabel: Record<SaveQuizDto["status"], string> = {
     [QuizStatus.Draft]: "Draft",
     [QuizStatus.Published]: "Published",
     [QuizStatus.Archived]: "Archived",
@@ -359,7 +359,7 @@ const CreateQuizPage = () => {
 			return;
 		}
 
-		const payload: QuizDto = {
+		const payload: SaveQuizDto = {
 			title: form.title.trim(),
 			description: form.description.trim() || undefined,
 			categoryId: form.categoryId || undefined,
@@ -449,12 +449,12 @@ const CreateQuizPage = () => {
 								<Select
 									value={form.visibility}
 									onChange={(event) =>
-										setForm((prev) => ({ ...prev, visibility: Number(event.target.value) as QuizDto["visibility"] }))
+										setForm((prev) => ({ ...prev, visibility: Number(event.target.value) as SaveQuizDto["visibility"] }))
 									}
 								>
 									{Object.values(QuizVisibility).map((value) => (
 										<MenuItem key={value} value={value}>
-											{visibilityLabel[value as QuizDto["visibility"]]}
+											{visibilityLabel[value as SaveQuizDto["visibility"]]}
 										</MenuItem>
 									))}
 								</Select>
@@ -465,12 +465,12 @@ const CreateQuizPage = () => {
 								<Select
 									value={form.status}
 									onChange={(event) =>
-										setForm((prev) => ({ ...prev, status: Number(event.target.value) as QuizDto["status"] }))
+										setForm((prev) => ({ ...prev, status: Number(event.target.value) as SaveQuizDto["status"] }))
 									}
 								>
 									{Object.values(QuizStatus).map((value) => (
 										<MenuItem key={value} value={value}>
-											{statusLabel[value as QuizDto["status"]]}
+											{statusLabel[value as SaveQuizDto["status"]]}
 										</MenuItem>
 									))}
 								</Select>

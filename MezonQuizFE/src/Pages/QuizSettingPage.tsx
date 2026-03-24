@@ -27,14 +27,14 @@ import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
-import { deleteQuiz, getQuizDetails, updateQuiz, updateQuizSettings } from "../Api/quiz.api";
+import { deleteQuiz, getQuiz, updateQuiz, updateQuizSettings } from "../Api/quiz.api";
 import { deleteQuizSession, getQuizSessions } from "../Api/session.api";
 import type { CategoryDto } from "../Interface/category.dto";
 import {
 	QuestionType,
 	QuizStatus,
 	QuizVisibility,
-	type QuizDto,
+	type SaveQuizDto,
 	type QuizOptionDto,
 	type QuizQuestionDto,
 } from "../Interface/quiz.dto";
@@ -46,9 +46,9 @@ type FormState = {
 	title: string;
 	description: string;
 	categoryId: string;
-	visibility: QuizDto["visibility"];
-	status: QuizDto["status"];
-	settings: QuizDto["settings"];
+	visibility: SaveQuizDto["visibility"];
+	status: SaveQuizDto["status"];
+	settings: SaveQuizDto["settings"];
 	questions: QuizQuestionDto[];
 };
 
@@ -76,13 +76,13 @@ const makeDefaultQuestion = (index: number): QuizQuestionDto => ({
 	options: makeDefaultOptions(QuestionType.SingleChoice),
 });
 
-const visibilityLabel: Record<QuizDto["visibility"], string> = {
+const visibilityLabel: Record<SaveQuizDto["visibility"], string> = {
 	[QuizVisibility.Private]: "Private",
 	[QuizVisibility.Public]: "Public",
 	[QuizVisibility.Unlisted]: "Unlisted",
 };
 
-const statusLabel: Record<QuizDto["status"], string> = {
+const statusLabel: Record<SaveQuizDto["status"], string> = {
 	[QuizStatus.Draft]: "Draft",
 	[QuizStatus.Published]: "Published",
 	[QuizStatus.Archived]: "Archived",
@@ -151,7 +151,7 @@ const QuizSettingPage = () => {
 
 				const [categoriesData, quizData] = await Promise.all([
 					getAllCategories(),
-					getQuizDetails(quizId),
+					getQuiz(quizId),
 				]);
 
 				if (!isMounted) {
@@ -195,7 +195,9 @@ const QuizSettingPage = () => {
 
 		try {
 			setIsLoadingSessions(true);
+			// Params theo QuizSessionQueryParams: { hostId, quizId, status, page, pageSize }
 			const data = await getQuizSessions({
+				hostId: userId || undefined,
 				quizId,
 				page: 1,
 				pageSize: 50,
@@ -207,7 +209,7 @@ const QuizSettingPage = () => {
 		} finally {
 			setIsLoadingSessions(false);
 		}
-	}, [quizId, showError]);
+	}, [quizId, userId, showError]);
 
 	useEffect(() => {
 		void loadSessions();
@@ -470,8 +472,7 @@ const QuizSettingPage = () => {
 		return null;
 	};
 
-	const toPayload = (overrideStatus?: QuizDto["status"]): QuizDto => ({
-		creatorId: form.creatorId,
+	const toPayload = (overrideStatus?: SaveQuizDto["status"]): SaveQuizDto => ({
 		title: form.title.trim(),
 		description: form.description.trim() || undefined,
 		categoryId: form.categoryId || undefined,
@@ -529,7 +530,7 @@ const QuizSettingPage = () => {
 		}
 	};
 
-	const updateStatus = async (status: QuizDto["status"]) => {
+	const updateStatus = async (status: SaveQuizDto["status"]) => {
 		if (!quizId) {
 			return;
 		}
@@ -802,12 +803,12 @@ const QuizSettingPage = () => {
 							<Select
 								value={form.visibility}
 								onChange={(event) =>
-									setForm((prev) => ({ ...prev, visibility: Number(event.target.value) as QuizDto["visibility"] }))
+									setForm((prev) => ({ ...prev, visibility: Number(event.target.value) as SaveQuizDto["visibility"] }))
 								}
 							>
 								{Object.values(QuizVisibility).map((value) => (
 									<MenuItem key={value} value={value}>
-										{visibilityLabel[value as QuizDto["visibility"]]}
+										{visibilityLabel[value as SaveQuizDto["visibility"]]}
 									</MenuItem>
 								))}
 							</Select>
