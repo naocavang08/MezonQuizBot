@@ -1,6 +1,6 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../Api/login.api";
+import { login, mezonAuthorize } from "../Api/login.api";
 import useAuthStore from "../Stores/login.store";
 
 export type LoginFormValues = {
@@ -9,6 +9,7 @@ export type LoginFormValues = {
 };
 
 const DEFAULT_ERROR_MESSAGE = "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.";
+const MEZON_LOGIN_INIT_ERROR = "Không thể khởi tạo đăng nhập Mezon.";
 
 const useLoginPage = () => {
 	const navigate = useNavigate();
@@ -44,8 +45,22 @@ const useLoginPage = () => {
 		}
 	};
 
-	const onLoginWithMezon = () => {
-		setErrorMessage("Tính năng đăng nhập Mezon đang được phát triển.");
+	const onLoginWithMezon = async () => {
+		setErrorMessage(null);
+
+		try {
+			const response = await mezonAuthorize();
+			const authorizeUrl = response?.authorizeUrl ?? response?.AuthorizeUrl;
+
+			if (!authorizeUrl) {
+				setErrorMessage(MEZON_LOGIN_INIT_ERROR);
+				return;
+			}
+
+			window.location.href = authorizeUrl;
+		} catch {
+			setErrorMessage(MEZON_LOGIN_INIT_ERROR);
+		}
 	};
 
 	return {

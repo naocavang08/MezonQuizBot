@@ -1,4 +1,4 @@
-import { keyframes } from "@emotion/react";
+﻿import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import {
     Box,
@@ -12,7 +12,6 @@ import { useForm } from "react-hook-form";
 import { MdLogin } from "react-icons/md";
 import CopyWrite from "../../Components/CopyWrite";
 import useLoginPage, { type LoginFormValues } from "../../Hooks/useLoginPage";
-import { generateMezonState } from "../../Lib/Utils/auth";
 
 const fadeIn = keyframes`
     from {
@@ -44,25 +43,13 @@ const LoginCard = styled(Paper)`
 `;
 
 const LoginPage = () => {
-    const { isSubmitting, errorMessage, onSubmit } = useLoginPage();
+    const { isSubmitting, errorMessage, onSubmit, onLoginWithMezon } = useLoginPage();
 
     const {
         register,
         handleSubmit,
         formState: { errors },
     } = useForm<LoginFormValues>();
-
-    const handleMezonLogin = () => {
-        const state = generateMezonState();
-        sessionStorage.setItem("mezon_oauth_state", state);
-        
-        const clientId = import.meta.env.VITE_MEZON_CLIENT_ID;
-        const redirectUri = encodeURIComponent(import.meta.env.VITE_MEZON_REDIRECT_URI);
-        const scope = encodeURIComponent("openid offline");
-
-        const authUrl = `https://oauth2.mezon.ai/oauth2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}`;
-        window.location.href = authUrl;
-    }
 
     return (
         <PageWrapper>
@@ -125,7 +112,7 @@ const LoginPage = () => {
                         size="large"
                         sx={{ color: "purple" }}
                         startIcon={<img src="/src/assets/mezon_icon.png" alt="Mezon Logo" width={24} height={24} />}
-                        onClick={handleMezonLogin}
+                        onClick={onLoginWithMezon}
                     >
                         Login With Mezon
                     </Button>

@@ -1,6 +1,8 @@
-using System.Net.Http.Headers;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text.Json;
 using WebApp.Application.Auth.Login;
 using WebApp.Application.Auth.MezonAuth.Dtos;
 using WebApp.Data;
@@ -15,19 +17,52 @@ namespace WebApp.Application.Auth.MezonAuth
         private readonly ILogger<MezonAuthService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
+        private readonly IMemoryCache _memoryCache;
+        private static readonly TimeSpan OAuthStateTtl = TimeSpan.FromMinutes(5);
+        private const string OAuthStateCacheKeyPrefix = "mezon_oauth_state:";
 
         public MezonAuthService(
             AppDbContext dbContext,
             ITokenService tokenService,
             ILogger<MezonAuthService> logger,
             IHttpClientFactory httpClientFactory,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IMemoryCache memoryCache)
         {
             _dbContext = dbContext;
             _tokenService = tokenService;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
+            _memoryCache = memoryCache;
+        }
+
+        public Task<MezonCallbackResult> GetAuthorizeUrlAsync()
+        {
+            var clientId = _configuration["MezonOAuth2:ClientId"];
+            var authorizeUrl = _configuration["MezonOAuth2:AuthorizeUrl"] ?? "https://oauth2.mezon.ai/oauth2/auth";
+            var redirectUri = _configuration["MezonOAuth2:RedirectUri"];
+            var scope = _configuration["MezonOAuth2:Scope"] ?? "openid offline";
+
+            if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(redirectUri))
+            {
+                _logger.LogError("Mezon OAuth is not configured correctly. Missing ClientId/RedirectUri.");
+                return Task.FromResult(MezonCallbackResult.Failure(
+                    StatusCodes.Status500InternalServerError,
+                    new { Message = "Cấu hình OAuth của server chưa đầy đủ." }));
+            }
+
+            var state = GenerateMezonState();
+            _memoryCache.Set(GetOAuthStateCacheKey(state), true, OAuthStateTtl);
+
+            var authUrl =
+                $"{authorizeUrl}?client_id={Uri.EscapeDataString(clientId)}" +
+                $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
+                "&response_type=code" +
+                $"&scope={Uri.EscapeDataString(scope)}" +
+                $"&state={Uri.EscapeDataString(state)}";
+
+            return Task.FromResult(MezonCallbackResult.Success(new { AuthorizeUrl = authUrl }));
         }
 
         public async Task<MezonCallbackResult> HandleCallbackAsync(MezonAuthRequest request)
@@ -36,6 +71,18 @@ namespace WebApp.Application.Auth.MezonAuth
             {
                 return MezonCallbackResult.Failure(StatusCodes.Status400BadRequest, "Authorization code is missing.");
             }
+
+            if (string.IsNullOrWhiteSpace(request.State))
+            {
+                return MezonCallbackResult.Failure(StatusCodes.Status400BadRequest, "OAuth state is missing.");
+            }
+
+            var stateCacheKey = GetOAuthStateCacheKey(request.State);
+            if (!_memoryCache.TryGetValue(stateCacheKey, out _))
+            {
+                return MezonCallbackResult.Failure(StatusCodes.Status400BadRequest, "Invalid or expired OAuth state.");
+            }
+            _memoryCache.Remove(stateCacheKey);
 
             var clientId = _configuration["MezonOAuth2:ClientId"];
             var clientSecret = _configuration["MezonOAuth2:ClientSecret"];
@@ -215,6 +262,27 @@ namespace WebApp.Application.Auth.MezonAuth
                 PermissionName = permissionNames,
                 HasSystemRole = hasSystemRole
             });
+        }
+
+        private static string GetOAuthStateCacheKey(string state) => $"{OAuthStateCacheKeyPrefix}{state}";
+
+        private string GenerateMezonState()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var state = new char[11];
+
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                var buffer = new byte[11];
+                rng.GetBytes(buffer);
+
+                for (int i = 0; i < state.Length; i++)
+                {
+                    state[i] = chars[buffer[i] % chars.Length];
+                }
+            }
+
+            return new string(state);
         }
     }
 }

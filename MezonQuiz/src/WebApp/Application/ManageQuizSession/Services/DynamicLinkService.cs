@@ -2,7 +2,7 @@ namespace WebApp.Application.ManageQuizSession.Services
 {
     public class DynamicLinkService : IDynamicLinkService
     {
-        private const string DefaultPublicTargetBaseUrl = "http://10.10.31.109:5173/app/sessions";
+        private const string DefaultPublicTargetBaseUrl = "https://right-thoroughly-amoeba.ngrok-free.app/app/sessions";
         private readonly IConfiguration _configuration;
 
         public DynamicLinkService(IConfiguration configuration)

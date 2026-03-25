@@ -18,7 +18,6 @@ export const login = (body: {
 export const mezonCallbackLogin = (body: {
   code: string;
   state: string;
-  redirectUri: string;
 }) => {
   return apiClient
     .post<LoginResponse>('/api/Login/mezon-callback', body)
@@ -27,4 +26,10 @@ export const mezonCallbackLogin = (body: {
       if (token) setTokenAccess(token);
       return res.data;
     });
+};
+
+export const mezonAuthorize = () => {
+  return apiClient
+    .get<{ authorizeUrl?: string; AuthorizeUrl?: string }>('/api/Login/mezon-authorize')
+    .then((res) => res.data);
 };

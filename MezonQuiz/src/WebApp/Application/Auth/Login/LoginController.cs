@@ -103,5 +103,13 @@ namespace WebApp.Application.Auth.Login
             var result = await _mezonAuthService.HandleCallbackAsync(request);
             return StatusCode(result.StatusCode, result.Payload);
         }
+
+        [HttpGet("mezon-authorize")]
+        [AllowAnonymous]
+        public async Task<IActionResult> MezonAuthorize()
+        {
+            var result = await _mezonAuthService.GetAuthorizeUrlAsync();
+            return StatusCode(result.StatusCode, result.Payload);
+        }
     }
 }
