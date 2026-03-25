@@ -443,6 +443,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 MediaUrl = question.MediaUrl,
                 TimeLimitSeconds = question.TimeLimitSeconds,
                 Points = question.Points,
+                QuestionType = question.QuestionType,
                 Options = question.Options
                     .Select(option => new QuizSessionQuestionOptionDto
                     {
@@ -503,13 +504,14 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return Fail("Answer already submitted for current question.");
             }
 
-            var selectedOption = ResolveSelectedOption(question, request.SelectedOption);
-            if (selectedOption is null)
+            var selectedOptions = ResolveSelectedOptions(question, request);
+            if (selectedOptions.Count == 0)
             {
                 return Fail("Selected option is invalid.");
             }
 
-            var points = selectedOption.IsCorrect ? question.Points : 0;
+            var isCorrect = IsCorrectAnswer(question, selectedOptions);
+            var points = isCorrect ? question.Points : 0;
 
             _dbContext.Answers.Add(new Answer
             {
@@ -517,15 +519,15 @@ namespace WebApp.Application.ManageQuizSession.Services
                 SessionId = sessionId,
                 UserId = request.UserId,
                 QuestionIndex = session.CurrentQuestion,
-                SelectedOption = request.SelectedOption,
-                IsCorrect = selectedOption.IsCorrect,
+                SelectedOption = selectedOptions[0],
+                IsCorrect = isCorrect,
                 PointsEarned = points,
                 ResponseTimeMs = request.ResponseTimeMs,
                 AnsweredAt = DateTime.UtcNow
             });
 
             participant.AnswersCount += 1;
-            if (selectedOption.IsCorrect)
+            if (isCorrect)
             {
                 participant.CorrectCount += 1;
             }
@@ -631,6 +633,59 @@ namespace WebApp.Application.ManageQuizSession.Services
             }
 
             return null;
+        }
+
+        private static List<int> ResolveSelectedOptions(QuizQuestion question, SubmitAnswerDto request)
+        {
+            if (question.QuestionType == QuestionType.MultipleChoice)
+            {
+                var requested = request.SelectedOptions ?? new List<int>();
+                var normalized = new List<int>();
+
+                foreach (var candidate in requested.Distinct())
+                {
+                    var option = ResolveSelectedOption(question, candidate);
+                    if (option is null)
+                    {
+                        return new List<int>();
+                    }
+
+                    normalized.Add(option.Index);
+                }
+
+                return normalized;
+            }
+
+            var single = ResolveSelectedOption(question, request.SelectedOption);
+            if (single is null)
+            {
+                return new List<int>();
+            }
+
+            return new List<int> { single.Index };
+        }
+
+        private static bool IsCorrectAnswer(QuizQuestion question, List<int> selectedOptions)
+        {
+            if (question.QuestionType == QuestionType.MultipleChoice)
+            {
+                var correctOptionIndexes = question.Options
+                    .Where(o => o.IsCorrect)
+                    .Select(o => o.Index)
+                    .Distinct()
+                    .OrderBy(i => i)
+                    .ToList();
+
+                var submittedIndexes = selectedOptions
+                    .Distinct()
+                    .OrderBy(i => i)
+                    .ToList();
+
+                return correctOptionIndexes.SequenceEqual(submittedIndexes);
+            }
+
+            var selectedIndex = selectedOptions[0];
+            return question.Options.Any(o => o.Index == selectedIndex && o.IsCorrect);
         }
 
         private static SessionOperationResult Success(string message)

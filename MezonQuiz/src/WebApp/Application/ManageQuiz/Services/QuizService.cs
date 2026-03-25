@@ -339,8 +339,11 @@ namespace WebApp.Application.ManageQuiz.Services
             return await _dbContext.SaveChangesAsync() > 0;
         }
 
-        private static bool IsValidinput(SaveQuizDto input)
+        private static bool IsValidinput(SaveQuizDto? input)
         {
+            if (input is null)
+                return false;
+
             if (string.IsNullOrWhiteSpace(input.Title))
                 return false;
 
@@ -353,8 +356,13 @@ namespace WebApp.Application.ManageQuiz.Services
             return input.Questions.All(q => q.IsValid());
         }
 
-        private static List<QuizQuestion> MapQuestions(IEnumerable<QuizQuestion> questions)
+        private static List<QuizQuestion> MapQuestions(IEnumerable<QuizQuestion>? questions)
         {
+            if (questions is null)
+            {
+                return new List<QuizQuestion>();
+            }
+
             return questions.Select(question => new QuizQuestion
             {
                 Id = question.Id,
@@ -364,7 +372,7 @@ namespace WebApp.Application.ManageQuiz.Services
                 TimeLimitSeconds = question.TimeLimitSeconds,
                 Points = question.Points,
                 QuestionType = question.QuestionType,
-                Options = question.Options.Select(option => new QuizOption
+                Options = (question.Options ?? new List<QuizOption>()).Select(option => new QuizOption
                 {
                     Id = option.Id,
                     Index = option.Index,
@@ -387,6 +395,7 @@ namespace WebApp.Application.ManageQuiz.Services
 
         private static void UpdateQuizMetadata(Quiz quiz)
         {
+            quiz.Questions ??= new List<QuizQuestion>();
             quiz.TotalPoints = quiz.Questions.Sum(q => q.Points);
             quiz.UpdatedAt = DateTime.UtcNow;
         }

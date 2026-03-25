@@ -33,6 +33,7 @@ import {
     type SessionParticipantDto,
     type SessionStateChangedDto,
 } from "../Interface/session.dto";
+import { QuestionType } from "../Interface/quiz.dto";
 import useAuthStore from "../Stores/login.store";
 
 const resolveHubUrl = () => {
@@ -47,7 +48,7 @@ const PlayerQuizPage = () => {
     const [session, setSession] = useState<QuizSessionDto | null>(null);
     const [leaderboard, setLeaderboard] = useState<SessionParticipantDto[]>([]);
     const [currentQuestion, setCurrentQuestion] = useState<QuizSessionQuestionDto | null>(null);
-    const [selectedOption, setSelectedOption] = useState<number | null>(null);
+    const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
     const [questionStartedAtMs, setQuestionStartedAtMs] = useState<number | null>(null);
     const [remainingSeconds, setRemainingSeconds] = useState(0);
     const [submittedQuestionIndex, setSubmittedQuestionIndex] = useState<number | null>(null);
@@ -78,7 +79,7 @@ const PlayerQuizPage = () => {
             setCurrentQuestion(data);
 
             if (previousQuestionIndex !== data.questionIndex) {
-                setSelectedOption(null);
+                setSelectedOptions([]);
                 setSubmittedQuestionIndex(null);
                 setQuestionStartedAtMs(Date.now());
                 setRemainingSeconds(data.timeLimitSeconds);
@@ -122,7 +123,7 @@ const PlayerQuizPage = () => {
                 await loadCurrentQuestion();
             } else {
                 setCurrentQuestion(null);
-                setSelectedOption(null);
+                setSelectedOptions([]);
                 setQuestionStartedAtMs(null);
                 setRemainingSeconds(0);
                 setSubmittedQuestionIndex(null);
@@ -274,7 +275,8 @@ const PlayerQuizPage = () => {
             return;
         }
 
-        if (selectedOption === null) {
+        const isMultipleChoice = currentQuestion?.questionType === QuestionType.MultipleChoice;
+        if (selectedOptions.length === 0) {
             showError("Please choose an answer first.");
             return;
         }
@@ -290,7 +292,8 @@ const PlayerQuizPage = () => {
                 questionStartedAtMs !== null ? Math.max(0, Date.now() - questionStartedAtMs) : undefined;
             const response = await submitSessionAnswer(sessionId, {
                 userId,
-                selectedOption,
+                selectedOption: selectedOptions[0],
+                selectedOptions: isMultipleChoice ? selectedOptions : undefined,
                 responseTimeMs,
             });
             showSuccess(response.message || "Answer submitted.");
@@ -415,14 +418,29 @@ const PlayerQuizPage = () => {
                                             />
                                         ) : null}
 
+                                        {currentQuestion.questionType === QuestionType.MultipleChoice ? (
+                                            <Typography variant="body2" color="text.secondary">
+                                                Multiple choice: select all correct answers.
+                                            </Typography>
+                                        ) : null}
+
                                         <Stack spacing={1}>
                                             {currentQuestion.options.map((option) => (
                                                 <Button
                                                     key={option.index}
-                                                    variant={selectedOption === option.index ? "contained" : "outlined"}
+                                                    variant={selectedOptions.includes(option.index) ? "contained" : "outlined"}
                                                     disabled={submittedQuestionIndex === currentQuestion.questionIndex}
                                                     onClick={() => {
-                                                        setSelectedOption(option.index);
+                                                        if (currentQuestion.questionType === QuestionType.MultipleChoice) {
+                                                            setSelectedOptions((prev) =>
+                                                                prev.includes(option.index)
+                                                                    ? prev.filter((item) => item !== option.index)
+                                                                    : [...prev, option.index]
+                                                            );
+                                                            return;
+                                                        }
+
+                                                        setSelectedOptions([option.index]);
                                                     }}
                                                 >
                                                     {option.content}

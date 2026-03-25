@@ -27,7 +27,7 @@ import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
-import { deleteQuiz, getQuiz, updateQuiz, updateQuizSettings } from "../Api/quiz.api";
+import { deleteQuiz, getQuiz, updateQuiz, updateQuizSettings, uploadQuizMedia } from "../Api/quiz.api";
 import { deleteQuizSession, getQuizSessions } from "../Api/session.api";
 import type { CategoryDto } from "../Interface/category.dto";
 import {
@@ -113,6 +113,7 @@ const QuizSettingPage = () => {
 	const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSavingSettings, setIsSavingSettings] = useState(false);
+    const [uploadingQuestionIndex, setUploadingQuestionIndex] = useState<number | null>(null);
 	const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 	const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
 	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
@@ -569,6 +570,24 @@ const QuizSettingPage = () => {
 		}
 	};
 
+    const uploadQuestionMedia = async (questionIndex: number, file: File) => {
+        try {
+            setUploadingQuestionIndex(questionIndex);
+            const uploadedUrl = await uploadQuizMedia(file);
+            if (!uploadedUrl) {
+                showError("Upload succeeded but no media URL returned.");
+                return;
+            }
+
+            setQuestionField(questionIndex, "mediaUrl", uploadedUrl);
+            showSuccess("Media uploaded successfully.");
+        } catch {
+            showError("Failed to upload media.");
+        } finally {
+            setUploadingQuestionIndex(null);
+        }
+    };
+
 	if (isLoading) {
 		return (
 			<Stack direction="row" justifyContent="center" sx={{ py: 8 }}>
@@ -925,6 +944,27 @@ const QuizSettingPage = () => {
 										onChange={(event) => setQuestionField(questionIndex, "mediaUrl", event.target.value)}
 									/>
 
+                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                                        <Button
+                                            component="label"
+                                            variant="outlined"
+                                            disabled={uploadingQuestionIndex === questionIndex}
+                                        >
+                                            {uploadingQuestionIndex === questionIndex ? "Uploading..." : "Upload image"}
+                                            <input
+                                                hidden
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(event) => {
+                                                    const file = event.target.files?.[0];
+                                                    if (!file) return;
+                                                    void uploadQuestionMedia(questionIndex, file);
+                                                    event.currentTarget.value = "";
+                                                }}
+                                            />
+                                        </Button>
+                                    </Stack>
+
 									<Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
 										<TextField
 											type="number"
@@ -1004,6 +1044,9 @@ const QuizSettingPage = () => {
 										</RadioGroup>
 									) : (
 										<Stack spacing={1}>
+											<Typography variant="caption" color="text.secondary">
+												Multiple choice is graded correct only when players select all correct options.
+											</Typography>
 											{question.options.map((option, optionIndex) => (
 												<Stack key={`option-${questionIndex}-${optionIndex}`} direction="row" spacing={1} alignItems="center">
 													<Switch

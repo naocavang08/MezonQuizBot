@@ -4,6 +4,7 @@ using System.Security.Claims;
 using WebApp.Data;
 using WebApp.Application.ManageQuiz.Dtos;
 using WebApp.Application.Auth.Authorization;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebApp.Application.ManageQuiz
 {
@@ -13,11 +14,16 @@ namespace WebApp.Application.ManageQuiz
     {
         private readonly IQuizService _quizService;
         private readonly ILogger<QuizController> _logger;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public QuizController(IQuizService quizService, ILogger<QuizController> logger)
+        public QuizController(
+            IQuizService quizService,
+            ILogger<QuizController> logger,
+            IWebHostEnvironment webHostEnvironment)
         {
             _quizService = quizService;
             _logger = logger;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet("available-quiz")]
@@ -72,6 +78,11 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Create)]
         public async Task<IActionResult> CreateQuiz([FromBody] SaveQuizDto input)
         {
+            if (input is null)
+            {
+                return BadRequest(new { Message = "Quiz payload is required." });
+            }
+
             var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userIdClaimValue, out var userId))
             {
@@ -83,13 +94,18 @@ namespace WebApp.Application.ManageQuiz
             if (!created)
                 return BadRequest(new { Message = "Invalid quiz data or failed to create quiz." });
 
-            return CreatedAtAction("Quiz created successfully", created);
+            return Ok(new { Message = "Quiz created successfully" });
         }
 
         [HttpPut("{quizId}")]
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateQuiz(Guid quizId, [FromBody] SaveQuizDto input)
         {
+            if (input is null)
+            {
+                return BadRequest(new { Message = "Quiz payload is required." });
+            }
+
             var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userIdClaimValue, out var userId))
             {
@@ -97,7 +113,16 @@ namespace WebApp.Application.ManageQuiz
                 return Unauthorized(new { Message = "User identity is invalid or missing." });
             }
 
-            var updated = await _quizService.UpdateQuiz(userId, quizId, input);
+            bool updated;
+            try
+            {
+                updated = await _quizService.UpdateQuiz(userId, quizId, input);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while updating quiz {QuizId} by user {UserId}.", quizId, userId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "Unexpected server error while updating quiz." });
+            }
 
             if (!updated)
                 return BadRequest(new { Message = "Could not update quiz." });
@@ -194,6 +219,46 @@ namespace WebApp.Application.ManageQuiz
                 return BadRequest(new { Message = "Could not update quiz settings." });
 
             return Ok(new { Message = "Quiz settings updated successfully" });
+        }
+
+        [HttpPost("upload-media")]
+        [Authorize]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public IActionResult UploadQuestionMedia([FromForm] IFormFile? file)
+        {
+            if (file is null || file.Length == 0)
+            {
+                return BadRequest(new { Message = "File is required." });
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg" };
+            var extension = Path.GetExtension(file.FileName);
+            if (string.IsNullOrWhiteSpace(extension) ||
+                !allowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { Message = "Only image files are allowed (.jpg, .jpeg, .png, .webp, .gif, .svg)." });
+            }
+
+            var webRootPath = _webHostEnvironment.WebRootPath;
+            if (string.IsNullOrWhiteSpace(webRootPath))
+            {
+                webRootPath = Path.Combine(_webHostEnvironment.ContentRootPath, "wwwroot");
+            }
+
+            var relativeFolder = Path.Combine("uploads", "quiz-media");
+            var targetFolder = Path.Combine(webRootPath, relativeFolder);
+            Directory.CreateDirectory(targetFolder);
+
+            var safeFileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+            var savePath = Path.Combine(targetFolder, safeFileName);
+
+            using (var stream = System.IO.File.Create(savePath))
+            {
+                file.CopyTo(stream);
+            }
+
+            var mediaUrl = $"/{relativeFolder.Replace('\\', '/')}/{safeFileName}";
+            return Ok(new { Url = mediaUrl });
         }
     }
 }

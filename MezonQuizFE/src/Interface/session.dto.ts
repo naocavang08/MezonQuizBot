@@ -1,3 +1,5 @@
+import type { QuestionType } from "./quiz.dto";
+
 export type SessionStatus = 0 | 1 | 2 | 3 | 4;
 
 export const SessionStatusValue = {
@@ -68,6 +70,7 @@ export interface ClearParticipantDto {
 export interface SubmitAnswerDto {
     userId: string;
     selectedOption: number;
+    selectedOptions?: number[];
     responseTimeMs?: number;
 }
 
@@ -83,6 +86,7 @@ export interface QuizSessionQuestionDto {
     mediaUrl?: string;
     timeLimitSeconds: number;
     points: number;
+    questionType: QuestionType;
     options: QuizSessionQuestionOptionDto[];
 }
 

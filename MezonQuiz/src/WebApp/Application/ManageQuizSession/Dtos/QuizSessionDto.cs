@@ -43,6 +43,7 @@ namespace WebApp.Application.ManageQuizSession.Dtos
     {
         public Guid UserId { get; set; }
         public int SelectedOption { get; set; }
+        public List<int>? SelectedOptions { get; set; }
         public int? ResponseTimeMs { get; set; }
     }
 

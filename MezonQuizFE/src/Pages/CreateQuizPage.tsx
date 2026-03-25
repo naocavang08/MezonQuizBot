@@ -23,7 +23,7 @@ import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
-import { createQuiz } from "../Api/quiz.api";
+import { createQuiz, uploadQuizMedia } from "../Api/quiz.api";
 import type { CategoryDto } from "../Interface/category.dto";
 import {
     QuestionType,
@@ -91,6 +91,7 @@ const CreateQuizPage = () => {
 	const [categories, setCategories] = useState<CategoryDto[]>([]);
 	const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploadingQuestionIndex, setUploadingQuestionIndex] = useState<number | null>(null);
 	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 	const [form, setForm] = useState<FormState>({
 		title: "",
@@ -394,6 +395,24 @@ const CreateQuizPage = () => {
 		}
 	};
 
+    const uploadQuestionMedia = async (questionIndex: number, file: File) => {
+        try {
+            setUploadingQuestionIndex(questionIndex);
+            const uploadedUrl = await uploadQuizMedia(file);
+            if (!uploadedUrl) {
+                showError("Upload succeeded but no media URL returned.");
+                return;
+            }
+
+            setQuestionField(questionIndex, "mediaUrl", uploadedUrl);
+            showSuccess("Media uploaded successfully.");
+        } catch {
+            showError("Failed to upload media.");
+        } finally {
+            setUploadingQuestionIndex(null);
+        }
+    };
+
 	return (
 		<Box sx={{ mt: 2 }}>
 			<Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={2} mb={3}>
@@ -551,6 +570,27 @@ const CreateQuizPage = () => {
 										value={question.mediaUrl ?? ""}
 										onChange={(event) => setQuestionField(questionIndex, "mediaUrl", event.target.value)}
 									/>
+
+                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                                        <Button
+                                            component="label"
+                                            variant="outlined"
+                                            disabled={uploadingQuestionIndex === questionIndex}
+                                        >
+                                            {uploadingQuestionIndex === questionIndex ? "Uploading..." : "Upload image from computer"}
+                                            <input
+                                                hidden
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(event) => {
+                                                    const file = event.target.files?.[0];
+                                                    if (!file) return;
+                                                    void uploadQuestionMedia(questionIndex, file);
+                                                    event.currentTarget.value = "";
+                                                }}
+                                            />
+                                        </Button>
+                                    </Stack>
 
 									<Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
 										<TextField

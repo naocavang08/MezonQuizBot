@@ -1,4 +1,5 @@
 using static WebApp.Domain.Enums.Status;
+using WebApp.Application.ManageQuiz.Dtos;
 
 namespace WebApp.Application.ManageQuizSession.Dtos
 {
@@ -18,6 +19,7 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public string? MediaUrl { get; set; }
         public int TimeLimitSeconds { get; set; }
         public int Points { get; set; }
+        public QuestionType QuestionType { get; set; }
         public List<QuizSessionQuestionOptionDto> Options { get; set; } = new();
     }
 

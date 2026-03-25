@@ -189,3 +189,14 @@ export const updateQuizSettings = (quizId: string, settings: Quiz["settings"]) =
             return res.data;
         });
 };
+
+export const uploadQuizMedia = (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return apiClient
+        .post<{ url?: string; Url?: string }>("/api/Quiz/upload-media", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        })
+        .then((res) => res.data?.url ?? res.data?.Url ?? "");
+};
