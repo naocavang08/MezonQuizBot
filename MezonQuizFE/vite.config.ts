@@ -6,6 +6,19 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    allowedHosts: ['.ngrok-free.app']
+    allowedHosts: ['.ngrok-free.app'],
+    proxy: {
+      '/api': {
+        target: 'https://localhost:7086',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/hubs': {
+        target: 'https://localhost:7086',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+    },
   }
 })

@@ -14,6 +14,7 @@ import QuizSettingPage from "../Pages/QuizSettingPage";
 import FindQuizPage from "../Pages/FindQuizPage";
 import SessionRoomPage from "../Pages/SessionRoomPage";
 import Layout from "../Layouts/Layout";
+// import QuizSessionLayout from "../Layouts/QuizSessionLayout";
 import { PERMISSIONS } from "../Lib/Utils/permissions";
 import StartQuizPage from "../Pages/StartQuizPage";
 import PlayerQuizPage from "../Pages/PlayerQuizPage";

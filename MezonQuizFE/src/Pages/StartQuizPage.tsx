@@ -49,8 +49,7 @@ const statusLabel: Record<number, string> = {
 };
 
 const resolveHubUrl = () => {
-    const base = (import.meta.env.VITE_QUIZ_API_URL ?? "").replace(/\/+$/, "");
-    return `${base}/hubs/quiz-session`;
+    return "/hubs/quiz-session";
 };
 
 const StartQuizPage = () => {

@@ -57,7 +57,6 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/join")]
-        [PermissionAuthorize(PermissionNames.Sessions.View)]
         public async Task<IActionResult> JoinSession(Guid sessionId, [FromBody] JoinQuizSessionDto request)
         {
             var result = await _sessionService.JoinSession(sessionId, request);
@@ -68,7 +67,6 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/clear")]
-        [PermissionAuthorize(PermissionNames.Sessions.Start)]
         public async Task<IActionResult> ClearParticipant(Guid sessionId, [FromBody] ClearParticipantDto request)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -100,7 +98,6 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/pause")]
-        [PermissionAuthorize(PermissionNames.Sessions.Start)]
         public async Task<IActionResult> PauseSession(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -116,7 +113,6 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/resume")]
-        [PermissionAuthorize(PermissionNames.Sessions.Start)]
         public async Task<IActionResult> ResumeSession(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -148,7 +144,6 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/cancel")]
-        [PermissionAuthorize(PermissionNames.Sessions.End)]
         public async Task<IActionResult> CancelSession(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -180,7 +175,6 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/next-question")]
-        [PermissionAuthorize(PermissionNames.Sessions.Start)]
         public async Task<IActionResult> NextQuestion(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -196,7 +190,6 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpGet("{sessionId}/current-question")]
-        [PermissionAuthorize(PermissionNames.Sessions.View)]
         public async Task<IActionResult> GetCurrentQuestion(Guid sessionId)
         {
             var (result, question) = await _sessionService.GetCurrentQuestion(sessionId);
@@ -209,7 +202,6 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/answers")]
-        [PermissionAuthorize(PermissionNames.Sessions.View)]
         public async Task<IActionResult> SubmitAnswer(Guid sessionId, [FromBody] SubmitAnswerDto request)
         {
             var result = await _sessionService.SubmitAnswer(sessionId, request);
@@ -220,7 +212,6 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpGet("{sessionId}/leaderboard")]
-        [PermissionAuthorize(PermissionNames.Sessions.View)]
         public async Task<IActionResult> GetLeaderboard(Guid sessionId)
         {
             var leaderboard = await _sessionService.GetLeaderboard(sessionId);
