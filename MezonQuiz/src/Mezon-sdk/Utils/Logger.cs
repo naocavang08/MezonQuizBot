@@ -21,6 +21,11 @@ namespace Mezon_sdk.Utils
         public bool IsDisabled { get; set; } = false;
         public bool UseColors { get; set; } = true;
 
+        public string LogFormat { get; set; } = "[{0}] [{1}] [{2}] {3}";
+        public string DateFormat { get; set; } = "yyyy-MM-dd HH:mm:ss";
+
+        private bool _isConfigured = false;
+
         public Logger(string name)
         {
             Name = name;
@@ -32,13 +37,25 @@ namespace Mezon_sdk.Utils
         }
 
         public static Logger SetupLogger(
-            string name = "mezon", 
-            LogLevel logLevel = LogLevel.INFO, 
+            string name = "mezon",
+            LogLevel logLevel = LogLevel.INFO,
+            string? logFormat = null,
+            string? dateFormat = null,
             bool useColors = true)
         {
             var logger = GetLogger(name);
-            logger.Level = logLevel;
-            logger.UseColors = useColors;
+
+            if (!logger._isConfigured)
+            {
+                logger.Level = logLevel;
+                logger.UseColors = useColors && logger.SupportsColor();
+
+                if (logFormat != null) logger.LogFormat = logFormat;
+                if (dateFormat != null) logger.DateFormat = dateFormat;
+
+                logger._isConfigured = true;
+            }
+
             return logger;
         }
 
@@ -61,30 +78,31 @@ namespace Mezon_sdk.Utils
         public void Error(string message) => Log(LogLevel.ERROR, message);
         public void Critical(string message) => Log(LogLevel.CRITICAL, message);
 
+        private bool SupportsColor()
+        {
+            return !Console.IsOutputRedirected;
+        }
+        
         private void Log(LogLevel level, string message)
         {
             if (IsDisabled || level < Level) return;
 
-            var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            var colorString = "";
-            var resetString = "";
+            var timestamp = DateTime.Now.ToString(DateFormat);
 
-            if (UseColors)
-            {
-                colorString = GetColorCode(level);
-                resetString = "\x1b[0m";
-            }
+            var color = UseColors ? GetColorCode(level) : "";
+            var reset = UseColors ? "\x1b[0m" : "";
+            var bold = UseColors ? "\x1b[1m" : "";
 
-            var formattedMessage = $"[{timestamp}] [{Name}] {colorString}[{level}]{resetString} {message}";
-            
+            var levelText = UseColors
+                ? $"{color}{bold}[{level}]{reset}"
+                : $"[{level}]";
+
+            var formatted = string.Format(LogFormat, timestamp, Name, levelText, message);
+
             if (level >= LogLevel.ERROR)
-            {
-                Console.Error.WriteLine(formattedMessage);
-            }
+                Console.Error.WriteLine(formatted);
             else
-            {
-                Console.WriteLine(formattedMessage);
-            }
+                Console.WriteLine(formatted);
         }
 
         private string GetColorCode(LogLevel level)

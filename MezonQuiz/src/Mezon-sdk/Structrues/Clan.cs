@@ -20,7 +20,7 @@ namespace Mezon_sdk.Structures
         public MezonApi ApiClient { get; set; }
         public SocketManager SocketManager { get; set; }
         public string SessionToken { get; set; }
-        public MessageDb MessageDb { get; set; }
+        public MessageDbService Service { get; set; }
 
         private bool _channelsLoaded = false;
 
@@ -36,7 +36,7 @@ namespace Mezon_sdk.Structures
             MezonApi apiClient, 
             SocketManager socketManager, 
             string sessionToken, 
-            MessageDb messageDb)
+            MessageDbService service)
         {
             Id = clanId;
             Name = clanName;
@@ -51,7 +51,7 @@ namespace Mezon_sdk.Structures
             ApiClient = apiClient;
             SocketManager = socketManager;
             SessionToken = sessionToken;
-            MessageDb = messageDb;
+            Service = service;
 
             Channels = new CacheManager<long, TextChannel>(ChannelFetcherAsync);
         }
@@ -90,7 +90,7 @@ namespace Mezon_sdk.Structures
                     initChannelData: channel,
                     clan: this,
                     socketManager: SocketManager,
-                    messageDb: MessageDb
+                    service: Service
                 );
                 
                 if (channel.ChannelId.HasValue && long.TryParse(channel.ChannelId.Value.ToString(), out long cid))

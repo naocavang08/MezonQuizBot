@@ -4,7 +4,7 @@ namespace Mezon_sdk.Models
     using System.Collections.Generic;
     using System.Text.Json.Serialization;
 
-    public class EmojiOnMessage
+    public class EmojiOnMessage : StartEndIndex
     {
         [JsonPropertyName("emojiid")]
         public int? EmojiId { get; set; }

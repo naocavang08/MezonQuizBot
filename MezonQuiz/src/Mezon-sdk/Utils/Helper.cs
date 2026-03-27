@@ -87,6 +87,30 @@ namespace Mezon_sdk.Utils
                 return snowflakeId;
             }
         }
+
+        public static int? ToInt(object? value)
+        {
+            if (value == null) return null;
+
+            try
+            {
+                if (value is JsonElement je)
+                {
+                    if (je.ValueKind == JsonValueKind.Number)
+                        return je.GetInt32();
+
+                    if (je.ValueKind == JsonValueKind.String &&
+                        int.TryParse(je.GetString(), out var i))
+                        return i;
+                }
+
+                return Convert.ToInt32(value);
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 
     public static class ProtoUtils

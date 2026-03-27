@@ -4,7 +4,7 @@ namespace Mezon_sdk.Models
     using System.Collections.Generic;
     using System.Text.Json.Serialization;
 
-    public class MarkdownOnMessage
+    public class MarkdownOnMessage : StartEndIndex
     {
         [JsonPropertyName("type")]
         public EMarkdownType? Type { get; set; }

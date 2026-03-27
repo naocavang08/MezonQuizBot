@@ -6,6 +6,7 @@ namespace Mezon_sdk.Managers
     using System.Threading.Tasks;
     using Mezon_sdk.Constants;
     using Mezon_sdk.Models;
+    using static Mezon_sdk.Utils.Helper;
 
     public class ChannelManager
     {
@@ -33,7 +34,7 @@ namespace Mezon_sdk.Managers
                 return;
             }
             
-            var channelsResponse = await _apiClient.ListChannelsAsync(sessionToken, (int)ChannelType.ChannelTypeDm);
+            var channelsResponse = await _apiClient.ListChannelsAsync(sessionToken, ToInt(ChannelType.ChannelTypeDm) ?? 0);
 
             if (channelsResponse == null || channelsResponse.Channeldesc == null)
             {
@@ -47,7 +48,7 @@ namespace Mezon_sdk.Managers
                 var channelType = channel.Type;
                 var channelId = channel.ChannelId;
 
-                if (userIds != null && userIds.Any() && channelType == (int)ChannelType.ChannelTypeDm)
+                if (userIds != null && userIds.Any() && channelType == ToInt(ChannelType.ChannelTypeDm))
                 {
                     if (int.TryParse(userIds[0].ToString(), out var parsedUserId))
                     {
@@ -77,7 +78,7 @@ namespace Mezon_sdk.Managers
                 ClanId = 0,
                 ChannelId = 0,
                 CategoryId = 0,
-                Type = (int)ChannelType.ChannelTypeDm,
+                Type = ToInt(ChannelType.ChannelTypeDm),      
                 UserIds = new List<int> { userId },
                 ChannelPrivate = 1
             };

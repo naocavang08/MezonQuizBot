@@ -17,11 +17,11 @@ namespace Mezon_sdk.Managers
 		public string Host { get; }
 		public string Port { get; }
 		public bool UseSsl { get; }
-		public MezonApi ApiClient { get; }
+		public MezonApi ApiClient { get; set; }
 		public EventManager EventManager { get; }
 
 		private readonly object _mezonClient;
-		private readonly MessageDb _messageDb;
+		private readonly MessageDbService _service;
 		private readonly WebSocketAdapterPb _adapter;
 		private readonly DefaultSocket _socket;
 
@@ -32,7 +32,7 @@ namespace Mezon_sdk.Managers
 			MezonApi apiClient,
 			EventManager eventManager,
 			object mezonClient,
-			MessageDb messageDb)
+            MessageDbService service)
 		{
 			Host = host;
 			Port = port;
@@ -40,7 +40,7 @@ namespace Mezon_sdk.Managers
 			ApiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
 			EventManager = eventManager ?? throw new ArgumentNullException(nameof(eventManager));
 			_mezonClient = mezonClient ?? throw new ArgumentNullException(nameof(mezonClient));
-			_messageDb = messageDb ?? throw new ArgumentNullException(nameof(messageDb));
+            _service = service ?? throw new ArgumentNullException(nameof(service));
 
 			_adapter = new WebSocketAdapterPb();
 			_socket = new DefaultSocket(
@@ -130,7 +130,7 @@ namespace Mezon_sdk.Managers
 					apiClient: ApiClient,
 					socketManager: this,
 					sessionToken: token,
-					messageDb: _messageDb);
+					service: _service);
 
 				SetClanOnClient(clanId, clan);
 			}

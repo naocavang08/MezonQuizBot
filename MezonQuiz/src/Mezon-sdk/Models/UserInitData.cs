@@ -2,7 +2,9 @@ namespace Mezon_sdk.Models
 {
     using System;
     using System.Collections.Generic;
+    using System.Text.Json;
     using System.Text.Json.Serialization;
+    using static Mezon_sdk.Utils.Helper;
 
     public class UserInitData
     {
@@ -27,5 +29,32 @@ namespace Mezon_sdk.Models
         [JsonPropertyName("dmChannelId")]
         public int DmChannelId { get; set; }
 
+        public static UserInitData FromProtobuf (Mezon.Protobuf.ChannelMessage message, int dmChannelId = 0)
+        {
+            return new UserInitData
+            {
+                Id = ToInt(message.SenderId) ?? 0,
+                Username = message.Username ?? "",
+                ClanNick = message.ClanNick ?? "",
+                ClanAvatar = message.ClanAvatar ?? "",
+                Avatar = message.Avatar ?? "",
+                DisplayName = message.DisplayName ?? "",
+                DmChannelId = dmChannelId
+            };
+        }
+
+        public Dictionary<string, object?> ToUserDict()
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = null,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            var json = JsonSerializer.Serialize(this, options);
+
+            return JsonSerializer.Deserialize<Dictionary<string, object?>>(json, options)
+                   ?? new Dictionary<string, object?>();
+        }
     }
 }

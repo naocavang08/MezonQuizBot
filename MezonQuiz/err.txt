@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+C:\Minh\NCCPLUS\MezonQuizzBot\MezonQuiz\src\Mezon-sdk\Client.cs(95,64): error CS8917: The delegate type could not be inferred. [C:\Minh\NCCPLUS\MezonQuizzBot\MezonQuiz\src\Mezon-sdk\Mezon-sdk.csproj]
+
+Build FAILED.
+
+C:\Minh\NCCPLUS\MezonQuizzBot\MezonQuiz\src\Mezon-sdk\Client.cs(95,64): error CS8917: The delegate type could not be inferred. [C:\Minh\NCCPLUS\MezonQuizzBot\MezonQuiz\src\Mezon-sdk\Mezon-sdk.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:03.91

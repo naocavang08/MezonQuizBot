@@ -20,9 +20,9 @@ namespace Mezon_sdk.Structures
 
         public CacheManager<long, Message> Messages { get; set; }
         public SocketManager SocketManager { get; set; }
-        public MessageDb MessageDb { get; set; }
+        public MessageDbService Service { get; set; }
 
-        public TextChannel(ApiChannelDescription initChannelData, Clan clan, SocketManager socketManager, MessageDb messageDb)
+        public TextChannel(ApiChannelDescription initChannelData, Clan clan, SocketManager socketManager, MessageDbService service)
         {
             if (long.TryParse(initChannelData.ChannelId?.ToString(), out var id)) Id = id;
             Name = initChannelData.ChannelLabel?.ToString();
@@ -40,14 +40,14 @@ namespace Mezon_sdk.Structures
 
             Clan = clan ?? throw new ArgumentNullException(nameof(clan));
             SocketManager = socketManager ?? throw new ArgumentNullException(nameof(socketManager));
-            MessageDb = messageDb ?? throw new ArgumentNullException(nameof(messageDb));
+            Service = service ?? throw new ArgumentNullException(nameof(service));
 
             Messages = new CacheManager<long, Message>(MessageFetcherAsync, 200);
         }
 
         private async Task<Message> MessageFetcherAsync(long messageId)
         {
-            var messageData = await MessageDb.GetMessageByIdAsync(messageId.ToString(), Id?.ToString() ?? "0");
+            var messageData = await Service.GetMessageByIdAsync(messageId.ToString(), Id?.ToString() ?? "0");
             if (messageData == null)
             {
                 throw new Exception($"Message {messageId} not found on channel {Id}!");
