@@ -8,6 +8,11 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace WebApp.Application.ManageQuiz
 {
+    public class UploadQuestionMediaRequest
+    {
+        public IFormFile? File { get; set; }
+    }
+
     [ApiController]
     [Route("api/[controller]")]
     public class QuizController : ControllerBase
@@ -223,9 +228,11 @@ namespace WebApp.Application.ManageQuiz
 
         [HttpPost("upload-media")]
         [Authorize]
+        [Consumes("multipart/form-data")]
         [RequestSizeLimit(10 * 1024 * 1024)]
-        public IActionResult UploadQuestionMedia([FromForm] IFormFile? file)
+        public IActionResult UploadQuestionMedia([FromForm] UploadQuestionMediaRequest request)
         {
+            var file = request.File;
             if (file is null || file.Length == 0)
             {
                 return BadRequest(new { Message = "File is required." });
