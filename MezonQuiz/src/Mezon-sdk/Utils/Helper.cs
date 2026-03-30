@@ -1,6 +1,9 @@
 using Google.Protobuf;
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Mezon_sdk.Constants;
@@ -115,14 +118,96 @@ namespace Mezon_sdk.Utils
 
     public static class ProtoUtils
     {
+        private static readonly JsonSerializerOptions SerializerOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            NumberHandling = JsonNumberHandling.AllowReadingFromString
+        };
+
         public static T? FromProtobuf<T>(IMessage message)
         {
             var json = JsonFormatter.Default.Format(message);
+            var normalizedJson = NormalizeProtobufJson(json);
 
-            return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
+            return JsonSerializer.Deserialize<T>(normalizedJson, SerializerOptions);
+        }
+
+        private static string NormalizeProtobufJson(string json)
+        {
+            var node = JsonNode.Parse(json);
+            if (node is null)
             {
-                PropertyNameCaseInsensitive = true
-            });
+                return json;
+            }
+
+            NormalizeNode(node);
+            return node.ToJsonString();
+        }
+
+        private static void NormalizeNode(JsonNode node)
+        {
+            if (node is JsonObject obj)
+            {
+                var renamed = new List<(string OldName, string NewName, JsonNode? Value)>();
+                foreach (var property in obj)
+                {
+                    var normalizedName = ToSnakeCase(property.Key);
+                    if (property.Value is not null)
+                    {
+                        NormalizeNode(property.Value);
+                    }
+
+                    if (!string.Equals(property.Key, normalizedName, StringComparison.Ordinal))
+                    {
+                        renamed.Add((property.Key, normalizedName, property.Value));
+                    }
+                }
+
+                foreach (var item in renamed)
+                {
+                    obj.Remove(item.OldName);
+                    obj[item.NewName] = item.Value;
+                }
+            }
+            else if (node is JsonArray array)
+            {
+                foreach (var item in array)
+                {
+                    if (item is not null)
+                    {
+                        NormalizeNode(item);
+                    }
+                }
+            }
+        }
+
+        private static string ToSnakeCase(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+
+            var builder = new System.Text.StringBuilder(value.Length + 8);
+            for (var i = 0; i < value.Length; i++)
+            {
+                var current = value[i];
+                if (char.IsUpper(current))
+                {
+                    if (i > 0)
+                    {
+                        builder.Append('_');
+                    }
+
+                    builder.Append(char.ToLowerInvariant(current));
+                }
+                else
+                {
+                    builder.Append(current);
+                }
+            }
+
+            return builder.ToString();
         }
     }
 }

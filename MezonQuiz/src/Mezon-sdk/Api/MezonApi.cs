@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json;
+using System.Linq;
 using static Mezon.Protobuf.Friend.Types;
 
 public class MezonApi
@@ -15,19 +16,21 @@ public class MezonApi
     private readonly string _baseUrl;
     private readonly int _timeoutMs;
 
-    // Rate limit: 1 request / 1.25s
     private static readonly SemaphoreSlim _rateLimiter = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _rateDelay = TimeSpan.FromMilliseconds(1250);
 
     public MezonApi(int clientId, string apiKey, string baseUrl, int timeoutMs)
+        : this(clientId, apiKey, baseUrl, timeoutMs, httpClient: null)
+    {
+    }
+
+    public MezonApi(int clientId, string apiKey, string baseUrl, int timeoutMs, HttpClient? httpClient)
     {
         _baseUrl = baseUrl;
         _timeoutMs = timeoutMs;
 
-        _httpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromMilliseconds(timeoutMs)
-        };
+        _httpClient = httpClient ?? new HttpClient();
+        _httpClient.Timeout = TimeSpan.FromMilliseconds(timeoutMs);
     }
 
     // ========================
@@ -196,7 +199,7 @@ public class MezonApi
             Type = request.Type ?? 0
         };
 
-        proto.UserIds.Add((IEnumerable<long>)(request.UserIds ?? new List<int>()));
+        proto.UserIds.Add((request.UserIds ?? new List<int>()).Select(static id => (long)id));
 
         var data = await CallApiAsync(
             HttpMethod.Post,

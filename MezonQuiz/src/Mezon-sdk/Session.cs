@@ -11,16 +11,16 @@ namespace Mezon_sdk
 	/// </summary>
 	public class Session
 	{
-		public string Token { get; private set; }
-		public string? RefreshToken { get; private set; }
+		public string Token { get; set; }
+		public string? RefreshToken { get; set; }
 		public string UserId { get; }
 		public string ApiUrl { get; }
 		public string IdToken { get; }
 		public string WsUrl { get; }
 		public long CreatedAt { get; }
-		public long? ExpiresAt { get; private set; }
-		public long? RefreshExpiresAt { get; private set; }
-		public Dictionary<string, object?> Vars { get; private set; }
+		public long? ExpiresAt { get; set; }
+		public long? RefreshExpiresAt { get; set; }
+		public Dictionary<string, object?> Vars { get; set; }
 
 		public Session(ApiSession apiSession)
 		{
@@ -55,7 +55,7 @@ namespace Mezon_sdk
 				return true;
 			}
 
-			return (ExpiresAt.Value - currentTime) < 0;
+			return currentTime < ExpiresAt.Value;
 		}
 
 		public bool IsRefreshExpired(long currentTime)
@@ -65,7 +65,7 @@ namespace Mezon_sdk
 				return true;
 			}
 
-			return (RefreshExpiresAt.Value - currentTime) < 0;
+			return currentTime < RefreshExpiresAt.Value;
 		}
 
 		public void Update(string token, string? refreshToken = null)
@@ -152,11 +152,66 @@ namespace Mezon_sdk
 
 			if (varsElement.ValueKind == JsonValueKind.Object)
 			{
-				var parsed = JsonSerializer.Deserialize<Dictionary<string, object?>>(varsElement.GetRawText());
-				return parsed ?? new Dictionary<string, object?>();
+				var parsed = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(varsElement.GetRawText());
+				if (parsed is null)
+				{
+					return new Dictionary<string, object?>();
+				}
+
+				var result = new Dictionary<string, object?>(StringComparer.Ordinal);
+				foreach (var pair in parsed)
+				{
+					result[pair.Key] = ConvertJsonElement(pair.Value);
+				}
+				return result;
 			}
 
 			return new Dictionary<string, object?>();
+		}
+
+		private static object? ConvertJsonElement(JsonElement element)
+		{
+			switch (element.ValueKind)
+			{
+				case JsonValueKind.String:
+					return element.GetString();
+				case JsonValueKind.Number:
+					if (element.TryGetInt64(out var longValue))
+					{
+						return longValue;
+					}
+
+					if (element.TryGetDouble(out var doubleValue))
+					{
+						return doubleValue;
+					}
+
+					return element.GetRawText();
+				case JsonValueKind.True:
+				case JsonValueKind.False:
+					return element.GetBoolean();
+				case JsonValueKind.Null:
+				case JsonValueKind.Undefined:
+					return null;
+				case JsonValueKind.Object:
+					var objectValues = new Dictionary<string, object?>(StringComparer.Ordinal);
+					foreach (var property in element.EnumerateObject())
+					{
+						objectValues[property.Name] = ConvertJsonElement(property.Value);
+					}
+
+					return objectValues;
+				case JsonValueKind.Array:
+					var items = new List<object?>();
+					foreach (var item in element.EnumerateArray())
+					{
+						items.Add(ConvertJsonElement(item));
+					}
+
+					return items;
+				default:
+					return element.GetRawText();
+			}
 		}
 	}
 }
