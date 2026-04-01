@@ -577,7 +577,7 @@ const CreateQuizPage = () => {
                                             variant="outlined"
                                             disabled={uploadingQuestionIndex === questionIndex}
                                         >
-                                            {uploadingQuestionIndex === questionIndex ? "Uploading..." : "Upload image from computer"}
+                                            {uploadingQuestionIndex === questionIndex ? "Uploading..." : "Upload image"}
                                             <input
                                                 hidden
                                                 type="file"

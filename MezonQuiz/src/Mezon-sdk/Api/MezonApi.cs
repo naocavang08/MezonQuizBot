@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Linq;
 using static Mezon.Protobuf.Friend.Types;
+using Mezon_sdk.Api;
 
 public class MezonApi
 {
@@ -96,7 +97,7 @@ public class MezonApi
         string password,
         ApiAuthenticateRequest body)
     {
-        var jsonBody = JsonSerializer.Serialize(body);
+        var jsonBody = Utils.BuildBody(body);
         var requestBytes = Encoding.UTF8.GetBytes(jsonBody);
 
         var request = new HttpRequestMessage(
