@@ -14,6 +14,7 @@ namespace WebApp.Application.ManageQuizSession.Dtos
     public class QuizSessionDto
     {
         public Guid Id { get; set; }
+        public string Code { get; set; } = string.Empty;
         public Guid QuizId { get; set; }
         public string QuizTitle { get; set; } = string.Empty;
         public Guid HostId { get; set; }
@@ -62,5 +63,6 @@ namespace WebApp.Application.ManageQuizSession.Dtos
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
+        public Guid? SessionId { get; set; }
     }
 }

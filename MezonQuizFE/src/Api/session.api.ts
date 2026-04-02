@@ -49,8 +49,8 @@ export const createQuizSession = (body: CreateQuizSessionDto) => {
     return apiClient.post<CreateSessionApiResponse>("/api/QuizSession", body).then((res) => res.data);
 };
 
-export const joinQuizSession = (sessionId: string, body: JoinQuizSessionDto) => {
-    return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/join`, body).then((res) => res.data);
+export const joinQuizSession = (code: string, body: JoinQuizSessionDto) => {
+    return apiClient.post<SessionApiResponse & { sessionId?: string }>(`/api/QuizSession/join/${code}`, body).then((res) => res.data);
 };
 
 export const clearSessionParticipant = (sessionId: string, body: ClearParticipantDto) => {

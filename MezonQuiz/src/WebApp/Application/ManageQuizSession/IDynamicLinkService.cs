@@ -1,7 +1,9 @@
+using WebApp.Application.ManageQuizSession.Dtos;
+
 namespace WebApp.Application.ManageQuizSession
 {
     public interface IDynamicLinkService
     {
-        (string DeepLink, string QrCodeUrl) BuildSessionLinks(Guid sessionId, Guid quizId, Guid hostId);
+        SessionLinksDto BuildSessionLinks(Guid sessionId);
     }
 }

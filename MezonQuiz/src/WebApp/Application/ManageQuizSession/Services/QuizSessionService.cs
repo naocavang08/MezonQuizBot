@@ -42,6 +42,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 .Select(s => new QuizSessionDto
                 {
                     Id = s.Id,
+                    Code = s.Code ?? string.Empty,
                     QuizId = s.QuizId,
                     QuizTitle = s.Quiz.Title,
                     HostId = s.HostId,
@@ -70,6 +71,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 .Select(s => new QuizSessionDto
                 {
                     Id = s.Id,
+                    Code = s.Code ?? string.Empty,
                     QuizId = s.QuizId,
                     QuizTitle = s.Quiz.Title,
                     HostId = s.HostId,
@@ -133,9 +135,10 @@ namespace WebApp.Application.ManageQuizSession.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-            var links = _dynamicLinkService.BuildSessionLinks(session.Id, session.QuizId, session.HostId);
+            var links = _dynamicLinkService.BuildSessionLinks(session.Id);
             session.DeepLink = links.DeepLink;
             session.QrCodeUrl = links.QrCodeUrl;
+            session.Code = links.Code;
 
             _dbContext.QuizSessions.Add(session);
             await _dbContext.SaveChangesAsync();
@@ -143,6 +146,7 @@ namespace WebApp.Application.ManageQuizSession.Services
             var dto = new QuizSessionDto
             {
                 Id = session.Id,
+                Code = session.Code,
                 QuizId = session.QuizId,
                 QuizTitle = quiz.Title,
                 HostId = session.HostId,
@@ -161,17 +165,24 @@ namespace WebApp.Application.ManageQuizSession.Services
             return (Success("Session created successfully."), dto);
         }
 
-        public async Task<SessionOperationResult> JoinSession(Guid sessionId, JoinQuizSessionDto request)
+        public async Task<SessionOperationResult> JoinByCode(string code, JoinQuizSessionDto request)
         {
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return Fail("Session code is required.");
+            }
+
             if (request is null || request.UserId == Guid.Empty)
             {
                 return Fail("Invalid join request.");
             }
 
-            var session = await _dbContext.QuizSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+            var session = await _dbContext.QuizSessions
+                .FirstOrDefaultAsync(s => s.Code == code.ToUpperInvariant());
+
             if (session is null)
             {
-                return Fail("Session not found.");
+                return Fail("Session not found for the given code.");
             }
 
             if (session.Status != SessionStatus.Waiting)
@@ -186,16 +197,16 @@ namespace WebApp.Application.ManageQuizSession.Services
             }
 
             var alreadyJoined = await _dbContext.SessionParticipants
-                .AnyAsync(p => p.SessionId == sessionId && p.UserId == request.UserId);
+                .AnyAsync(p => p.SessionId == session.Id && p.UserId == request.UserId);
 
             if (alreadyJoined)
             {
-                return Success("Participant already joined.");
+                return new SessionOperationResult { Success = true, Message = "Participant already joined.", SessionId = session.Id };
             }
 
             if (session.MaxParticipants.HasValue)
             {
-                var currentCount = await _dbContext.SessionParticipants.CountAsync(p => p.SessionId == sessionId);
+                var currentCount = await _dbContext.SessionParticipants.CountAsync(p => p.SessionId == session.Id);
                 if (currentCount >= session.MaxParticipants.Value)
                 {
                     return Fail("Session is full.");
@@ -205,7 +216,7 @@ namespace WebApp.Application.ManageQuizSession.Services
             _dbContext.SessionParticipants.Add(new SessionParticipant
             {
                 Id = Guid.NewGuid(),
-                SessionId = sessionId,
+                SessionId = session.Id,
                 UserId = request.UserId,
                 TotalScore = 0,
                 AnswersCount = 0,
@@ -216,7 +227,7 @@ namespace WebApp.Application.ManageQuizSession.Services
 
             await _dbContext.SaveChangesAsync();
             await BroadcastSessionStateChanged(session);
-            return Success("Joined session successfully.");
+            return new SessionOperationResult { Success = true, Message = "Joined session successfully.", SessionId = session.Id };
         }
 
         public async Task<SessionOperationResult> ClearParticipant(Guid sessionId, Guid hostId, ClearParticipantDto request)

@@ -1,75 +1,83 @@
+using System.Net;
+using System.Numerics;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using QRCoder;
+using WebApp.Application.ManageQuizSession.Dtos;
+
 namespace WebApp.Application.ManageQuizSession.Services
 {
     public class DynamicLinkService : IDynamicLinkService
     {
-        private const string DefaultPublicTargetBaseUrl = "https://right-thoroughly-amoeba.ngrok-free.app/app/sessions";
-        private readonly IConfiguration _configuration;
+        private const int CodeLength = 6;
+        private const string CodeChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+        private readonly IConfiguration _configuration;
         public DynamicLinkService(IConfiguration configuration)
         {
             _configuration = configuration;
         }
 
-        public (string DeepLink, string QrCodeUrl) BuildSessionLinks(Guid sessionId, Guid quizId, Guid hostId)
+        public SessionLinksDto BuildSessionLinks(Guid sessionId)
         {
-            var configuredTargetBaseUrl = (_configuration["DynamicLink:TargetBaseUrl"] ?? DefaultPublicTargetBaseUrl).TrimEnd('/');
-            var publicTargetBaseUrl = (_configuration["DynamicLink:PublicTargetBaseUrl"] ?? DefaultPublicTargetBaseUrl).TrimEnd('/');
-            var targetBaseUrl = ResolveTargetBaseUrl(configuredTargetBaseUrl, publicTargetBaseUrl);
-            var dynamicLinkDomain = (_configuration["DynamicLink:Domain"] ?? "https://mezonquiz.page.link").TrimEnd('/');
-            var useTargetAsDeepLink = bool.TryParse(_configuration["DynamicLink:UseTargetAsDeepLink"], out var parsedUseTargetAsDeepLink)
-                && parsedUseTargetAsDeepLink;
-            var androidPackage = _configuration["DynamicLink:AndroidPackage"] ?? string.Empty;
-            var iosBundle = _configuration["DynamicLink:IOSBundle"] ?? string.Empty;
-            var iosAppStoreId = _configuration["DynamicLink:IOSAppStoreId"] ?? string.Empty;
-            var qrTemplate = _configuration["DynamicLink:QrCodeApiTemplate"]
-                             ?? "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={0}";
-
-            var targetLink = $"{targetBaseUrl}/{sessionId}/play?quizId={quizId}&hostId={hostId}";
-
-            if (useTargetAsDeepLink)
+            var input = new DataJsonDto
             {
-                var directQrCodeUrl = string.Format(qrTemplate, Uri.EscapeDataString(targetLink));
-                return (targetLink, directQrCodeUrl);
-            }
-
-            var query = new List<string>
-            {
-                $"link={Uri.EscapeDataString(targetLink)}"
+                Id = _configuration["MezonBot:BotId"] ?? string.Empty,
+                Name = _configuration["MezonBot:BotName"] ?? "MezonQuizBot-5559",
+                Avatar = _configuration["MezonBot:BotAvatar"] ?? "https://cdn.mezon.vn/1967925734009737216/2032376880174206976.jpg"
             };
 
-            if (!string.IsNullOrWhiteSpace(androidPackage))
+            string dataJson = JsonSerializer.Serialize(input);
+            string urlEncoded = WebUtility.UrlEncode(dataJson);
+            string base64Encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(urlEncoded));
+
+            string baseUrl = _configuration["MezonBot:BaseLink"] ?? "https://mezon.ai/chat";
+            string linkForQr = $"{baseUrl}/{input.Name}?data={base64Encoded}";
+
+            string qrCodeDataUri = GenerateQrCodeDataUri(linkForQr);
+
+            return new SessionLinksDto
             {
-                query.Add($"apn={Uri.EscapeDataString(androidPackage)}");
-            }
-
-            if (!string.IsNullOrWhiteSpace(iosBundle))
-            {
-                query.Add($"ibi={Uri.EscapeDataString(iosBundle)}");
-            }
-
-            if (!string.IsNullOrWhiteSpace(iosAppStoreId))
-            {
-                query.Add($"isi={Uri.EscapeDataString(iosAppStoreId)}");
-            }
-
-            var deepLink = $"{dynamicLinkDomain}/?{string.Join("&", query)}";
-            var qrCodeUrl = string.Format(qrTemplate, Uri.EscapeDataString(deepLink));
-
-            return (deepLink, qrCodeUrl);
+                DeepLink = linkForQr,
+                QrCodeUrl = qrCodeDataUri,
+                Code = EncodeSessionCode(sessionId)
+            };
         }
 
-        private static string ResolveTargetBaseUrl(string configuredTargetBaseUrl, string publicTargetBaseUrl)
+        /// <summary>
+        /// Mã hóa sessionId thành mã ngắn 6 ký tự (0-9, A-Z) bằng SHA256 + base36.
+        /// Deterministic: cùng sessionId luôn cho ra cùng Code.
+        /// </summary>
+        private static string EncodeSessionCode(Guid sessionId)
         {
-            if (Uri.TryCreate(configuredTargetBaseUrl, UriKind.Absolute, out var configuredUri))
+            byte[] hash = SHA256.HashData(sessionId.ToByteArray());
+
+            // Lấy 8 byte đầu của hash → chuyển thành số dương
+            var number = new BigInteger(hash.AsSpan(0, 8), isUnsigned: true);
+
+            var result = new char[CodeLength];
+            int baseN = CodeChars.Length; // 36
+
+            for (int i = CodeLength - 1; i >= 0; i--)
             {
-                var isLocalHost = configuredUri.IsLoopback || string.Equals(configuredUri.Host, "localhost", StringComparison.OrdinalIgnoreCase);
-                if (!isLocalHost)
-                {
-                    return configuredTargetBaseUrl;
-                }
+                number = BigInteger.DivRem(number, baseN, out var remainder);
+                result[i] = CodeChars[(int)remainder];
             }
 
-            return publicTargetBaseUrl;
+            return new string(result);
+        }
+
+        private static string GenerateQrCodeDataUri(string url)
+        {
+            using var qrGenerator = new QRCodeGenerator();
+            using var qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.M);
+            using var qrCode = new PngByteQRCode(qrCodeData);
+
+            byte[] qrCodeBytes = qrCode.GetGraphic(10);
+            string base64 = Convert.ToBase64String(qrCodeBytes);
+
+            return $"data:image/png;base64,{base64}";
         }
     }
 }

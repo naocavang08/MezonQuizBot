@@ -240,7 +240,7 @@ const PlayerQuizPage = () => {
 
         const autoJoin = async () => {
             try {
-                const response = await joinQuizSession(sessionId, { userId });
+                const response = await joinQuizSession(session.code, { userId });
                 showSuccess(response.message || "Joined session successfully.");
                 await loadSession(true);
             } catch {

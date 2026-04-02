@@ -42,6 +42,10 @@ namespace WebApp.Domain.Entites
         [Column("max_participants")]
         public int? MaxParticipants { get; set; }
 
+        [Column("code")]
+        [MaxLength(10)]
+        public string? Code { get; set; }
+
         [Column("started_at")]
         public DateTime? StartedAt { get; set; }
 

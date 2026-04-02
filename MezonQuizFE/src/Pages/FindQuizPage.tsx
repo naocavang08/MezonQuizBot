@@ -53,7 +53,7 @@ const FindQuizPage = () => {
     const [totalCount, setTotalCount] = useState(0);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [sessionId, setSessionId] = useState("");
+    const [code, setCode] = useState("");
     const [isJoining, setIsJoining] = useState(false);
     const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 
@@ -119,9 +119,9 @@ const FindQuizPage = () => {
     }, [fetchQuizzes]);
 
     const handleJoinSession = async () => {
-        const normalizedSessionId = sessionId.trim();
-        if (!normalizedSessionId) {
-            showError("Please enter a session ID.");
+        const normalizedCode = code.trim().toUpperCase();
+        if (!normalizedCode) {
+            showError("Please enter a session code.");
             return;
         }
 
@@ -133,11 +133,17 @@ const FindQuizPage = () => {
         try {
             setIsJoining(true);
 
-            const response = await joinQuizSession(normalizedSessionId, { userId });
+            const response = await joinQuizSession(normalizedCode, { userId });
             showSuccess(response.message || "Joined session successfully.");
-            navigate(`/app/sessions/${normalizedSessionId}/play`);
+
+            const sessionId = response.sessionId;
+            if (sessionId) {
+                navigate(`/app/sessions/${sessionId}/play`);
+            } else {
+                showError("Joined but could not retrieve session info.");
+            }
         } catch {
-            showError("Can not join this session now. Please check session ID and try again.");
+            showError("Can not join this session now. Please check the code and try again.");
         } finally {
             setIsJoining(false);
         }
@@ -285,13 +291,14 @@ const FindQuizPage = () => {
                             >
                                 <TextField
                                     size="small"
-                                    label="Join by Session ID"
-                                    placeholder="Paste session id"
-                                    value={sessionId}
+                                    label="Join by Session Code"
+                                    placeholder="Enter 6-digit code"
+                                    value={code}
                                     onChange={(event) => {
-                                        setSessionId(event.target.value);
+                                        setCode(event.target.value.toUpperCase());
                                     }}
-                                    sx={{ maxWidth: { xs: "100%", sm: 360 } }}
+                                    inputProps={{ maxLength: 6, style: { letterSpacing: "0.15em", fontWeight: 700 } }}
+                                    sx={{ maxWidth: { xs: "100%", sm: 240 } }}
                                 />
                                 <Chip
                                     label={isJoining ? "Joining..." : "Join Session"}

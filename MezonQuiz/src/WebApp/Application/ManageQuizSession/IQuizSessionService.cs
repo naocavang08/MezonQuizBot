@@ -9,7 +9,7 @@ namespace WebApp.Application.ManageQuizSession
         Task<List<QuizSessionDto>> GetAllSessions(Guid? QuizId);
         Task<QuizSessionDto?> GetSession(Guid sessionId);
         Task<(SessionOperationResult Result, QuizSessionDto? Session)> CreateSession(CreateQuizSessionDto request, Guid hostId);
-        Task<SessionOperationResult> JoinSession(Guid sessionId, JoinQuizSessionDto request);
+        Task<SessionOperationResult> JoinByCode(string code, JoinQuizSessionDto request);
         Task<SessionOperationResult> ClearParticipant(Guid sessionId, Guid hostId, ClearParticipantDto request);
         Task<SessionOperationResult> StartSession(Guid sessionId, Guid hostId);
         Task<SessionOperationResult> PauseSession(Guid sessionId, Guid hostId);

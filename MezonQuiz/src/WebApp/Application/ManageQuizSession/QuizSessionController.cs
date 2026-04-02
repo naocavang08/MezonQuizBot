@@ -56,14 +56,14 @@ namespace WebApp.Application.ManageQuizSession
             return Ok(new { Message = result.Message, Session = session });
         }
 
-        [HttpPost("{sessionId}/join")]
-        public async Task<IActionResult> JoinSession(Guid sessionId, [FromBody] JoinQuizSessionDto request)
+        [HttpPost("join/{code}")]
+        public async Task<IActionResult> JoinByCode(string code, [FromBody] JoinQuizSessionDto request)
         {
-            var result = await _sessionService.JoinSession(sessionId, request);
+            var result = await _sessionService.JoinByCode(code, request);
             if (!result.Success)
                 return BadRequest(new { Message = result.Message });
 
-            return Ok(new { Message = result.Message });
+            return Ok(new { Message = result.Message, SessionId = result.SessionId });
         }
 
         [HttpPost("{sessionId}/clear")]

@@ -20,6 +20,7 @@ export interface CreateQuizSessionDto {
 
 export interface QuizSessionDto {
     id: string;
+    code: string;
     quizId: string;
     quizTitle: string;
     hostId: string;
