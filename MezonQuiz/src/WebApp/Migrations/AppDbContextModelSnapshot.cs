@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApp.Data;
+using WebApp.Domain.Enums;
 
 #nullable disable
 
@@ -168,7 +169,17 @@ namespace WebApp.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<int>("Status")
+                    b.Property<string>("Questions")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("questions");
+
+                    b.Property<string>("Settings")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("settings");
+
+                    b.Property<Status.QuizStatus>("Status")
                         .HasColumnType("quiz_status")
                         .HasColumnName("quiz_status");
 
@@ -186,7 +197,7 @@ namespace WebApp.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
-                    b.Property<int>("Visibility")
+                    b.Property<Status.QuizVisibility>("Visibility")
                         .HasColumnType("quiz_visibility")
                         .HasColumnName("quiz_visibility");
 
@@ -245,6 +256,11 @@ namespace WebApp.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Code")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("code");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -286,7 +302,7 @@ namespace WebApp.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("started_at");
 
-                    b.Property<int>("Status")
+                    b.Property<Status.SessionStatus>("Status")
                         .HasColumnType("session_status")
                         .HasColumnName("session_status");
 
@@ -551,111 +567,9 @@ namespace WebApp.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsMany("WebApp.Application.Dtos.QuizQuestion", "Questions", b1 =>
-                        {
-                            b1.Property<Guid>("QuizId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<int>("Id")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer");
-
-                            b1.Property<string>("Content")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<int>("Index")
-                                .HasColumnType("integer");
-
-                            b1.Property<string>("MediaUrl")
-                                .HasColumnType("text");
-
-                            b1.Property<int>("Points")
-                                .HasColumnType("integer");
-
-                            b1.Property<int>("TimeLimitSeconds")
-                                .HasColumnType("integer");
-
-                            b1.HasKey("QuizId", "Id");
-
-                            b1.ToTable("quizzes");
-
-                            b1.ToJson("questions");
-
-                            b1.WithOwner()
-                                .HasForeignKey("QuizId");
-
-                            b1.OwnsMany("WebApp.Application.Dtos.QuizOption", "Options", b2 =>
-                                {
-                                    b2.Property<Guid>("QuizQuestionQuizId")
-                                        .HasColumnType("uuid");
-
-                                    b2.Property<int>("QuizQuestionId")
-                                        .HasColumnType("integer");
-
-                                    b2.Property<int>("Id")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("integer");
-
-                                    b2.Property<string>("Content")
-                                        .IsRequired()
-                                        .HasColumnType("text");
-
-                                    b2.Property<int>("Index")
-                                        .HasColumnType("integer");
-
-                                    b2.Property<bool>("IsCorrect")
-                                        .HasColumnType("boolean");
-
-                                    b2.HasKey("QuizQuestionQuizId", "QuizQuestionId", "Id");
-
-                                    b2.ToTable("quizzes");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("QuizQuestionQuizId", "QuizQuestionId");
-                                });
-
-                            b1.Navigation("Options");
-                        });
-
-                    b.OwnsOne("WebApp.Application.Dtos.QuizSettings", "Settings", b1 =>
-                        {
-                            b1.Property<Guid>("QuizId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<int>("MaxAttempts")
-                                .HasColumnType("integer");
-
-                            b1.Property<bool>("ShowCorrectAnswer")
-                                .HasColumnType("boolean");
-
-                            b1.Property<bool>("ShuffleOptions")
-                                .HasColumnType("boolean");
-
-                            b1.Property<bool>("ShuffleQuestions")
-                                .HasColumnType("boolean");
-
-                            b1.Property<int>("TimeLimitSeconds")
-                                .HasColumnType("integer");
-
-                            b1.HasKey("QuizId");
-
-                            b1.ToTable("quizzes");
-
-                            b1.ToJson("settings");
-
-                            b1.WithOwner()
-                                .HasForeignKey("QuizId");
-                        });
-
                     b.Navigation("Category");
 
                     b.Navigation("Creator");
-
-                    b.Navigation("Questions");
-
-                    b.Navigation("Settings")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("WebApp.Domain.Entites.QuizSession", b =>

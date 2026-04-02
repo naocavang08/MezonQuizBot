@@ -7,13 +7,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApp.Data;
+using WebApp.Domain.Enums;
 
 #nullable disable
 
 namespace WebApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260227045802_InitialDB")]
+    [Migration("20260402035722_InitialDB")]
     partial class InitialDB
     {
         /// <inheritdoc />
@@ -181,7 +182,7 @@ namespace WebApp.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("settings");
 
-                    b.Property<int>("Status")
+                    b.Property<Status.QuizStatus>("Status")
                         .HasColumnType("quiz_status")
                         .HasColumnName("quiz_status");
 
@@ -199,7 +200,7 @@ namespace WebApp.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
-                    b.Property<int>("Visibility")
+                    b.Property<Status.QuizVisibility>("Visibility")
                         .HasColumnType("quiz_visibility")
                         .HasColumnName("quiz_visibility");
 
@@ -258,6 +259,11 @@ namespace WebApp.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Code")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("code");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -299,7 +305,7 @@ namespace WebApp.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("started_at");
 
-                    b.Property<int>("Status")
+                    b.Property<Status.SessionStatus>("Status")
                         .HasColumnType("session_status")
                         .HasColumnName("session_status");
 
@@ -458,10 +464,14 @@ namespace WebApp.Migrations
                         .HasColumnName("last_login_at");
 
                     b.Property<string>("MezonUserId")
-                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("mezon_user_id");
+
+                    b.Property<string>("Password")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("password");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Migrations;
+using WebApp.Domain.Enums;
 
 #nullable disable
 
@@ -69,9 +70,10 @@ namespace WebApp.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    mezon_user_id = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    mezon_user_id = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     username = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    password = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     display_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     avatar_url = table.Column<string>(type: "text", nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
@@ -145,8 +147,8 @@ namespace WebApp.Migrations
                     questions = table.Column<string>(type: "jsonb", nullable: false),
                     total_points = table.Column<int>(type: "integer", nullable: false),
                     settings = table.Column<string>(type: "jsonb", nullable: false),
-                    quiz_visibility = table.Column<int>(type: "quiz_visibility", nullable: false),
-                    quiz_status = table.Column<int>(type: "quiz_status", nullable: false),
+                    quiz_visibility = table.Column<Status.QuizVisibility>(type: "quiz_visibility", nullable: false),
+                    quiz_status = table.Column<Status.QuizStatus>(type: "quiz_status", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -207,12 +209,13 @@ namespace WebApp.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     quiz_id = table.Column<Guid>(type: "uuid", nullable: false),
                     host_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    session_status = table.Column<int>(type: "session_status", nullable: false),
+                    session_status = table.Column<Status.SessionStatus>(type: "session_status", nullable: false),
                     current_question = table.Column<int>(type: "integer", nullable: false),
                     deep_link = table.Column<string>(type: "text", nullable: true),
                     qr_code_url = table.Column<string>(type: "text", nullable: true),
                     mezon_channel_id = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     max_participants = table.Column<int>(type: "integer", nullable: true),
+                    code = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     started_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     finished_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)

@@ -659,6 +659,9 @@ const QuizSettingPage = () => {
 													Status: {sessionStatusLabel[session.status] ?? "Unknown"} | Participants: {session.participantCount}
 												</Typography>
 												<Typography variant="body2" color="text.secondary">
+													Code: {session.code || "N/A"}
+												</Typography>
+												<Typography variant="body2" color="text.secondary">
 													Created: {new Date(session.createdAt).toLocaleString()}
 												</Typography>
 												<Typography variant="body2" color="text.secondary">
@@ -689,6 +692,16 @@ const QuizSettingPage = () => {
 														onClick={() => navigate(`/app/sessions/${session.id}`)}
 													>
 														Open Session Room
+													</Button>
+													<Button
+														size="small"
+														variant="outlined"
+														disabled={!session.code}
+														onClick={() => {
+															void copyValue(session.code, "Session code copied.");
+														}}
+													>
+														Copy Session Code
 													</Button>
 													<Button
 														size="small"

@@ -274,6 +274,23 @@ const SessionRoomPage = () => {
 
                                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                                         <Typography variant="body2" color="text.secondary">
+                                            Session Code: {session.code || "N/A"}
+                                        </Typography>
+                                        <Button
+                                            size="small"
+                                            variant="text"
+                                            startIcon={<MdContentCopy />}
+                                            disabled={!session.code}
+                                            onClick={() => {
+                                                void copyToClipboard(session.code, "Session code copied.");
+                                            }}
+                                        >
+                                            Copy Session Code
+                                        </Button>
+                                    </Stack>
+
+                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                        <Typography variant="body2" color="text.secondary">
                                             Deep Link: {shareLink || "N/A"}
                                         </Typography>
                                         <Button
