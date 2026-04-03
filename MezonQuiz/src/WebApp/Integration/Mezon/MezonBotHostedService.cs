@@ -6,10 +6,14 @@ using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Mezon.Protobuf;
 using Mezon_sdk;
+using Mezon_sdk.Constants;
+using Mezon_sdk.Models;
+using Mezon_sdk.Utils;
 using WebApp.Application.ManageQuizSession.Dtos;
 using WebApp.Application.ManageQuizSession.Services;
 using WebApp.Data;
 using WebApp.Application.ManageQuizSession;
+using PbChannelMessage = Mezon.Protobuf.ChannelMessage;
 
 namespace WebApp.Integration.Mezon;
 
@@ -105,7 +109,7 @@ public sealed class MezonBotHostedService : BackgroundService
         await base.StopAsync(cancellationToken);
     }
 
-    private async Task HandleChannelMessageAsync(ChannelMessage message)
+    private async Task HandleChannelMessageAsync(PbChannelMessage message)
     {
         var senderId = message.SenderId.ToString();
         if (string.IsNullOrWhiteSpace(senderId) || senderId == "0")
@@ -155,9 +159,10 @@ public sealed class MezonBotHostedService : BackgroundService
                     senderId,
                     incomingUsername);
 
-                await SendWebhookMessageAsync(
+                await SendReplyAsync(
+                    message,
                     senderId,
-                    "Khong tim thay tai khoan da lien ket. Vui long dang nhap bang Mezon tren web truoc roi thu lai /join.");
+                    "Cannot map Mezon sender to local user. Please login with Mezon on the web first and then try /join.");
                 return;
             }
 
@@ -169,15 +174,71 @@ public sealed class MezonBotHostedService : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to process /join command for sender {SenderId}.", senderId);
-            await SendWebhookMessageAsync(senderId, "He thong dang ban. Vui long thu lai sau.");
+            await SendReplyAsync(message, senderId, "System is currently unavailable. Please try again later.");
             return;
         }
 
         var replyMessage = operationResult.Success
-            ? $"Join thanh cong session {code}. {operationResult.Message}"
-            : $"Join that bai session {code}. {operationResult.Message}";
+            ? $"Join successful for session {code}. {operationResult.Message}"
+            : $"Join failed for session {code}. {operationResult.Message}";
 
-        await SendWebhookMessageAsync(senderId, replyMessage);
+        await SendReplyAsync(message, senderId, replyMessage);
+    }
+
+    private async Task SendReplyAsync(PbChannelMessage incomingMessage, string senderId, string message)
+    {
+        var sdkSent = await SendMessageViaSdkAsync(incomingMessage, message);
+        if (sdkSent)
+        {
+            return;
+        }
+
+        await SendWebhookMessageAsync(senderId, message);
+    }
+
+    private async Task<bool> SendMessageViaSdkAsync(PbChannelMessage incomingMessage, string message)
+    {
+        if (_client?.SocketManager is null)
+        {
+            return false;
+        }
+
+        if (incomingMessage.ChannelId == 0)
+        {
+            return false;
+        }
+
+        var mode = Helper.ToInt(incomingMessage.Mode)
+            ?? Helper.ConvertChannelTypeToChannelMode((int)ChannelType.ChannelTypeDm);
+
+        try
+        {
+            await _client.SocketManager.WriteChatMessageAsync(
+                clanId: incomingMessage.ClanId,
+                channelId: incomingMessage.ChannelId,
+                mode: mode,
+                isPublic: incomingMessage.IsPublic,
+                content: new ChannelMessageContent
+                {
+                    Text = message
+                });
+
+            _logger.LogInformation(
+                "SDK reply sent to channel {ChannelId} for sender {SenderId}.",
+                incomingMessage.ChannelId,
+                incomingMessage.SenderId);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "SDK reply failed for channel {ChannelId}. Falling back to webhook.",
+                incomingMessage.ChannelId);
+
+            return false;
+        }
     }
 
     public async Task<bool> SendWebhookMessageAsync(string userIdentifier, string message)
