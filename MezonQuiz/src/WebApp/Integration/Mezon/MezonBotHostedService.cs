@@ -161,7 +161,6 @@ public sealed class MezonBotHostedService : BackgroundService
 
                 await SendReplyAsync(
                     message,
-                    senderId,
                     "Cannot map Mezon sender to local user. Please login with Mezon on the web first and then try /join.");
                 return;
             }
@@ -174,7 +173,7 @@ public sealed class MezonBotHostedService : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to process /join command for sender {SenderId}.", senderId);
-            await SendReplyAsync(message, senderId, "System is currently unavailable. Please try again later.");
+            await SendReplyAsync(message, "System is currently unavailable. Please try again later.");
             return;
         }
 
@@ -182,18 +181,16 @@ public sealed class MezonBotHostedService : BackgroundService
             ? $"Join successful for session {code}. {operationResult.Message}"
             : $"Join failed for session {code}. {operationResult.Message}";
 
-        await SendReplyAsync(message, senderId, replyMessage);
+        await SendReplyAsync(message, replyMessage);
     }
 
-    private async Task SendReplyAsync(PbChannelMessage incomingMessage, string senderId, string message)
+    private async Task SendReplyAsync(PbChannelMessage incomingMessage, string message)
     {
         var sdkSent = await SendMessageViaSdkAsync(incomingMessage, message);
         if (sdkSent)
         {
             return;
         }
-
-        await SendWebhookMessageAsync(senderId, message);
     }
 
     private async Task<bool> SendMessageViaSdkAsync(PbChannelMessage incomingMessage, string message)
@@ -239,58 +236,6 @@ public sealed class MezonBotHostedService : BackgroundService
 
             return false;
         }
-    }
-
-    public async Task<bool> SendWebhookMessageAsync(string userIdentifier, string message)
-    {
-        if (!_webhookEnabled)
-        {
-            _logger.LogDebug("Mezon webhook is disabled. Skip sending message to {UserIdentifier}.", userIdentifier);
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(_clanWebhookToken))
-        {
-            _logger.LogWarning("Mezon webhook token is empty. Cannot send message to {UserIdentifier}.", userIdentifier);
-            return false;
-        }
-
-        var endpoint = $"https://webhook.mezon.ai/clanwebhooks/{Uri.EscapeDataString(_clanWebhookToken)}/{Uri.EscapeDataString(userIdentifier)}";
-
-        var payload = new ClanWebhookRequest
-        {
-            Content = JsonSerializer.Serialize(new ClanWebhookContent
-            {
-                T = message
-            })
-        };
-
-        var client = _httpClientFactory.CreateClient();
-        var requestBody = JsonSerializer.Serialize(payload);
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        request.Content = new StringContent(requestBody, null, "application/json");
-
-        using var response = await client.SendAsync(request);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorBody = await response.Content.ReadAsStringAsync();
-            _logger.LogWarning(
-                "Mezon webhook send failed. Status={StatusCode} Body={ResponseBody}",
-                (int)response.StatusCode,
-                errorBody);
-            return false;
-        }
-
-        var successBody = await response.Content.ReadAsStringAsync();
-        _logger.LogInformation(
-            "Mezon webhook message sent successfully to {UserIdentifier}. Response={ResponseBody}",
-            userIdentifier,
-            successBody);
-
-        return true;
     }
 
     private static bool TryParseJoinCode(string input, out string code)
