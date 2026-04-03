@@ -1,11 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
+using Mezon_sdk.Models;
+using Mezon_sdk.Structures;
 using WebApp.Data;
 using WebApp.Domain.Entites;
 using WebApp.Realtime;
 using static WebApp.Domain.Enums.Status;
 using WebApp.Application.ManageQuiz.Dtos;
 using WebApp.Application.ManageQuizSession.Dtos;
+using WebApp.Integration.Mezon;
 
 namespace WebApp.Application.ManageQuizSession.Services
 {
@@ -14,15 +17,21 @@ namespace WebApp.Application.ManageQuizSession.Services
         private readonly AppDbContext _dbContext;
         private readonly IDynamicLinkService _dynamicLinkService;
         private readonly IHubContext<QuizHub> _hubContext;
+        private readonly MezonBotHostedService _mezonBotHostedService;
+        private readonly ILogger<QuizSessionService> _logger;
 
         public QuizSessionService(
             AppDbContext dbContext,
             IDynamicLinkService dynamicLinkService,
-            IHubContext<QuizHub> hubContext)
+            IHubContext<QuizHub> hubContext,
+            MezonBotHostedService mezonBotHostedService,
+            ILogger<QuizSessionService> logger)
         {
             _dbContext = dbContext;
             _dynamicLinkService = dynamicLinkService;
             _hubContext = hubContext;
+            _mezonBotHostedService = mezonBotHostedService;
+            _logger = logger;
         }
 
         public async Task<List<QuizSessionDto>> GetAllSessions(Guid? QuizId)
@@ -282,6 +291,7 @@ namespace WebApp.Application.ManageQuizSession.Services
             session.CurrentQuestion = 0;
 
             await _dbContext.SaveChangesAsync();
+            await SendCurrentQuestionToParticipants(session);
             await BroadcastSessionStateChanged(session);
             return Success("Session started successfully.");
         }
@@ -411,6 +421,7 @@ namespace WebApp.Application.ManageQuizSession.Services
 
             session.CurrentQuestion += 1;
             await _dbContext.SaveChangesAsync();
+            await SendCurrentQuestionToParticipants(session);
             await BroadcastSessionStateChanged(session);
             return Success("Moved to next question.");
         }
@@ -706,6 +717,178 @@ namespace WebApp.Application.ManageQuizSession.Services
                 Success = true,
                 Message = message
             };
+        }
+
+        private async Task SendCurrentQuestionToParticipants(QuizSession session)
+        {
+            var quiz = await _dbContext.Quizzes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.Id == session.QuizId);
+
+            if (quiz is null)
+            {
+                _logger.LogWarning(
+                    "Skip DM question dispatch for session {SessionId}: quiz not found.",
+                    session.Id);
+                return;
+            }
+
+            var question = ResolveQuestion(quiz, session.CurrentQuestion);
+            if (question is null)
+            {
+                _logger.LogWarning(
+                    "Skip DM question dispatch for session {SessionId}: question index {QuestionIndex} is invalid.",
+                    session.Id,
+                    session.CurrentQuestion);
+                return;
+            }
+
+            var mezonUserIds = await _dbContext.SessionParticipants
+                .AsNoTracking()
+                .Where(p => p.SessionId == session.Id)
+                .Select(p => p.User.MezonUserId)
+                .ToListAsync();
+
+            var targets = mezonUserIds
+                .Select(value => long.TryParse(value, out var parsedId) ? parsedId : 0)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            if (targets.Count == 0)
+            {
+                _logger.LogInformation(
+                    "Skip DM question dispatch for session {SessionId}: no participants with valid Mezon user id.",
+                    session.Id);
+                return;
+            }
+
+            var content = BuildQuestionMessageContent(session, quiz, question);
+            var sendResult = await _mezonBotHostedService.SendDmMessageToUsersAsync(targets, content);
+
+            _logger.LogInformation(
+                "DM question dispatch finished for session {SessionId}. Sent {SentCount}/{RequestedCount}.",
+                session.Id,
+                sendResult.SentCount,
+                sendResult.RequestedCount);
+        }
+
+        private static ChannelMessageContent BuildQuestionMessageContent(QuizSession session, Quiz quiz, QuizQuestion question)
+        {
+            var orderedOptions = (question.Options ?? new List<QuizOption>())
+                .OrderBy(option => option.Index)
+                .ToList();
+
+            var hasZeroBasedIndex = orderedOptions.Any(option => option.Index == 0);
+            var optionLines = orderedOptions
+                .Select(option => $"{NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex)} - {option.Content}")
+                .ToList();
+
+            var totalQuestionCount = quiz.Questions?.Count ?? 0;
+            var title = $"[QUIZ] {quiz.Title} | Question {session.CurrentQuestion + 1}/{Math.Max(totalQuestionCount, 1)}";
+            var optionsBlock = string.Join("\n", optionLines);
+            var instruction = "(Reply with option number or answer on web if needed.)";
+
+            var messageText = string.Join(
+                "\n\n",
+                new[]
+                {
+                    title,
+                    question.Content,
+                    optionsBlock,
+                    instruction
+                });
+
+            var markdown = BuildMarkdownRanges(title, optionsBlock, messageText);
+
+            return new ChannelMessageContent
+            {
+                Text = messageText,
+                Markdown = markdown,
+                Components = BuildOptionButtons(session, orderedOptions, hasZeroBasedIndex)
+            };
+        }
+
+        private static List<MarkdownOnMessage> BuildMarkdownRanges(string title, string optionsBlock, string messageText)
+        {
+            var ranges = new List<MarkdownOnMessage>();
+
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                ranges.Add(new MarkdownOnMessage
+                {
+                    Type = EMarkdownType.Bold,
+                    Start = 0,
+                    End = title.Length
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(optionsBlock))
+            {
+                var optionsStart = messageText.IndexOf(optionsBlock, StringComparison.Ordinal);
+                if (optionsStart >= 0)
+                {
+                    ranges.Add(new MarkdownOnMessage
+                    {
+                        Type = EMarkdownType.Pre,
+                        Start = optionsStart,
+                        End = optionsStart + optionsBlock.Length
+                    });
+                }
+            }
+
+            return ranges;
+        }
+
+        private static List<MessageActionRow> BuildOptionButtons(
+            QuizSession session,
+            List<QuizOption> options,
+            bool hasZeroBasedIndex)
+        {
+            if (options.Count == 0)
+            {
+                return [];
+            }
+
+            var buttonBuilder = new ButtonBuilder();
+            foreach (var option in options)
+            {
+                var displayIndex = NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex);
+                var componentId = $"quiz:{session.Id}:q:{session.CurrentQuestion}:a:{displayIndex}";
+
+                buttonBuilder.AddButton(
+                    componentId: componentId,
+                    label: displayIndex.ToString(),
+                    style: ButtonMessageStyle.Primary);
+            }
+
+            var components = buttonBuilder
+                .Build()
+                .Select(component => new MessageComponent
+                {
+                    Type = component["type"],
+                    ComponentId = component["id"].ToString(),
+                    Component = component["component"] as Dictionary<string, object>
+                })
+                .ToList();
+
+            return
+            [
+                new MessageActionRow
+                {
+                    Components = components
+                }
+            ];
+        }
+
+        private static int NormalizeOptionDisplayIndex(int optionIndex, bool hasZeroBasedIndex)
+        {
+            if (hasZeroBasedIndex)
+            {
+                return optionIndex + 1;
+            }
+
+            return optionIndex;
         }
 
         private static SessionOperationResult Fail(string message)

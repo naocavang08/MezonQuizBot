@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -29,6 +30,7 @@ public sealed class MezonBotHostedService : BackgroundService
     private readonly ILogger<MezonBotHostedService> _logger;
 
     private MezonClient? _client;
+    private readonly ConcurrentDictionary<long, DmRoute> _dmRoutes = new();
     private string _botId = string.Empty;
     private string _clanWebhookToken = string.Empty;
     private bool _webhookEnabled;
@@ -109,6 +111,47 @@ public sealed class MezonBotHostedService : BackgroundService
         await base.StopAsync(cancellationToken);
     }
 
+    public async Task<BatchDmSendResult> SendDmMessageToUsersAsync(
+        IEnumerable<long> userIds,
+        ChannelMessageContent content,
+        CancellationToken cancellationToken = default)
+    {
+        var uniqueUserIds = userIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (uniqueUserIds.Count == 0)
+        {
+            return new BatchDmSendResult();
+        }
+
+        var sentCount = 0;
+        var failedUserIds = new List<long>();
+
+        foreach (var userId in uniqueUserIds)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var sent = await SendDmMessageToUserAsync(userId, content);
+            if (sent)
+            {
+                sentCount += 1;
+            }
+            else
+            {
+                failedUserIds.Add(userId);
+            }
+        }
+
+        return new BatchDmSendResult
+        {
+            RequestedCount = uniqueUserIds.Count,
+            SentCount = sentCount,
+            FailedUserIds = failedUserIds
+        };
+    }
+
     private async Task HandleChannelMessageAsync(PbChannelMessage message)
     {
         var senderId = message.SenderId.ToString();
@@ -121,6 +164,8 @@ public sealed class MezonBotHostedService : BackgroundService
         {
             return;
         }
+
+        CacheDmRoute(message);
 
         var messageText = ExtractMessageText(message.Content);
         if (!TryParseJoinCode(messageText, out var code))
@@ -238,6 +283,102 @@ public sealed class MezonBotHostedService : BackgroundService
         }
     }
 
+    private async Task<bool> SendDmMessageToUserAsync(long userId, ChannelMessageContent content)
+    {
+        if (_client?.SocketManager is null || _client.ChannelManager is null)
+        {
+            _logger.LogWarning("Cannot send DM to user {UserId} because bot client is not connected.", userId);
+            return false;
+        }
+
+        try
+        {
+            if (await TrySendByKnownDmRouteAsync(userId, content))
+            {
+                return true;
+            }
+
+            if (userId > int.MaxValue)
+            {
+                _logger.LogWarning(
+                    "Cannot create DM channel via SDK for user {UserId} because ID exceeds Int32. User should message bot first to establish DM route.",
+                    userId);
+                return false;
+            }
+
+            var user = await _client.GetUserFromIdAsync(userId);
+            await user.SendDmMessageAsync(content);
+
+            _logger.LogInformation("DM question sent to Mezon user {UserId}.", userId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send DM question to Mezon user {UserId}.", userId);
+            return false;
+        }
+    }
+
+    private void CacheDmRoute(PbChannelMessage message)
+    {
+        if (message.ChannelId == 0 || message.SenderId == 0)
+        {
+            return;
+        }
+
+        var senderId = message.SenderId;
+        var mode = Helper.ToInt(message.Mode)
+            ?? Helper.ConvertChannelTypeToChannelMode((int)ChannelType.ChannelTypeDm);
+
+        _dmRoutes[(long)senderId] = new DmRoute
+        {
+            ChannelId = message.ChannelId,
+            ClanId = message.ClanId,
+            IsPublic = message.IsPublic,
+            Mode = mode
+        };
+    }
+
+    private async Task<bool> TrySendByKnownDmRouteAsync(long userId, ChannelMessageContent content)
+    {
+        if (_client?.SocketManager is null)
+        {
+            return false;
+        }
+
+        if (!_dmRoutes.TryGetValue(userId, out var route))
+        {
+            return false;
+        }
+
+        try
+        {
+            await _client.SocketManager.WriteChatMessageAsync(
+                clanId: route.ClanId,
+                channelId: route.ChannelId,
+                mode: route.Mode,
+                isPublic: route.IsPublic,
+                content: content);
+
+            _logger.LogInformation(
+                "DM question sent to Mezon user {UserId} via cached route channel {ChannelId}.",
+                userId,
+                route.ChannelId);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to send DM via cached route for user {UserId} on channel {ChannelId}.",
+                userId,
+                route.ChannelId);
+
+            return false;
+        }
+    }
+
     private static bool TryParseJoinCode(string input, out string code)
     {
         code = string.Empty;
@@ -317,5 +458,20 @@ public sealed class MezonBotHostedService : BackgroundService
 
         [JsonPropertyName("filetype")]
         public string Filetype { get; init; } = string.Empty;
+    }
+
+    public sealed class BatchDmSendResult
+    {
+        public int RequestedCount { get; init; }
+        public int SentCount { get; init; }
+        public List<long> FailedUserIds { get; init; } = [];
+    }
+
+    private sealed class DmRoute
+    {
+        public long ClanId { get; init; }
+        public long ChannelId { get; init; }
+        public bool IsPublic { get; init; }
+        public int Mode { get; init; }
     }
 }

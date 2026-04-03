@@ -76,7 +76,8 @@ builder.Services.Scan(scan => scan
     .WithScopedLifetime());
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
-builder.Services.AddHostedService<MezonBotHostedService>();
+builder.Services.AddSingleton<MezonBotHostedService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<MezonBotHostedService>());
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
