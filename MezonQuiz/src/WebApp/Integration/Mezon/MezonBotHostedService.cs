@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Mezon.Protobuf;
@@ -38,6 +39,9 @@ public sealed class MezonBotHostedService : BackgroundService
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
         _logger = logger;
+
+        _clanWebhookToken = (_configuration["MezonWebhook:ClanWebhookToken"] ?? string.Empty).Trim();
+        _webhookEnabled = bool.TryParse(_configuration["MezonWebhook:Enabled"], out var enabled) && enabled;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -176,18 +180,18 @@ public sealed class MezonBotHostedService : BackgroundService
         await SendWebhookMessageAsync(senderId, replyMessage);
     }
 
-    private async Task SendWebhookMessageAsync(string userIdentifier, string message)
+    public async Task<bool> SendWebhookMessageAsync(string userIdentifier, string message)
     {
         if (!_webhookEnabled)
         {
             _logger.LogDebug("Mezon webhook is disabled. Skip sending message to {UserIdentifier}.", userIdentifier);
-            return;
+            return false;
         }
 
         if (string.IsNullOrWhiteSpace(_clanWebhookToken))
         {
             _logger.LogWarning("Mezon webhook token is empty. Cannot send message to {UserIdentifier}.", userIdentifier);
-            return;
+            return false;
         }
 
         var endpoint = $"https://webhook.mezon.ai/clanwebhooks/{Uri.EscapeDataString(_clanWebhookToken)}/{Uri.EscapeDataString(userIdentifier)}";
@@ -216,7 +220,7 @@ public sealed class MezonBotHostedService : BackgroundService
                 "Mezon webhook send failed. Status={StatusCode} Body={ResponseBody}",
                 (int)response.StatusCode,
                 errorBody);
-            return;
+            return false;
         }
 
         var successBody = await response.Content.ReadAsStringAsync();
@@ -224,6 +228,8 @@ public sealed class MezonBotHostedService : BackgroundService
             "Mezon webhook message sent successfully to {UserIdentifier}. Response={ResponseBody}",
             userIdentifier,
             successBody);
+
+        return true;
     }
 
     private static bool TryParseJoinCode(string input, out string code)
@@ -285,20 +291,25 @@ public sealed class MezonBotHostedService : BackgroundService
 
     private sealed class ClanWebhookRequest
     {
+        [JsonPropertyName("content")]
         public string Content { get; init; } = string.Empty;
 
+        [JsonPropertyName("attachments")]
         public List<ClanWebhookAttachment> Attachments { get; init; } = [];
     }
 
     private sealed class ClanWebhookContent
     {
+        [JsonPropertyName("t")]
         public string T { get; init; } = string.Empty;
     }
 
     private sealed class ClanWebhookAttachment
     {
+        [JsonPropertyName("url")]
         public string Url { get; init; } = string.Empty;
 
+        [JsonPropertyName("filetype")]
         public string Filetype { get; init; } = string.Empty;
     }
 }

@@ -30,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Mezon-sdk\Mezon-sdk.csproj" />
+    <ProjectReference Include="..\WebApp\WebApp.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
