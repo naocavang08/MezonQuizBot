@@ -20,14 +20,14 @@ public class MezonApi
     private static readonly SemaphoreSlim _rateLimiter = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _rateDelay = TimeSpan.FromMilliseconds(1250);
 
-    public MezonApi(int clientId, string apiKey, string baseUrl, int timeoutMs)
+    public MezonApi(long clientId, string apiKey, string baseUrl, int timeoutMs)
         : this(clientId, apiKey, baseUrl, timeoutMs, httpClient: null)
     {
     }
 
-    public MezonApi(int clientId, string apiKey, string baseUrl, int timeoutMs, HttpClient? httpClient)
+    public MezonApi(long clientId, string apiKey, string baseUrl, int timeoutMs, HttpClient? httpClient)
     {
-        _baseUrl = baseUrl;
+        _baseUrl = (baseUrl ?? string.Empty).TrimEnd('/');
         _timeoutMs = timeoutMs;
 
         _httpClient = httpClient ?? new HttpClient();

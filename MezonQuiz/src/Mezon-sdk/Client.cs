@@ -260,7 +260,7 @@ namespace Mezon_sdk
                 background,
                 menuName,
                 (int)Helper.GenerateSnowflakeId(),
-                ParseClientId());
+                checked((int)ParseClientId()));
         }
 
         public async Task<ApiQuickMenuAccess> DeleteQuickMenuAccessAsync(
@@ -671,11 +671,11 @@ namespace Mezon_sdk
             return 0;
         }
 
-        private int ParseClientId()
+        private long ParseClientId()
         {
-            if (!int.TryParse(ClientId, out var clientId))
+            if (!long.TryParse(ClientId, out var clientId))
             {
-                throw new InvalidOperationException($"ClientId '{ClientId}' is not a valid integer.");
+                throw new InvalidOperationException($"ClientId '{ClientId}' is not a valid Int64 number.");
             }
 
             return clientId;
