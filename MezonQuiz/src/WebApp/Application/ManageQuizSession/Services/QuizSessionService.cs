@@ -789,55 +789,26 @@ namespace WebApp.Application.ManageQuizSession.Services
             var optionsBlock = string.Join("\n", optionLines);
             var instruction = "(Reply with option number or answer on web if needed.)";
 
-            var messageText = string.Join(
-                "\n\n",
-                new[]
-                {
-                    title,
-                    question.Content,
-                    optionsBlock,
-                    instruction
-                });
+            var sections = new List<string>
+            {
+                title,
+                question.Content
+            };
 
-            var markdown = BuildMarkdownRanges(title, optionsBlock, messageText);
+            if (!string.IsNullOrWhiteSpace(optionsBlock))
+            {
+                sections.Add(optionsBlock);
+            }
+
+            sections.Add(instruction);
+
+            var messageText = string.Join("\n\n", sections);
 
             return new ChannelMessageContent
             {
                 Text = messageText,
-                Markdown = markdown,
                 Components = BuildOptionButtons(session, orderedOptions, hasZeroBasedIndex)
             };
-        }
-
-        private static List<MarkdownOnMessage> BuildMarkdownRanges(string title, string optionsBlock, string messageText)
-        {
-            var ranges = new List<MarkdownOnMessage>();
-
-            if (!string.IsNullOrWhiteSpace(title))
-            {
-                ranges.Add(new MarkdownOnMessage
-                {
-                    Type = EMarkdownType.Bold,
-                    Start = 0,
-                    End = title.Length
-                });
-            }
-
-            if (!string.IsNullOrWhiteSpace(optionsBlock))
-            {
-                var optionsStart = messageText.IndexOf(optionsBlock, StringComparison.Ordinal);
-                if (optionsStart >= 0)
-                {
-                    ranges.Add(new MarkdownOnMessage
-                    {
-                        Type = EMarkdownType.Pre,
-                        Start = optionsStart,
-                        End = optionsStart + optionsBlock.Length
-                    });
-                }
-            }
-
-            return ranges;
         }
 
         private static List<MessageActionRow> BuildOptionButtons(
