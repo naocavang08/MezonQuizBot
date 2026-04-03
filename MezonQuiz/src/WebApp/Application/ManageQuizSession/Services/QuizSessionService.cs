@@ -785,14 +785,20 @@ namespace WebApp.Application.ManageQuizSession.Services
                 .ToList();
 
             var totalQuestionCount = quiz.Questions?.Count ?? 0;
-            var title = $"[QUIZ] {quiz.Title} | Question {session.CurrentQuestion + 1}/{Math.Max(totalQuestionCount, 1)}";
+            var questionTypeLabel = GetQuestionTypeLabel(question.QuestionType);
+            var title = $"[{questionTypeLabel}] {quiz.Title} | Question {session.CurrentQuestion + 1}/{Math.Max(totalQuestionCount, 1)}";
             var optionsBlock = BuildOptionsPseudoCodeBlock(optionLines);
-            var instruction = "(Chọn đáp án đúng tương ứng phía bên dưới!)";
+            var instruction = GetInstructionText(question.QuestionType);
 
             var descriptionSections = new List<string>
             {
                 question.Content
             };
+
+            if (!string.IsNullOrWhiteSpace(question.MediaUrl))
+            {
+                descriptionSections.Add($"Media: {question.MediaUrl}");
+            }
 
             if (!string.IsNullOrWhiteSpace(optionsBlock))
             {
@@ -810,12 +816,67 @@ namespace WebApp.Application.ManageQuizSession.Services
                 [
                     new InteractiveMessageProps
                     {
-                        Color = "#22C55E",
+                        Color = GetPanelColor(question.QuestionType),
                         Title = title,
-                        Description = panelDescription
+                        Description = panelDescription,
+                        Image = BuildEmbedImage(question.MediaUrl)
                     }
                 ],
-                Components = BuildOptionButtons(session, orderedOptions, hasZeroBasedIndex)
+                Components = BuildOptionButtons(session, question.QuestionType, orderedOptions, hasZeroBasedIndex)
+            };
+        }
+
+        private static string GetQuestionTypeLabel(QuestionType questionType)
+        {
+            return questionType switch
+            {
+                QuestionType.MultipleChoice => "MULTI CHOICE",
+                QuestionType.TrueFalse => "TRUE/FALSE",
+                _ => "SINGLE CHOICE"
+            };
+        }
+
+        private static string GetInstructionText(QuestionType questionType)
+        {
+            return questionType switch
+            {
+                QuestionType.MultipleChoice => "(Chọn môt hoặc nhiểu đáp án đúng tương ứng phía bên dưới!)",
+                QuestionType.TrueFalse => "(Chọn Đúng hoặc Sai bằng nút bên dưới!)",
+                _ => "(Chọn đáp án đúng tương ứng phía bên dưới!)"
+            };
+        }
+
+        private static string GetPanelColor(QuestionType questionType)
+        {
+            return questionType switch
+            {
+                QuestionType.MultipleChoice => "#F59E0B",
+                QuestionType.TrueFalse => "#06B6D4",
+                _ => "#22C55E"
+            };
+        }
+
+        private static InteractiveMessageMedia? BuildEmbedImage(string? mediaUrl)
+        {
+            if (string.IsNullOrWhiteSpace(mediaUrl))
+            {
+                return null;
+            }
+
+            if (!Uri.TryCreate(mediaUrl, UriKind.Absolute, out var uri))
+            {
+                return null;
+            }
+
+            if (!string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return new InteractiveMessageMedia
+            {
+                Url = mediaUrl
             };
         }
 
@@ -832,6 +893,7 @@ namespace WebApp.Application.ManageQuizSession.Services
 
         private static List<MessageActionRow> BuildOptionButtons(
             QuizSession session,
+            QuestionType questionType,
             List<QuizOption> options,
             bool hasZeroBasedIndex)
         {
@@ -849,7 +911,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 buttonBuilder.AddButton(
                     componentId: componentId,
                     label: displayIndex.ToString(),
-                    style: ButtonMessageStyle.Primary);
+                    style: ResolveButtonStyle(questionType, displayIndex));
             }
 
             var components = buttonBuilder
@@ -869,6 +931,16 @@ namespace WebApp.Application.ManageQuizSession.Services
                     Components = components
                 }
             ];
+        }
+
+        private static ButtonMessageStyle ResolveButtonStyle(QuestionType questionType, int displayIndex)
+        {
+            return questionType switch
+            {
+                QuestionType.MultipleChoice => ButtonMessageStyle.Secondary,
+                QuestionType.TrueFalse => displayIndex == 1 ? ButtonMessageStyle.Success : ButtonMessageStyle.Danger,
+                _ => ButtonMessageStyle.Primary
+            };
         }
 
         private static int NormalizeOptionDisplayIndex(int optionIndex, bool hasZeroBasedIndex)
