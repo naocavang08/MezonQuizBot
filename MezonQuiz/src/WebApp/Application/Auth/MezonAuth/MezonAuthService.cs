@@ -150,16 +150,40 @@ namespace WebApp.Application.Auth.MezonAuth
             {
                 foreach (var name in names)
                 {
-                    if (source.TryGetProperty(name, out var node) && node.ValueKind == JsonValueKind.String)
+                    if (!source.TryGetProperty(name, out var node))
                     {
-                        return node.GetString();
+                        continue;
+                    }
+
+                    if (node.ValueKind == JsonValueKind.String)
+                    {
+                        var value = node.GetString();
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            return value;
+                        }
+                    }
+
+                    if (node.ValueKind == JsonValueKind.Number)
+                    {
+                        if (node.TryGetInt64(out var longValue))
+                        {
+                            return longValue.ToString();
+                        }
+
+                        if (node.TryGetDouble(out var doubleValue))
+                        {
+                            return doubleValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        }
                     }
                 }
 
                 return null;
             }
 
-            var mezonUserId = GetStringByCandidate(userInfo, "mezon_user_id", "sub", "id");
+            // Mezon C# SDK maps session user identity from "user_id".
+            var mezonUserId = GetStringByCandidate(userInfo, "user_id", "mezon_user_id", "sub", "id")
+                              ?? GetStringByCandidate(tokenData, "user_id", "mezon_user_id", "sub", "id");
             var username = GetStringByCandidate(userInfo, "username", "preferred_username", "name");
             var email = GetStringByCandidate(userInfo, "email");
             var displayName = GetStringByCandidate(userInfo, "display_name", "name");
