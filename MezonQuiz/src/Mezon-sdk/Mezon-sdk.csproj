@@ -14,7 +14,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.11" />
 
     <Protobuf Include="Protobuf\api\api.proto" GrpcServices="Client" ProtoRoot="Protobuf" />
     <Protobuf Include="Protobuf\rtapi\realtime.proto" GrpcServices="Client" ProtoRoot="Protobuf" />
