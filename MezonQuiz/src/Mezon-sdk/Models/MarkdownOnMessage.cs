@@ -7,6 +7,7 @@ namespace Mezon_sdk.Models
     public class MarkdownOnMessage : StartEndIndex
     {
         [JsonPropertyName("type")]
+        [JsonConverter(typeof(EMarkdownTypeWireConverter))]
         public EMarkdownType? Type { get; set; }
 
     }

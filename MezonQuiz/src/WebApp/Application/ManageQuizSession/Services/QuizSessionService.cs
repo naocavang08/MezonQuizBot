@@ -786,29 +786,48 @@ namespace WebApp.Application.ManageQuizSession.Services
 
             var totalQuestionCount = quiz.Questions?.Count ?? 0;
             var title = $"[QUIZ] {quiz.Title} | Question {session.CurrentQuestion + 1}/{Math.Max(totalQuestionCount, 1)}";
-            var optionsBlock = string.Join("\n", optionLines);
-            var instruction = "(Reply with option number or answer on web if needed.)";
+            var optionsBlock = BuildOptionsPseudoCodeBlock(optionLines);
+            var instruction = "(Chọn đáp án đúng tương ứng phía bên dưới!)";
 
-            var sections = new List<string>
+            var descriptionSections = new List<string>
             {
-                title,
                 question.Content
             };
 
             if (!string.IsNullOrWhiteSpace(optionsBlock))
             {
-                sections.Add(optionsBlock);
+                descriptionSections.Add(optionsBlock);
             }
 
-            sections.Add(instruction);
+            descriptionSections.Add(instruction);
 
-            var messageText = string.Join("\n\n", sections);
+            var panelDescription = string.Join("\n\n", descriptionSections);
 
             return new ChannelMessageContent
             {
-                Text = messageText,
+                Text = string.Empty,
+                Embed =
+                [
+                    new InteractiveMessageProps
+                    {
+                        Color = "#22C55E",
+                        Title = title,
+                        Description = panelDescription
+                    }
+                ],
                 Components = BuildOptionButtons(session, orderedOptions, hasZeroBasedIndex)
             };
+        }
+
+        private static string BuildOptionsPseudoCodeBlock(List<string> optionLines)
+        {
+            if (optionLines.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var optionsBody = string.Join("\n", optionLines);
+            return $"```\n{optionsBody}\n```";
         }
 
         private static List<MessageActionRow> BuildOptionButtons(
