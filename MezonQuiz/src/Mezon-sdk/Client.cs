@@ -177,7 +177,7 @@ namespace Mezon_sdk
             EnsureInitialized();
             var session = SessionManager!.GetSession()!;
             var clans = await ApiClient!.ListClansAsync(session.Token);
-            var clanDesc = clans.Clandesc?.FirstOrDefault(c => (c.ClanId ?? 0) == clanId);
+            var clanDesc = clans.Clandesc?.FirstOrDefault(c => (c.ClanId ?? 0L) == clanId);
 
             if (clanDesc == null)
             {
@@ -200,7 +200,7 @@ namespace Mezon_sdk
             EnsureInitialized();
             var session = SessionManager!.GetSession()!;
             var channelDetail = await ApiClient!.GetChannelDetailAsync(session.Token, channelId);
-            var clanId = channelDetail.ClanId ?? 0;
+            var clanId = channelDetail.ClanId ?? 0L;
 
             var clan = Clans.Get(clanId) ?? await GetClanFromIdAsync(clanId);
             var channel = new TextChannel(channelDetail, clan, SocketManager!, MessageDb);
@@ -578,9 +578,9 @@ namespace Mezon_sdk
         private Clan CreateClan(ApiClanDesc clanDesc, string sessionToken)
         {
             return new Clan(
-                clanId: clanDesc.ClanId ?? 0,
+                clanId: clanDesc.ClanId ?? 0L,
                 clanName: clanDesc.ClanName ?? string.Empty,
-                welcomeChannelId: clanDesc.WelcomeChannelId ?? 0,
+                welcomeChannelId: clanDesc.WelcomeChannelId ?? 0L,
                 client: this,
                 apiClient: ApiClient!,
                 socketManager: SocketManager!,

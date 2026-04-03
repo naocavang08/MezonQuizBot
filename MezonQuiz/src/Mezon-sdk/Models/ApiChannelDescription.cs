@@ -15,7 +15,7 @@ namespace Mezon_sdk.Models
         public List<string>? Avatars { get; set; }
 
         [JsonPropertyName("category_id")]
-        public int? CategoryId { get; set; }
+        public long? CategoryId { get; set; }
 
         [JsonPropertyName("category_name")]
         public string? CategoryName { get; set; }
@@ -24,7 +24,7 @@ namespace Mezon_sdk.Models
         public List<string>? ChannelAvatar { get; set; }
 
         [JsonPropertyName("channel_id")]
-        public int? ChannelId { get; set; }
+        public long? ChannelId { get; set; }
 
         [JsonPropertyName("channel_label")]
         public string? ChannelLabel { get; set; }
@@ -33,7 +33,7 @@ namespace Mezon_sdk.Models
         public int? ChannelPrivate { get; set; }
 
         [JsonPropertyName("clan_id")]
-        public int? ClanId { get; set; }
+        public long? ClanId { get; set; }
 
         [JsonPropertyName("clan_name")]
         public string? ClanName { get; set; }
@@ -45,7 +45,7 @@ namespace Mezon_sdk.Models
         public int? CreateTimeSeconds { get; set; }
 
         [JsonPropertyName("creator_id")]
-        public int? CreatorId { get; set; }
+        public long? CreatorId { get; set; }
 
         [JsonPropertyName("creator_name")]
         public string? CreatorName { get; set; }
@@ -72,7 +72,7 @@ namespace Mezon_sdk.Models
         public List<bool>? Onlines { get; set; }
 
         [JsonPropertyName("parent_id")]
-        public int? ParentId { get; set; }
+        public long? ParentId { get; set; }
 
         [JsonPropertyName("status")]
         public int? Status { get; set; }
@@ -84,10 +84,10 @@ namespace Mezon_sdk.Models
         public int? UpdateTimeSeconds { get; set; }
 
         [JsonPropertyName("user_id")]
-        public List<int>? UserId { get; set; }
+        public List<long>? UserId { get; set; }
 
         [JsonPropertyName("user_ids")]
-        public List<int>? UserIds { get; set; }
+        public List<long>? UserIds { get; set; }
 
         [JsonPropertyName("usernames")]
         public List<string>? Usernames { get; set; }

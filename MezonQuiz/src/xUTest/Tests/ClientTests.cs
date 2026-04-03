@@ -83,6 +83,59 @@ namespace xUTest.Tests
         }
 
         [Fact]
+        public async Task ChannelMessageEvent_WhenUserMessageEmitted_PreservesSenderAndContent()
+        {
+            var client = new MezonClient("client-id", "api-key");
+            var message = new PbChannelMessage
+            {
+                SenderId = 1843962578301095936,
+                ChannelId = 556677,
+                Content = "{\"t\":\"/join ABC123\"}"
+            };
+
+            PbChannelMessage? received = null;
+            client.OnChannelMessage += msg =>
+            {
+                received = msg;
+                return Task.CompletedTask;
+            };
+
+            await client.EventManager.EmitAsync("channel_message", message);
+            await Task.Delay(100);
+
+            Assert.NotNull(received);
+            Assert.Equal(message.SenderId, received!.SenderId);
+            Assert.Equal(message.ChannelId, received.ChannelId);
+            Assert.Equal(message.Content, received.Content);
+        }
+
+        [Fact]
+        public async Task OnChannelMessageEvent_WhenRegistered_InvokesHandler()
+        {
+            var client = new MezonClient("client-id", "api-key");
+            var message = new PbChannelMessage
+            {
+                SenderId = 111,
+                ChannelId = 222,
+                Content = "{\"t\":\"/join Z9Y8X7\"}"
+            };
+
+            PbChannelMessage? received = null;
+            client.OnChannelMessageEvent(msg =>
+            {
+                received = msg;
+                return Task.CompletedTask;
+            });
+
+            await client.EventManager.EmitAsync("channel_message", message);
+            await Task.Delay(100);
+
+            Assert.NotNull(received);
+            Assert.Equal(111, received!.SenderId);
+            Assert.Equal("{\"t\":\"/join Z9Y8X7\"}", received.Content);
+        }
+
+        [Fact]
         public async Task ChannelMessageEvent_WithNonChannelMessagePayload_DoesNotInvokeHandler()
         {
             var client = new MezonClient("client-id", "api-key");

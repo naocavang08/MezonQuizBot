@@ -34,7 +34,10 @@ namespace Mezon_sdk.Managers
                 return;
             }
             
-            var channelsResponse = await _apiClient.ListChannelsAsync(sessionToken, ToInt(ChannelType.ChannelTypeDm) ?? 0);
+            var channelsResponse = await _apiClient.ListChannelsAsync(
+                token: sessionToken,
+                clanId: 0,
+                channelType: ToInt(ChannelType.ChannelTypeDm) ?? 0);
 
             if (channelsResponse == null || channelsResponse.Channeldesc == null)
             {
@@ -50,7 +53,7 @@ namespace Mezon_sdk.Managers
 
                 if (userIds != null && userIds.Any() && channelType == ToInt(ChannelType.ChannelTypeDm))
                 {
-                    if (int.TryParse(userIds[0].ToString(), out var parsedUserId))
+                    if (long.TryParse(userIds[0].ToString(), out var parsedUserId))
                     {
                         dmMapping[parsedUserId] = channelId ?? 0;
                     }

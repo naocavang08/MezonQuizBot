@@ -278,7 +278,7 @@ namespace Mezon_sdk.Managers
 			return _socket.CloseAsync();
 		}
 
-		private void SetClanOnClient(int clanId, Clan clan)
+		private void SetClanOnClient(long clanId, Clan clan)
 		{
 			if (clanId <= 0)
 			{
@@ -297,7 +297,7 @@ namespace Mezon_sdk.Managers
 			var setMethod = clansStore.GetType().GetMethod("Set", BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
 			if (setMethod != null)
 			{
-				setMethod.Invoke(clansStore, new object[] { (long)clanId, clan });
+				setMethod.Invoke(clansStore, new object[] { clanId, clan });
 			}
 		}
 	}

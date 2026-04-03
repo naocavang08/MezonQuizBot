@@ -10,6 +10,7 @@ using WebApp.Realtime;
 using static WebApp.Domain.Enums.Status;
 using WebApp.Application.ManageQuiz.Services;
 using WebApp.Application.Auth.Authorization;
+using WebApp.Integration.Mezon;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +76,7 @@ builder.Services.Scan(scan => scan
     .WithScopedLifetime());
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
+builder.Services.AddHostedService<MezonBotHostedService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

@@ -10,13 +10,13 @@ namespace Mezon_sdk.Models
         public string? Banner { get; set; }
 
         [JsonPropertyName("clan_id")]
-        public int? ClanId { get; set; }
+        public long? ClanId { get; set; }
 
         [JsonPropertyName("clan_name")]
         public string? ClanName { get; set; }
 
         [JsonPropertyName("creator_id")]
-        public int? CreatorId { get; set; }
+        public long? CreatorId { get; set; }
 
         [JsonPropertyName("logo")]
         public string? Logo { get; set; }
@@ -31,7 +31,7 @@ namespace Mezon_sdk.Models
         public bool? IsOnboarding { get; set; }
 
         [JsonPropertyName("welcome_channel_id")]
-        public int? WelcomeChannelId { get; set; }
+        public long? WelcomeChannelId { get; set; }
 
         [JsonPropertyName("onboarding_banner")]
         public string? OnboardingBanner { get; set; }

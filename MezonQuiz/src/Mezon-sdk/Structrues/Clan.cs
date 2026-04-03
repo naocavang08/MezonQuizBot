@@ -9,9 +9,9 @@ namespace Mezon_sdk.Structures
 {
     public class Clan
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string Name { get; set; }
-        public int WelcomeChannelId { get; set; }
+        public long WelcomeChannelId { get; set; }
         
         // Client property typed as dynamic as MezonClient is not defined yet
         public dynamic? Client { get; set; } 
@@ -29,9 +29,9 @@ namespace Mezon_sdk.Structures
         private static readonly Logger Logger = new Logger("Clan");
 
         public Clan(
-            int clanId, 
+            long clanId, 
             string clanName, 
-            int welcomeChannelId, 
+            long welcomeChannelId, 
             dynamic client, 
             MezonApi apiClient, 
             SocketManager socketManager, 
@@ -77,7 +77,7 @@ namespace Mezon_sdk.Structures
             var channelsResponse = await ApiClient.ListChannelsAsync(
                 token: SessionToken,
                 channelType: (int)ChannelType.ChannelTypeChannel,
-                clanId: Id
+                clanId: checked((int)Id)
             );
 
             var validChannels = channelsResponse?.Channeldesc?
@@ -130,7 +130,7 @@ namespace Mezon_sdk.Structures
 
             var result = await ApiClient.ListChannelVoiceUsersAsync(
                 token: SessionToken,
-                clanId: Id,
+                clanId: checked((int)Id),
                 channelId: channelId,
                 channelType: channelType.Value,
                 limit: limit,
@@ -157,7 +157,7 @@ namespace Mezon_sdk.Structures
         {
             return await ApiClient.ListRolesAsync(
                 token: SessionToken,
-                clanId: Id,
+                clanId: checked((int)Id),
                 limit: limit,
                 state: state,
                 cursor: cursor

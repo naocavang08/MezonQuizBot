@@ -13,7 +13,7 @@ namespace Mezon_sdk.Models
         public string? Content { get; set; }
 
         [JsonPropertyName("id")]
-        public int? Id { get; set; }
+        public long? Id { get; set; }
 
         [JsonPropertyName("mention")]
         public string? Mention { get; set; }
@@ -25,7 +25,7 @@ namespace Mezon_sdk.Models
         public string? Referece { get; set; }
 
         [JsonPropertyName("sender_id")]
-        public int? SenderId { get; set; }
+        public long? SenderId { get; set; }
 
         [JsonPropertyName("timestamp_seconds")]
         public int? TimestampSeconds { get; set; }
