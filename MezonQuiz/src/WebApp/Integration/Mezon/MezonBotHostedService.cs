@@ -325,6 +325,19 @@ public sealed class MezonBotHostedService : BackgroundService
             var feedbackContent = BuildAnswerFeedbackMessageContent(submitResult, questionIndex, selectedOption);
             await SendDmFeedbackAsync(mezonUserId, feedbackContent);
 
+            var shouldLockQuestionMessage = submitResult.Success
+                || submitResult.Message.Contains("already submitted", StringComparison.OrdinalIgnoreCase);
+
+            if (shouldLockQuestionMessage)
+            {
+                await TryLockAnsweredQuestionMessageAsync(
+                    clickEvent,
+                    quizSessionService,
+                    sessionId,
+                    questionIndex,
+                    mezonUserId);
+            }
+
             _logger.LogInformation(
                 "Processed quiz button click. SessionId={SessionId}, QuestionIndex={QuestionIndex}, SelectedOption={SelectedOption}, SenderId={SenderId}, Success={Success}, Message={Message}",
                 sessionId,
@@ -508,6 +521,194 @@ public sealed class MezonBotHostedService : BackgroundService
         }
 
         return string.Join(", ", options.OrderBy(index => index));
+    }
+
+    private async Task TryLockAnsweredQuestionMessageAsync(
+        Rt.MessageButtonClicked clickEvent,
+        IQuizSessionService quizSessionService,
+        Guid sessionId,
+        int clickedQuestionIndex,
+        string mezonUserId)
+    {
+        if (_client?.SocketManager is null)
+        {
+            return;
+        }
+
+        if (clickEvent.MessageId <= 0 || clickEvent.ChannelId <= 0)
+        {
+            return;
+        }
+
+        var content = await BuildAnsweredQuestionMessageContentAsync(
+            quizSessionService,
+            sessionId,
+            clickedQuestionIndex);
+
+        var mode = Helper.ConvertChannelTypeToChannelMode((int)ChannelType.ChannelTypeDm);
+        var clanId = 0L;
+        var isPublic = false;
+
+        if (long.TryParse(mezonUserId, out var senderAsLong)
+            && _dmRoutes.TryGetValue(senderAsLong, out var route)
+            && route.ChannelId == clickEvent.ChannelId)
+        {
+            mode = route.Mode;
+            clanId = route.ClanId;
+            isPublic = route.IsPublic;
+        }
+
+        try
+        {
+            await _client.SocketManager.UpdateChatMessageAsync(
+                clanId: clanId,
+                channelId: clickEvent.ChannelId,
+                mode: mode,
+                isPublic: isPublic,
+                messageId: clickEvent.MessageId,
+                content: content,
+                hideEditted: true);
+
+            _logger.LogInformation(
+                "Locked answered question message. MessageId={MessageId}, ChannelId={ChannelId}, SessionId={SessionId}, QuestionIndex={QuestionIndex}",
+                clickEvent.MessageId,
+                clickEvent.ChannelId,
+                sessionId,
+                clickedQuestionIndex);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to lock answered question message. MessageId={MessageId}, ChannelId={ChannelId}, SessionId={SessionId}",
+                clickEvent.MessageId,
+                clickEvent.ChannelId,
+                sessionId);
+        }
+    }
+
+    private static async Task<ChannelMessageContent> BuildAnsweredQuestionMessageContentAsync(
+        IQuizSessionService quizSessionService,
+        Guid sessionId,
+        int clickedQuestionIndex)
+    {
+        var currentQuestion = await quizSessionService.GetCurrentQuestion(sessionId);
+        if (!currentQuestion.Result.Success || currentQuestion.Question is null)
+        {
+            return BuildAnsweredQuestionFallbackContent(clickedQuestionIndex);
+        }
+
+        if (currentQuestion.Question.QuestionIndex != clickedQuestionIndex)
+        {
+            return BuildAnsweredQuestionFallbackContent(clickedQuestionIndex);
+        }
+
+        var question = currentQuestion.Question;
+        var orderedOptions = (question.Options ?? [])
+            .OrderBy(option => option.Index)
+            .ToList();
+
+        var hasZeroBasedIndex = orderedOptions.Any(option => option.Index == 0);
+        var optionLines = orderedOptions
+            .Select(option => $"{NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex)} - {option.Content}")
+            .ToList();
+
+        var sections = new List<string>
+        {
+            question.Content
+        };
+
+        if (!string.IsNullOrWhiteSpace(question.MediaUrl))
+        {
+            sections.Add($"Media: {question.MediaUrl}");
+        }
+
+        var optionBlock = BuildOptionsPseudoCodeBlock(optionLines);
+        if (!string.IsNullOrWhiteSpace(optionBlock))
+        {
+            sections.Add(optionBlock);
+        }
+
+        sections.Add("Câu hỏi đã được trả lời");
+
+        return new ChannelMessageContent
+        {
+            Text = string.Empty,
+            Embed =
+            [
+                new InteractiveMessageProps
+                {
+                    Color = "#64748B",
+                    Title = $"Question {question.QuestionIndex + 1}",
+                    Description = string.Join("\n\n", sections),
+                    Image = BuildEmbedImage(question.MediaUrl)
+                }
+            ],
+            Components = []
+        };
+    }
+
+    private static ChannelMessageContent BuildAnsweredQuestionFallbackContent(int clickedQuestionIndex)
+    {
+        return new ChannelMessageContent
+        {
+            Text = string.Empty,
+            Embed =
+            [
+                new InteractiveMessageProps
+                {
+                    Color = "#64748B",
+                    Title = $"Question {clickedQuestionIndex + 1}",
+                    Description = "Câu hỏi đã được trả lời"
+                }
+            ],
+            Components = []
+        };
+    }
+
+    private static InteractiveMessageMedia? BuildEmbedImage(string? mediaUrl)
+    {
+        if (string.IsNullOrWhiteSpace(mediaUrl))
+        {
+            return null;
+        }
+
+        if (!Uri.TryCreate(mediaUrl, UriKind.Absolute, out var uri))
+        {
+            return null;
+        }
+
+        if (!string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return new InteractiveMessageMedia
+        {
+            Url = mediaUrl
+        };
+    }
+
+    private static string BuildOptionsPseudoCodeBlock(List<string> optionLines)
+    {
+        if (optionLines.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var optionsBody = string.Join("\n", optionLines);
+        return $"```\n{optionsBody}\n```";
+    }
+
+    private static int NormalizeOptionDisplayIndex(int optionIndex, bool hasZeroBasedIndex)
+    {
+        if (hasZeroBasedIndex)
+        {
+            return optionIndex + 1;
+        }
+
+        return optionIndex;
     }
 
     private void CacheDmRoute(PbChannelMessage message)
