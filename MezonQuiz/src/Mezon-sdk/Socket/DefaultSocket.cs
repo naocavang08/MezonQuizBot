@@ -825,6 +825,7 @@ namespace Mezon_sdk.Socket
 				Rt.Envelope.MessageOneofCase.ChannelMessageUpdate => envelope.ChannelMessageUpdate,
 				Rt.Envelope.MessageOneofCase.ChannelMessageRemove => envelope.ChannelMessageRemove,
 				Rt.Envelope.MessageOneofCase.MessageReactionEvent => envelope.MessageReactionEvent,
+				Rt.Envelope.MessageOneofCase.MessageButtonClicked => envelope.MessageButtonClicked,
 				Rt.Envelope.MessageOneofCase.Error => envelope.Error,
 				Rt.Envelope.MessageOneofCase.Ping => envelope.Ping,
 				Rt.Envelope.MessageOneofCase.Pong => envelope.Pong,

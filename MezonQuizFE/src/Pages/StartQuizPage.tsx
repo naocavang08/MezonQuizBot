@@ -346,7 +346,7 @@ const StartQuizPage = () => {
                                         Participants: {session.participantCount}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        Current Question: {session.currentQuestion}
+                                        Current Question: {session.currentQuestion + 1}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
                                         Created: {new Date(session.createdAt).toLocaleString()}
