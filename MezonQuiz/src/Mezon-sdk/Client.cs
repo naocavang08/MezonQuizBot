@@ -12,6 +12,7 @@ using Mezon_sdk.Utils;
 
 using Rt = Mezon.Protobuf.Realtime;
 using ApiUtils = Mezon_sdk.Api.Utils;
+using ApiPb = Mezon.Protobuf;
 
 namespace Mezon_sdk
 {
@@ -50,6 +51,25 @@ namespace Mezon_sdk
         public event Func<Rt.UserChannelRemoved, Task>? OnUserChannelRemoved;
         public event Func<Rt.UserClanRemoved, Task>? OnUserClanRemoved;
         public event Func<Rt.UserChannelAdded, Task>? OnUserChannelAdded;
+        public event Func<ApiPb.TokenSentEvent, Task>? OnTokenSend;
+        public event Func<ApiPb.MessageReaction, Task>? OnMessageReaction;
+        public event Func<ApiPb.GiveCoffeeEvent, Task>? OnGiveCoffee;
+        public event Func<Rt.RoleEvent, Task>? OnRoleEvent;
+        public event Func<ApiPb.CreateEventRequest, Task>? OnClanEventCreated;
+        public event Func<Rt.MessageButtonClicked, Task>? OnMessageButtonClicked;
+        public event Func<Rt.StreamingJoinedEvent, Task>? OnStreamingJoined;
+        public event Func<Rt.StreamingLeavedEvent, Task>? OnStreamingLeaved;
+        public event Func<Rt.DropdownBoxSelected, Task>? OnDropdownBoxSelected;
+        public event Func<Rt.WebrtcSignalingFwd, Task>? OnWebrtcSignalingFwd;
+        public event Func<Rt.VoiceStartedEvent, Task>? OnVoiceStarted;
+        public event Func<Rt.VoiceEndedEvent, Task>? OnVoiceEnded;
+        public event Func<Rt.VoiceJoinedEvent, Task>? OnVoiceJoined;
+        public event Func<Rt.VoiceLeavedEvent, Task>? OnVoiceLeaved;
+        public event Func<Rt.QuickMenuDataEvent, Task>? OnQuickMenu;
+        public event Func<Rt.AIAgentEnabledEvent, Task>? OnAiAgentEnabled;
+        public event Func<Rt.RoleAssignedEvent, Task>? OnRoleAssign;
+        public event Func<Rt.Notifications, Task>? OnNotification;
+        public event Func<Rt.AddClanUserEvent, Task>? OnAddClanUser;
 
         private readonly string _host;
         private readonly string _port;
@@ -104,6 +124,25 @@ namespace Mezon_sdk
         public void OnUserChannelRemovedEvent(Func<Rt.UserChannelRemoved, Task> handler) => OnUserChannelRemoved += handler;
         public void OnUserClanRemovedEvent(Func<Rt.UserClanRemoved, Task> handler) => OnUserClanRemoved += handler;
         public void OnUserChannelAddedEvent(Func<Rt.UserChannelAdded, Task> handler) => OnUserChannelAdded += handler;
+        public void OnTokenSendEvent(Func<ApiPb.TokenSentEvent, Task> handler) => OnTokenSend += handler;
+        public void OnMessageReactionEvent(Func<ApiPb.MessageReaction, Task> handler) => OnMessageReaction += handler;
+        public void OnGiveCoffeeEvent(Func<ApiPb.GiveCoffeeEvent, Task> handler) => OnGiveCoffee += handler;
+        public void OnRoleEventHandler(Func<Rt.RoleEvent, Task> handler) => OnRoleEvent += handler;
+        public void OnClanEventCreatedEvent(Func<ApiPb.CreateEventRequest, Task> handler) => OnClanEventCreated += handler;
+        public void OnMessageButtonClickedEvent(Func<Rt.MessageButtonClicked, Task> handler) => OnMessageButtonClicked += handler;
+        public void OnStreamingJoinedEvent(Func<Rt.StreamingJoinedEvent, Task> handler) => OnStreamingJoined += handler;
+        public void OnStreamingLeavedEvent(Func<Rt.StreamingLeavedEvent, Task> handler) => OnStreamingLeaved += handler;
+        public void OnDropdownBoxSelectedEvent(Func<Rt.DropdownBoxSelected, Task> handler) => OnDropdownBoxSelected += handler;
+        public void OnWebrtcSignalingFwdEvent(Func<Rt.WebrtcSignalingFwd, Task> handler) => OnWebrtcSignalingFwd += handler;
+        public void OnVoiceStartedEvent(Func<Rt.VoiceStartedEvent, Task> handler) => OnVoiceStarted += handler;
+        public void OnVoiceEndedEvent(Func<Rt.VoiceEndedEvent, Task> handler) => OnVoiceEnded += handler;
+        public void OnVoiceJoinedEvent(Func<Rt.VoiceJoinedEvent, Task> handler) => OnVoiceJoined += handler;
+        public void OnVoiceLeavedEvent(Func<Rt.VoiceLeavedEvent, Task> handler) => OnVoiceLeaved += handler;
+        public void OnQuickMenuEvent(Func<Rt.QuickMenuDataEvent, Task> handler) => OnQuickMenu += handler;
+        public void OnAiAgentEnabledEvent(Func<Rt.AIAgentEnabledEvent, Task> handler) => OnAiAgentEnabled += handler;
+        public void OnRoleAssignEvent(Func<Rt.RoleAssignedEvent, Task> handler) => OnRoleAssign += handler;
+        public void OnNotificationEvent(Func<Rt.Notifications, Task> handler) => OnNotification += handler;
+        public void OnAddClanUserEvent(Func<Rt.AddClanUserEvent, Task> handler) => OnAddClanUser += handler;
 
         public async Task<Session> GetSessionAsync()
         {
@@ -366,6 +405,101 @@ namespace Mezon_sdk
                 Events.UserChannelAdded,
                 HandleUserChannelAddedDefaultAsync,
                 async message => await InvokeEventAsync(OnUserChannelAdded, message));
+
+            BindDefaultHandler<ApiPb.TokenSentEvent>(
+                Events.TokenSend,
+                HandleTokenSendDefaultAsync,
+                async message => await InvokeEventAsync(OnTokenSend, message));
+
+            BindDefaultHandler<ApiPb.MessageReaction>(
+                Events.MessageReaction,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnMessageReaction, message));
+
+            BindDefaultHandler<ApiPb.GiveCoffeeEvent>(
+                Events.GiveCoffee,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnGiveCoffee, message));
+
+            BindDefaultHandler<Rt.RoleEvent>(
+                Events.RoleEvent,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnRoleEvent, message));
+
+            BindDefaultHandler<ApiPb.CreateEventRequest>(
+                Events.ClanEventCreated,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnClanEventCreated, message));
+
+            BindDefaultHandler<Rt.MessageButtonClicked>(
+                Events.MessageButtonClicked,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnMessageButtonClicked, message));
+
+            BindDefaultHandler<Rt.StreamingJoinedEvent>(
+                Events.StreamingJoinedEvent,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnStreamingJoined, message));
+
+            BindDefaultHandler<Rt.StreamingLeavedEvent>(
+                Events.StreamingLeavedEvent,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnStreamingLeaved, message));
+
+            BindDefaultHandler<Rt.DropdownBoxSelected>(
+                Events.DropdownBoxSelected,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnDropdownBoxSelected, message));
+
+            BindDefaultHandler<Rt.WebrtcSignalingFwd>(
+                Events.WebrtcSignalingFwd,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnWebrtcSignalingFwd, message));
+
+            BindDefaultHandler<Rt.VoiceStartedEvent>(
+                Events.VoiceStartedEvent,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnVoiceStarted, message));
+
+            BindDefaultHandler<Rt.VoiceEndedEvent>(
+                Events.VoiceEndedEvent,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnVoiceEnded, message));
+
+            BindDefaultHandler<Rt.VoiceJoinedEvent>(
+                Events.VoiceJoinedEvent,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnVoiceJoined, message));
+
+            BindDefaultHandler<Rt.VoiceLeavedEvent>(
+                Events.VoiceLeavedEvent,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnVoiceLeaved, message));
+
+            BindDefaultHandler<Rt.QuickMenuDataEvent>(
+                Events.QuickMenu,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnQuickMenu, message));
+
+            BindDefaultHandler<Rt.AIAgentEnabledEvent>(
+                Events.AiAgentEnable,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnAiAgentEnabled, message));
+
+            BindDefaultHandler<Rt.RoleAssignedEvent>(
+                Events.RoleAssign,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnRoleAssign, message));
+
+            BindDefaultHandler<Rt.Notifications>(
+                Events.Notifications,
+                _ => Task.CompletedTask,
+                async message => await InvokeEventAsync(OnNotification, message));
+
+            BindDefaultHandler<Rt.AddClanUserEvent>(
+                Events.AddClanUser,
+                HandleAddClanUserDefaultAsync,
+                async message => await InvokeEventAsync(OnAddClanUser, message));
         }
 
         private void BindDefaultHandler<T>(
@@ -496,6 +630,82 @@ namespace Mezon_sdk
                     break;
                 }
             }
+        }
+
+        private async Task HandleTokenSendDefaultAsync(ApiPb.TokenSentEvent message)
+        {
+            if (message.SenderId != ParseClientId())
+            {
+                return;
+            }
+
+            try
+            {
+                var receiverId = message.ReceiverId;
+                var receiver = Users.Get(receiverId) ?? await GetUserFromIdAsync(receiverId);
+                var note = string.IsNullOrWhiteSpace(message.Note) ? "Transfer funds" : message.Note;
+                await receiver.SendDmMessageAsync(
+                    new ChannelMessageContent
+                    {
+                        Text = $"Funds Transferred: {message.Amount:N0} VND | {note}"
+                    },
+                    code: (int)TypeMessage.SendToken);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to process token sent default handler.");
+            }
+        }
+
+        private async Task HandleAddClanUserDefaultAsync(Rt.AddClanUserEvent message)
+        {
+            EnsureInitialized();
+
+            if (message.User != null && message.User.UserId == ParseClientId())
+            {
+                await SocketManager!.GetSocket().JoinClanChatAsync(message.ClanId);
+
+                if (Clans.Get(message.ClanId) == null)
+                {
+                    var session = SessionManager!.GetSession()
+                        ?? throw new InvalidOperationException("Session is not available.");
+
+                    var clan = CreateClan(
+                        new ApiClanDesc
+                        {
+                            ClanId = message.ClanId,
+                            ClanName = string.Empty,
+                            WelcomeChannelId = 0
+                        },
+                        session.Token);
+
+                    Clans.Set(message.ClanId, clan);
+                    await clan.LoadChannelsAsync();
+                }
+
+                return;
+            }
+
+            if (message.User == null)
+            {
+                return;
+            }
+
+            var user = new User(
+                new UserInitData
+                {
+                    Id = (int)message.User.UserId,
+                    Username = message.User.Username,
+                    Avatar = message.User.Avatar,
+                    DisplayName = message.User.DisplayName,
+                    ClanNick = string.Empty,
+                    ClanAvatar = string.Empty,
+                    DmChannelId = 0
+                },
+                SocketManager!,
+                ChannelManager!);
+
+            Users.Set(message.User.UserId, user);
         }
 
         private void SetupReconnectHandlers()
