@@ -15,6 +15,7 @@ using WebApp.Application.ManageQuizSession.Services;
 using WebApp.Data;
 using WebApp.Application.ManageQuizSession;
 using PbChannelMessage = Mezon.Protobuf.ChannelMessage;
+using Rt = Mezon.Protobuf.Realtime;
 
 namespace WebApp.Integration.Mezon;
 
@@ -22,6 +23,9 @@ public sealed class MezonBotHostedService : BackgroundService
 {
     private static readonly Regex JoinCommandRegex = new(
         @"^/join\s+([a-zA-Z0-9]{4,16})$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    private static readonly Regex QuizButtonRegex = new(
+        @"^quiz:([0-9a-fA-F\-]{36}):q:(\d+):a:(\d+)$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private readonly IServiceScopeFactory _scopeFactory;
@@ -69,6 +73,7 @@ public sealed class MezonBotHostedService : BackgroundService
 
         _client = new MezonClient(_botId, botToken, host: apiHost, port: apiPort, useSsl: useSsl);
         _client.OnChannelMessage += HandleChannelMessageAsync;
+        _client.OnMessageButtonClicked += HandleButtonClickedAsync;
 
         try
         {
@@ -97,6 +102,7 @@ public sealed class MezonBotHostedService : BackgroundService
         if (_client is not null)
         {
             _client.OnChannelMessage -= HandleChannelMessageAsync;
+            _client.OnMessageButtonClicked -= HandleButtonClickedAsync;
 
             try
             {
@@ -191,7 +197,6 @@ public sealed class MezonBotHostedService : BackgroundService
             var normalizedIncomingUsername = incomingUsername.ToLowerInvariant();
 
             var user = await dbContext.Users
-                .AsNoTracking()
                 .FirstOrDefaultAsync(u =>
                     u.MezonUserId == senderId ||
                     (!string.IsNullOrWhiteSpace(incomingUsername) &&
@@ -208,6 +213,17 @@ public sealed class MezonBotHostedService : BackgroundService
                     message,
                     "Cannot map Mezon sender to local user. Please login with Mezon on the web first and then try /join.");
                 return;
+            }
+
+            if (string.IsNullOrWhiteSpace(user.MezonUserId))
+            {
+                user.MezonUserId = senderId;
+                await dbContext.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Linked local user {UserId} with Mezon user id {SenderId} during /join.",
+                    user.Id,
+                    senderId);
             }
 
             operationResult = await quizSessionService.JoinByCode(code, new JoinQuizSessionDto
@@ -227,6 +243,109 @@ public sealed class MezonBotHostedService : BackgroundService
             : $"Join failed for session {code}. {operationResult.Message}";
 
         await SendReplyAsync(message, replyMessage);
+    }
+
+    private async Task HandleButtonClickedAsync(Rt.MessageButtonClicked clickEvent)
+    {
+        var buttonId = ExtractButtonId(clickEvent);
+        if (!TryParseQuizButtonId(buttonId, out var sessionId, out var questionIndex, out var selectedOption))
+        {
+            _logger.LogWarning(
+                "Ignored button click because button id format is invalid. ButtonId={ButtonId}, RawButtonId={RawButtonId}, ExtraData={ExtraData}, SenderId={SenderId}, UserId={UserId}",
+                buttonId,
+                clickEvent.ButtonId,
+                clickEvent.ExtraData,
+                clickEvent.SenderId,
+                clickEvent.UserId);
+            return;
+        }
+
+        var mezonUserId = ResolveMezonUserId(clickEvent);
+        if (string.IsNullOrWhiteSpace(mezonUserId))
+        {
+            _logger.LogWarning(
+                "Ignoring quiz button click with invalid sender. ButtonId={ButtonId}, SenderId={SenderId}, UserId={UserId}",
+                buttonId,
+                clickEvent.SenderId,
+                clickEvent.UserId);
+            return;
+        }
+
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var quizSessionService = scope.ServiceProvider.GetRequiredService<IQuizSessionService>();
+
+            var user = await dbContext.Users
+                .FirstOrDefaultAsync(u => u.MezonUserId == mezonUserId);
+
+            if (user is null)
+            {
+                var fallbackUsername = $"mezon_{mezonUserId}";
+                user = await dbContext.SessionParticipants
+                    .Where(p => p.SessionId == sessionId)
+                    .Select(p => p.User)
+                    .FirstOrDefaultAsync(u => u.Username == fallbackUsername);
+
+                if (user is not null && string.IsNullOrWhiteSpace(user.MezonUserId))
+                {
+                    user.MezonUserId = mezonUserId;
+                    await dbContext.SaveChangesAsync();
+
+                    _logger.LogInformation(
+                        "Linked fallback local user {UserId} with Mezon user id {SenderId} during button click.",
+                        user.Id,
+                        mezonUserId);
+                }
+            }
+
+            if (user is null)
+            {
+                _logger.LogWarning(
+                    "Cannot map Mezon button click sender to local user. SenderId={SenderId}, ButtonId={ButtonId}",
+                    mezonUserId,
+                    buttonId);
+                return;
+            }
+
+            var resolvedOption = await ResolveSubmittedOptionIndexAsync(
+                quizSessionService,
+                sessionId,
+                questionIndex,
+                selectedOption);
+
+            var submitResult = await quizSessionService.SubmitAnswer(sessionId, new SubmitAnswerDto
+            {
+                UserId = user.Id,
+                SelectedOption = resolvedOption,
+                SelectedOptions = [resolvedOption]
+            });
+
+            var feedbackContent = BuildAnswerFeedbackMessageContent(submitResult, questionIndex, selectedOption);
+            await SendDmFeedbackAsync(mezonUserId, feedbackContent);
+
+            _logger.LogInformation(
+                "Processed quiz button click. SessionId={SessionId}, QuestionIndex={QuestionIndex}, SelectedOption={SelectedOption}, SenderId={SenderId}, Success={Success}, Message={Message}",
+                sessionId,
+                questionIndex,
+                resolvedOption,
+                mezonUserId,
+                submitResult.Success,
+                submitResult.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to process quiz button click. ButtonId={ButtonId}, SenderId={SenderId}",
+                buttonId,
+                mezonUserId);
+
+            await SendDmFeedbackAsync(
+                mezonUserId,
+                BuildFailureFeedbackMessageContent("System is currently unavailable. Please try again."));
+        }
     }
 
     private async Task SendReplyAsync(PbChannelMessage incomingMessage, string message)
@@ -319,6 +438,78 @@ public sealed class MezonBotHostedService : BackgroundService
         }
     }
 
+    private async Task SendDmFeedbackAsync(string mezonUserId, ChannelMessageContent content)
+    {
+        if (!long.TryParse(mezonUserId, out var userId) || userId <= 0)
+        {
+            return;
+        }
+
+        await SendDmMessageToUserAsync(userId, content);
+    }
+
+    private static ChannelMessageContent BuildAnswerFeedbackMessageContent(
+        SessionOperationResult submitResult,
+        int fallbackQuestionIndex,
+        int fallbackSelectedDisplay)
+    {
+        if (!submitResult.Success)
+        {
+            return BuildFailureFeedbackMessageContent($"Cannot submit answer: {submitResult.Message}");
+        }
+
+        var isCorrect = submitResult.IsCorrect ?? false;
+        var selectedDisplay = submitResult.SelectedOptionDisplay ?? fallbackSelectedDisplay;
+        var questionIndex = submitResult.QuestionIndex ?? fallbackQuestionIndex;
+        var totalScore = submitResult.TotalScore ?? 0;
+        var pointsEarned = submitResult.PointsEarned ?? 0;
+        var correctAnswerLabel = FormatOptionList(submitResult.CorrectOptionDisplays);
+
+        var title = isCorrect
+            ? $"Correct!!!, you have {totalScore} points"
+            : $"Incorrect!!!, The correct answer is {correctAnswerLabel}";
+
+        return new ChannelMessageContent
+        {
+            Text = string.Empty,
+            Embed =
+            [
+                new InteractiveMessageProps
+                {
+                    Color = isCorrect ? "#22C55E" : "#EF4444",
+                    Title = title,
+                }
+            ]
+        };
+    }
+
+    private static ChannelMessageContent BuildFailureFeedbackMessageContent(string message)
+    {
+        return new ChannelMessageContent
+        {
+            Text = string.Empty,
+            Embed =
+            [
+                new InteractiveMessageProps
+                {
+                    Color = "#F59E0B",
+                    Title = "Cannot submit answer",
+                    Description = message
+                }
+            ]
+        };
+    }
+
+    private static string FormatOptionList(List<int> options)
+    {
+        if (options.Count == 0)
+        {
+            return "N/A";
+        }
+
+        return string.Join(", ", options.OrderBy(index => index));
+    }
+
     private void CacheDmRoute(PbChannelMessage message)
     {
         if (message.ChannelId == 0 || message.SenderId == 0)
@@ -396,6 +587,139 @@ public sealed class MezonBotHostedService : BackgroundService
 
         code = match.Groups[1].Value.Trim().ToUpperInvariant();
         return code.Length > 0;
+    }
+
+    private static bool TryParseQuizButtonId(string input, out Guid sessionId, out int questionIndex, out int selectedOption)
+    {
+        sessionId = Guid.Empty;
+        questionIndex = -1;
+        selectedOption = -1;
+
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return false;
+        }
+
+        var match = QuizButtonRegex.Match(input.Trim());
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        if (!Guid.TryParse(match.Groups[1].Value, out sessionId))
+        {
+            return false;
+        }
+
+        if (!int.TryParse(match.Groups[2].Value, out questionIndex) || questionIndex < 0)
+        {
+            return false;
+        }
+
+        if (!int.TryParse(match.Groups[3].Value, out selectedOption) || selectedOption < 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static string ResolveMezonUserId(Rt.MessageButtonClicked clickEvent)
+    {
+        if (clickEvent.UserId > 0)
+        {
+            return clickEvent.UserId.ToString();
+        }
+
+        return string.Empty;
+    }
+
+    private static string ExtractButtonId(Rt.MessageButtonClicked clickEvent)
+    {
+        var buttonId = (clickEvent.ButtonId ?? string.Empty).Trim();
+        if (!string.IsNullOrWhiteSpace(buttonId))
+        {
+            return buttonId;
+        }
+
+        var extraData = (clickEvent.ExtraData ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(extraData))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(extraData);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object)
+            {
+                var candidate = TryGetStringProperty(doc.RootElement, "button_id")
+                    ?? TryGetStringProperty(doc.RootElement, "buttonId")
+                    ?? TryGetStringProperty(doc.RootElement, "id")
+                    ?? TryGetStringProperty(doc.RootElement, "component_id")
+                    ?? TryGetStringProperty(doc.RootElement, "componentId");
+
+                return candidate?.Trim() ?? string.Empty;
+            }
+
+            if (doc.RootElement.ValueKind == JsonValueKind.String)
+            {
+                return (doc.RootElement.GetString() ?? string.Empty).Trim();
+            }
+        }
+        catch (JsonException)
+        {
+            // Keep fallback behavior below for non-JSON extra_data.
+        }
+
+        return extraData;
+    }
+
+    private static string? TryGetStringProperty(JsonElement obj, string propertyName)
+    {
+        if (!obj.TryGetProperty(propertyName, out var node))
+        {
+            return null;
+        }
+
+        return node.ValueKind switch
+        {
+            JsonValueKind.String => node.GetString(),
+            JsonValueKind.Number => node.ToString(),
+            _ => null
+        };
+    }
+
+    private static async Task<int> ResolveSubmittedOptionIndexAsync(
+        IQuizSessionService quizSessionService,
+        Guid sessionId,
+        int clickedQuestionIndex,
+        int selectedOption)
+    {
+        var currentQuestion = await quizSessionService.GetCurrentQuestion(sessionId);
+        if (!currentQuestion.Result.Success || currentQuestion.Question is null)
+        {
+            return selectedOption;
+        }
+
+        if (currentQuestion.Question.QuestionIndex != clickedQuestionIndex)
+        {
+            return selectedOption;
+        }
+
+        var options = currentQuestion.Question.Options ?? [];
+        var hasZeroBasedOption = options.Any(option => option.Index == 0);
+        if (hasZeroBasedOption && selectedOption > 0)
+        {
+            return selectedOption - 1;
+        }
+
+        if (options.Any(option => option.Index == selectedOption))
+        {
+            return selectedOption;
+        }
+
+        return selectedOption;
     }
 
     private static string ExtractMessageText(string rawContent)

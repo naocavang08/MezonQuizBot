@@ -64,5 +64,13 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
         public Guid? SessionId { get; set; }
+        public bool? IsCorrect { get; set; }
+        public int? PointsEarned { get; set; }
+        public int? TotalScore { get; set; }
+        public int? AnswersCount { get; set; }
+        public int? CorrectCount { get; set; }
+        public int? QuestionIndex { get; set; }
+        public int? SelectedOptionDisplay { get; set; }
+        public List<int> CorrectOptionDisplays { get; set; } = new();
     }
 }

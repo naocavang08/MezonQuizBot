@@ -532,6 +532,15 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return Fail("Selected option is invalid.");
             }
 
+            var hasZeroBasedOption = question.Options.Any(option => option.Index == 0);
+            var selectedOptionDisplay = NormalizeOptionDisplayIndex(selectedOptions[0], hasZeroBasedOption);
+            var correctOptionDisplays = question.Options
+                .Where(option => option.IsCorrect)
+                .OrderBy(option => option.Index)
+                .Select(option => NormalizeOptionDisplayIndex(option.Index, hasZeroBasedOption))
+                .Distinct()
+                .ToList();
+
             var isCorrect = IsCorrectAnswer(question, selectedOptions);
             var points = isCorrect ? question.Points : 0;
 
@@ -558,7 +567,20 @@ namespace WebApp.Application.ManageQuizSession.Services
 
             await _dbContext.SaveChangesAsync();
             await BroadcastSessionStateChanged(session);
-            return Success("Answer submitted successfully.");
+            return new SessionOperationResult
+            {
+                Success = true,
+                Message = "Answer submitted successfully.",
+                SessionId = sessionId,
+                IsCorrect = isCorrect,
+                PointsEarned = points,
+                TotalScore = participant.TotalScore,
+                AnswersCount = participant.AnswersCount,
+                CorrectCount = participant.CorrectCount,
+                QuestionIndex = session.CurrentQuestion,
+                SelectedOptionDisplay = selectedOptionDisplay,
+                CorrectOptionDisplays = correctOptionDisplays
+            };
         }
 
         public async Task<List<SessionParticipantDto>> GetLeaderboard(Guid sessionId)
