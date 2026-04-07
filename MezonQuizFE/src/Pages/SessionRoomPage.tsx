@@ -258,7 +258,7 @@ const SessionRoomPage = () => {
                                 <Stack spacing={1}>
                                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                                         <Typography variant="body2" color="text.secondary">
-                                            Session ID: {session.id}
+                                            Session ID
                                         </Typography>
                                         <Button
                                             size="small"
@@ -274,7 +274,7 @@ const SessionRoomPage = () => {
 
                                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                                         <Typography variant="body2" color="text.secondary">
-                                            Session Code: {session.code || "N/A"}
+                                            Session Code
                                         </Typography>
                                         <Button
                                             size="small"
@@ -291,7 +291,7 @@ const SessionRoomPage = () => {
 
                                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                                         <Typography variant="body2" color="text.secondary">
-                                            Deep Link: {shareLink || "N/A"}
+                                            Deep Link
                                         </Typography>
                                         <Button
                                             size="small"
@@ -326,16 +326,6 @@ const SessionRoomPage = () => {
                                                     }}
                                                 />
                                                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                                                    <Button
-                                                        size="small"
-                                                        variant="text"
-                                                        startIcon={<MdContentCopy />}
-                                                        onClick={() => {
-                                                            void copyToClipboard(qrCodeUrl, "QR code URL copied.");
-                                                        }}
-                                                    >
-                                                        Copy QR URL
-                                                    </Button>
                                                     <Link href={qrCodeUrl} target="_blank" rel="noopener noreferrer" underline="hover">
                                                         Open QR
                                                     </Link>

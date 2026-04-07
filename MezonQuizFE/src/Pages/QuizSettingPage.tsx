@@ -664,12 +664,6 @@ const QuizSettingPage = () => {
 												<Typography variant="body2" color="text.secondary">
 													Created: {new Date(session.createdAt).toLocaleString()}
 												</Typography>
-												<Typography variant="body2" color="text.secondary">
-													Deep Link: {deepLink || "N/A"}
-												</Typography>
-												<Typography variant="body2" color="text.secondary">
-													QR Code: {qrCodeUrl ? "Available" : "N/A"}
-												</Typography>
 												{qrCodeUrl ? (
 													<Box
 														component="img"
@@ -732,16 +726,6 @@ const QuizSettingPage = () => {
 														}}
 													>
 														Copy Deep Link
-													</Button>
-													<Button
-														size="small"
-														variant="outlined"
-														disabled={!qrCodeUrl}
-														onClick={() => {
-															void copyValue(qrCodeUrl, "Session QR URL copied.");
-														}}
-													>
-														Copy QR URL
 													</Button>
 													{qrCodeUrl ? (
 														<Link href={qrCodeUrl} target="_blank" rel="noopener noreferrer" underline="hover" sx={{ alignSelf: "center" }}>
