@@ -17,6 +17,7 @@ using WebApp.Data;
 using WebApp.Application.ManageQuizSession;
 using PbChannelMessage = Mezon.Protobuf.ChannelMessage;
 using Rt = Mezon.Protobuf.Realtime;
+using WebApp.Application.ManageQuiz.Dtos;
 
 namespace WebApp.Integration.Mezon;
 
@@ -31,6 +32,9 @@ public sealed class MezonBotHostedService : BackgroundService
     private static readonly Regex QuizButtonRegex = new(
         @"^quiz:([0-9a-fA-F\-]{36}):q:(\d+):a:(\d+)$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    private static readonly Regex QuizSubmitButtonRegex = new(
+        @"^quiz:([0-9a-fA-F\-]{36}):q:(\d+):submit$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -39,6 +43,7 @@ public sealed class MezonBotHostedService : BackgroundService
 
     private MezonClient? _client;
     private readonly ConcurrentDictionary<long, DmRoute> _dmRoutes = new();
+    private readonly ConcurrentDictionary<string, HashSet<int>> _pendingMultiChoiceSelections = new();
     private string _botId = string.Empty;
     private string _clanWebhookToken = string.Empty;
     private bool _webhookEnabled;
@@ -273,7 +278,9 @@ public sealed class MezonBotHostedService : BackgroundService
     private async Task HandleButtonClickedAsync(Rt.MessageButtonClicked clickEvent)
     {
         var buttonId = ExtractButtonId(clickEvent);
-        if (!TryParseQuizButtonId(buttonId, out var sessionId, out var questionIndex, out var selectedOption))
+        var isSubmitAction = TryParseQuizSubmitButtonId(buttonId, out var submitSessionId, out var submitQuestionIndex);
+        var isOptionAction = TryParseQuizButtonId(buttonId, out var optionSessionId, out var optionQuestionIndex, out var selectedOption);
+        if (!isSubmitAction && !isOptionAction)
         {
             _logger.LogWarning(
                 "Ignored button click because button id format is invalid. ButtonId={ButtonId}, RawButtonId={RawButtonId}, ExtraData={ExtraData}, SenderId={SenderId}, UserId={UserId}",
@@ -284,6 +291,9 @@ public sealed class MezonBotHostedService : BackgroundService
                 clickEvent.UserId);
             return;
         }
+
+        var sessionId = isSubmitAction ? submitSessionId : optionSessionId;
+        var questionIndex = isSubmitAction ? submitQuestionIndex : optionQuestionIndex;
 
         var mezonUserId = ResolveMezonUserId(clickEvent);
         if (string.IsNullOrWhiteSpace(mezonUserId))
@@ -331,6 +341,101 @@ public sealed class MezonBotHostedService : BackgroundService
                     "Cannot map Mezon button click sender to local user. SenderId={SenderId}, ButtonId={ButtonId}",
                     mezonUserId,
                     buttonId);
+                return;
+            }
+
+            var currentQuestionResult = await quizSessionService.GetCurrentQuestion(sessionId);
+            if (!currentQuestionResult.Result.Success || currentQuestionResult.Question is null)
+            {
+                await SendDmFeedbackAsync(
+                    mezonUserId,
+                    QuizBotMessageFormatter.BuildFailureFeedbackMessageContent("Current question is unavailable."));
+                return;
+            }
+
+            var currentQuestion = currentQuestionResult.Question;
+            if (currentQuestion.QuestionIndex != questionIndex)
+            {
+                await SendDmFeedbackAsync(
+                    mezonUserId,
+                    QuizBotMessageFormatter.BuildFailureFeedbackMessageContent("Question has changed. Please answer the latest question."));
+                return;
+            }
+
+            if (currentQuestion.QuestionType == QuestionType.MultipleChoice)
+            {
+                if (isSubmitAction)
+                {
+                    var selectionKey = BuildMultiChoiceSelectionKey(sessionId, questionIndex, mezonUserId);
+                    if (!_pendingMultiChoiceSelections.TryGetValue(selectionKey, out var pendingSelections)
+                        || pendingSelections.Count == 0)
+                    {
+                        await SendDmFeedbackAsync(
+                            mezonUserId,
+                            QuizBotMessageFormatter.BuildFailureFeedbackMessageContent("Please choose at least one option before submitting."));
+                        return;
+                    }
+
+                    List<int> selectedIndexes;
+                    lock (pendingSelections)
+                    {
+                        selectedIndexes = pendingSelections
+                            .Distinct()
+                            .OrderBy(index => index)
+                            .ToList();
+                    }
+
+                    var multiChoiceSubmitResult = await quizSessionService.SubmitAnswer(sessionId, new SubmitAnswerDto
+                    {
+                        UserId = user.Id,
+                        SelectedOption = selectedIndexes[0],
+                        SelectedOptions = selectedIndexes
+                    });
+
+                    if (multiChoiceSubmitResult.Success)
+                    {
+                        _pendingMultiChoiceSelections.TryRemove(selectionKey, out _);
+                    }
+
+                    var multiChoiceFeedbackContent = QuizBotMessageFormatter.BuildAnswerFeedbackMessageContent(multiChoiceSubmitResult, questionIndex, selectedIndexes[0]);
+                    await SendDmFeedbackAsync(mezonUserId, multiChoiceFeedbackContent);
+
+                    var shouldLockMultiChoiceQuestionMessage = multiChoiceSubmitResult.Success
+                        || multiChoiceSubmitResult.Message.Contains("already submitted", StringComparison.OrdinalIgnoreCase);
+
+                    if (shouldLockMultiChoiceQuestionMessage)
+                    {
+                        await TryLockAnsweredQuestionMessageAsync(
+                            clickEvent,
+                            quizSessionService,
+                            sessionId,
+                            questionIndex,
+                            mezonUserId);
+                    }
+
+                    return;
+                }
+
+                var toggledResolvedOption = await ResolveSubmittedOptionIndexAsync(
+                    quizSessionService,
+                    sessionId,
+                    questionIndex,
+                    selectedOption);
+
+                var selectionKeyForToggle = BuildMultiChoiceSelectionKey(sessionId, questionIndex, mezonUserId);
+                var selectedSnapshot = ToggleMultiChoiceSelection(selectionKeyForToggle, toggledResolvedOption);
+                var hasZeroBasedOption = currentQuestion.Options.Any(option => option.Index == 0);
+                var selectedDisplays = selectedSnapshot
+                    .Select(index => QuizBotMessageFormatter.NormalizeOptionDisplayIndex(index, hasZeroBasedOption))
+                    .Distinct()
+                    .OrderBy(index => index)
+                    .ToList();
+
+                await TryUpdateMultiChoiceQuestionMessageAsync(
+                    clickEvent,
+                    currentQuestion,
+                    selectedDisplays,
+                    mezonUserId);
                 return;
             }
 
@@ -550,6 +655,60 @@ public sealed class MezonBotHostedService : BackgroundService
         }
     }
 
+    private async Task TryUpdateMultiChoiceQuestionMessageAsync(
+        Rt.MessageButtonClicked clickEvent,
+        QuizSessionQuestionDto question,
+        List<int> selectedDisplays,
+        string mezonUserId)
+    {
+        if (_client?.SocketManager is null)
+        {
+            return;
+        }
+
+        if (clickEvent.MessageId <= 0 || clickEvent.ChannelId <= 0)
+        {
+            return;
+        }
+
+        var mode = Helper.ConvertChannelTypeToChannelMode((int)ChannelType.ChannelTypeDm);
+        var clanId = 0L;
+        var isPublic = false;
+
+        if (long.TryParse(mezonUserId, out var senderAsLong)
+            && _dmRoutes.TryGetValue(senderAsLong, out var route)
+            && route.ChannelId == clickEvent.ChannelId)
+        {
+            mode = route.Mode;
+            clanId = route.ClanId;
+            isPublic = route.IsPublic;
+        }
+
+        var content = QuizBotMessageFormatter.BuildMultiChoiceSelectionStateMessageContent(question, selectedDisplays);
+
+        try
+        {
+            await _client.SocketManager.UpdateChatMessageAsync(
+                clanId: clanId,
+                channelId: clickEvent.ChannelId,
+                mode: mode,
+                isPublic: isPublic,
+                messageId: clickEvent.MessageId,
+                content: content,
+                hideEditted: true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to update multi-choice question message state. MessageId={MessageId}, ChannelId={ChannelId}, SessionId={SessionId}, QuestionIndex={QuestionIndex}",
+                clickEvent.MessageId,
+                clickEvent.ChannelId,
+                question.SessionId,
+                question.QuestionIndex);
+        }
+    }
+
     private static async Task<ChannelMessageContent> BuildAnsweredQuestionMessageContentAsync(
         IQuizSessionService quizSessionService,
         Guid sessionId,
@@ -697,6 +856,54 @@ public sealed class MezonBotHostedService : BackgroundService
         }
 
         return true;
+    }
+
+    private static bool TryParseQuizSubmitButtonId(string input, out Guid sessionId, out int questionIndex)
+    {
+        sessionId = Guid.Empty;
+        questionIndex = -1;
+
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return false;
+        }
+
+        var match = QuizSubmitButtonRegex.Match(input.Trim());
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        if (!Guid.TryParse(match.Groups[1].Value, out sessionId))
+        {
+            return false;
+        }
+
+        if (!int.TryParse(match.Groups[2].Value, out questionIndex) || questionIndex < 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static string BuildMultiChoiceSelectionKey(Guid sessionId, int questionIndex, string mezonUserId)
+    {
+        return $"{sessionId:N}:{questionIndex}:{mezonUserId}";
+    }
+
+    private List<int> ToggleMultiChoiceSelection(string key, int selectedOption)
+    {
+        var selections = _pendingMultiChoiceSelections.GetOrAdd(key, _ => new HashSet<int>());
+        lock (selections)
+        {
+            if (!selections.Add(selectedOption))
+            {
+                selections.Remove(selectedOption);
+            }
+
+            return selections.OrderBy(index => index).ToList();
+        }
     }
 
     private static string ResolveMezonUserId(Rt.MessageButtonClicked clickEvent)

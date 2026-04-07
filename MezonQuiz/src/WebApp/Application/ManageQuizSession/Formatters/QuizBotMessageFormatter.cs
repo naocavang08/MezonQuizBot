@@ -181,6 +181,113 @@ public static class QuizBotMessageFormatter
         };
     }
 
+    public static ChannelMessageContent BuildMultiChoiceSelectionChangedMessageContent(List<int> selectedOptionDisplays)
+    {
+        var selectedLabel = selectedOptionDisplays.Count == 0
+            ? "None"
+            : string.Join(", ", selectedOptionDisplays.OrderBy(index => index));
+
+        return new ChannelMessageContent
+        {
+            Text = string.Empty,
+            Embed =
+            [
+                new InteractiveMessageProps
+                {
+                    Color = "#3B82F6",
+                    Title = "Selection updated",
+                    Description = $"Selected options: {selectedLabel}\nPress Submit to send your final answer."
+                }
+            ]
+        };
+    }
+
+    public static ChannelMessageContent BuildMultiChoiceSelectionStateMessageContent(
+        QuizSessionQuestionDto question,
+        List<int> selectedOptionDisplays)
+    {
+        var resolvedMediaUrl = ResolveMediaUrl(question.MediaUrl);
+        var orderedOptions = (question.Options ?? [])
+            .OrderBy(option => option.Index)
+            .ToList();
+
+        var hasZeroBasedIndex = orderedOptions.Any(option => option.Index == 0);
+        var optionLines = orderedOptions
+            .Select(option => $"{NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex)} - {option.Content}")
+            .ToList();
+
+        var sections = new List<string>
+        {
+            question.Content
+        };
+
+        if (!string.IsNullOrWhiteSpace(resolvedMediaUrl))
+        {
+            sections.Add($"Media: {resolvedMediaUrl}");
+        }
+
+        var optionBlock = BuildOptionsPseudoCodeBlock(optionLines);
+        if (!string.IsNullOrWhiteSpace(optionBlock))
+        {
+            sections.Add(optionBlock);
+        }
+
+        sections.Add("(Chọn một hoặc nhiều đáp án, sau đó bấm Submit)");
+
+        var selectedSet = selectedOptionDisplays
+            .Distinct()
+            .ToHashSet();
+
+        var buttonBuilder = new ButtonBuilder();
+        foreach (var option in orderedOptions)
+        {
+            var displayIndex = NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex);
+            buttonBuilder.AddButton(
+                componentId: $"quiz:{question.SessionId}:q:{question.QuestionIndex}:a:{displayIndex}",
+                label: displayIndex.ToString(),
+                style: selectedSet.Contains(displayIndex)
+                    ? ButtonMessageStyle.Success
+                    : ButtonMessageStyle.Secondary);
+        }
+
+        buttonBuilder.AddButton(
+            componentId: $"quiz:{question.SessionId}:q:{question.QuestionIndex}:submit",
+            label: "Submit",
+            style: ButtonMessageStyle.Primary);
+
+        var components = buttonBuilder
+            .Build()
+            .Select(component => new MessageComponent
+            {
+                Type = component["type"],
+                ComponentId = component["id"].ToString(),
+                Component = component["component"] as Dictionary<string, object>
+            })
+            .ToList();
+
+        return new ChannelMessageContent
+        {
+            Text = string.Empty,
+            Embed =
+            [
+                new InteractiveMessageProps
+                {
+                    Color = "#F59E0B",
+                    Title = $"Question {question.QuestionIndex + 1}",
+                    Description = string.Join("\n\n", sections),
+                    Image = BuildEmbedImage(resolvedMediaUrl)
+                }
+            ],
+            Components =
+            [
+                new MessageActionRow
+                {
+                    Components = components
+                }
+            ]
+        };
+    }
+
     public static int NormalizeOptionDisplayIndex(int optionIndex, bool hasZeroBasedIndex)
     {
         if (hasZeroBasedIndex)
@@ -305,6 +412,24 @@ public static class QuizBotMessageFormatter
                 Component = component["component"] as Dictionary<string, object>
             })
             .ToList();
+
+        if (questionType == QuestionType.MultipleChoice)
+        {
+            var submitButtonBuilder = new ButtonBuilder();
+            submitButtonBuilder.AddButton(
+                componentId: $"quiz:{session.Id}:q:{session.CurrentQuestion}:submit",
+                label: "Submit",
+                style: ButtonMessageStyle.Primary);
+
+            components.AddRange(submitButtonBuilder
+                .Build()
+                .Select(component => new MessageComponent
+                {
+                    Type = component["type"],
+                    ComponentId = component["id"].ToString(),
+                    Component = component["component"] as Dictionary<string, object>
+                }));
+        }
 
         return
         [
