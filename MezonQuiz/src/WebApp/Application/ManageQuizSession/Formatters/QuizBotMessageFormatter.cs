@@ -4,6 +4,7 @@ using Mezon_sdk.Structures;
 using WebApp.Application.ManageQuiz.Dtos;
 using WebApp.Application.ManageQuizSession.Dtos;
 using WebApp.Domain.Entites;
+using System.Text.RegularExpressions;
 
 namespace WebApp.Application.ManageQuizSession.Formatters;
 
@@ -11,6 +12,7 @@ public static class QuizBotMessageFormatter
 {
     public static ChannelMessageContent BuildQuestionMessageContent(QuizSession session, Quiz quiz, QuizQuestion question)
     {
+        var resolvedMediaUrl = ResolveMediaUrl(question.MediaUrl);
         var orderedOptions = (question.Options ?? new List<QuizOption>())
             .OrderBy(option => option.Index)
             .ToList();
@@ -31,9 +33,9 @@ public static class QuizBotMessageFormatter
             question.Content
         };
 
-        if (!string.IsNullOrWhiteSpace(question.MediaUrl))
+        if (!string.IsNullOrWhiteSpace(resolvedMediaUrl))
         {
-            descriptionSections.Add($"Media: {question.MediaUrl}");
+            descriptionSections.Add($"Media: {resolvedMediaUrl}");
         }
 
         if (!string.IsNullOrWhiteSpace(optionsBlock))
@@ -55,7 +57,7 @@ public static class QuizBotMessageFormatter
                     Color = GetPanelColor(question.QuestionType),
                     Title = title,
                     Description = panelDescription,
-                    Image = BuildEmbedImage(question.MediaUrl)
+                    Image = BuildEmbedImage(resolvedMediaUrl)
                 }
             ],
             Components = BuildOptionButtons(session, question.QuestionType, orderedOptions, hasZeroBasedIndex)
@@ -84,6 +86,7 @@ public static class QuizBotMessageFormatter
             };
         }
 
+        var resolvedMediaUrl = ResolveMediaUrl(question.MediaUrl);
         var orderedOptions = (question.Options ?? [])
             .OrderBy(option => option.Index)
             .ToList();
@@ -98,9 +101,9 @@ public static class QuizBotMessageFormatter
             question.Content
         };
 
-        if (!string.IsNullOrWhiteSpace(question.MediaUrl))
+        if (!string.IsNullOrWhiteSpace(resolvedMediaUrl))
         {
-            sections.Add($"Media: {question.MediaUrl}");
+            sections.Add($"Media: {resolvedMediaUrl}");
         }
 
         var optionBlock = BuildOptionsPseudoCodeBlock(optionLines);
@@ -121,7 +124,7 @@ public static class QuizBotMessageFormatter
                     Color = "#64748B",
                     Title = $"Question {question.QuestionIndex + 1}",
                     Description = string.Join("\n\n", sections),
-                    Image = BuildEmbedImage(question.MediaUrl)
+                    Image = BuildEmbedImage(resolvedMediaUrl)
                 }
             ],
             Components = []
@@ -240,6 +243,23 @@ public static class QuizBotMessageFormatter
         {
             Url = mediaUrl
         };
+    }
+
+    private static string? ResolveMediaUrl(string? mediaValue)
+    {
+        if (string.IsNullOrWhiteSpace(mediaValue))
+        {
+            return null;
+        }
+
+        var trimmed = mediaValue.Trim();
+        var markdownMatch = Regex.Match(trimmed, "!\\[[^\\]]*\\]\\((https?://[^\\s)]+)\\)", RegexOptions.IgnoreCase);
+        if (markdownMatch.Success)
+        {
+            return markdownMatch.Groups[1].Value;
+        }
+
+        return trimmed;
     }
 
     private static string BuildOptionsPseudoCodeBlock(List<string> optionLines)

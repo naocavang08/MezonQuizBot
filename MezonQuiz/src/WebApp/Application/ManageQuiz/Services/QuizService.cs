@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using WebApp.Data;
 using WebApp.Domain.Entites;
 using WebApp.Application.ManageQuiz.Dtos;
@@ -9,10 +12,14 @@ namespace WebApp.Application.ManageQuiz.Services
     public class QuizService : IQuizService
     {
         private readonly AppDbContext _dbContext;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IConfiguration _configuration;
 
-        public QuizService(AppDbContext dbContext)
+        public QuizService(AppDbContext dbContext, IWebHostEnvironment webHostEnvironment, IConfiguration configuration)
         {
             _dbContext = dbContext;
+            _webHostEnvironment = webHostEnvironment;
+            _configuration = configuration;
         }
 
         public async Task<PagingDto<AvailableQuizDto>> GetAllAvailableQuizzes(Guid? userId, QuizQuery input)
@@ -337,6 +344,56 @@ namespace WebApp.Application.ManageQuiz.Services
             UpdateQuizMetadata(quiz);
 
             return await _dbContext.SaveChangesAsync() > 0;
+        }
+
+        public async Task<(bool Success, string Message, string? Url, string? Markdown)> UploadQuestionMedia(IFormFile? file, HttpRequest request)
+        {
+            if (file is null || file.Length == 0)
+            {
+                return (false, "File is required.", null, null);
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg" };
+            var extension = Path.GetExtension(file.FileName);
+            if (string.IsNullOrWhiteSpace(extension) ||
+                !allowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            {
+                return (false, "Only image files are allowed (.jpg, .jpeg, .png, .webp, .gif, .svg).", null, null);
+            }
+
+            var webRootPath = _webHostEnvironment.WebRootPath;
+            if (string.IsNullOrWhiteSpace(webRootPath))
+            {
+                webRootPath = Path.Combine(_webHostEnvironment.ContentRootPath, "wwwroot");
+            }
+
+            var relativeFolder = Path.Combine("uploads", "quiz-media");
+            var targetFolder = Path.Combine(webRootPath, relativeFolder);
+            Directory.CreateDirectory(targetFolder);
+
+            var safeFileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+            var savePath = Path.Combine(targetFolder, safeFileName);
+
+            await using (var stream = System.IO.File.Create(savePath))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var mediaPath = $"/{relativeFolder.Replace('\\', '/')}/{safeFileName}";
+            var configuredBaseUrl = _configuration["Domain:BaseUrl"]?.TrimEnd('/');
+            var host = request.Host.HasValue ? request.Host.Value : string.Empty;
+            var requestBaseUrl = string.IsNullOrWhiteSpace(host)
+                ? string.Empty
+                : $"{request.Scheme}://{host}{request.PathBase}".TrimEnd('/');
+            var baseUrl = !string.IsNullOrWhiteSpace(configuredBaseUrl)
+                ? configuredBaseUrl
+                : requestBaseUrl;
+            var absoluteUrl = string.IsNullOrWhiteSpace(baseUrl)
+                ? mediaPath
+                : $"{baseUrl}{mediaPath}";
+
+            var markdown = $"![quiz-media]({absoluteUrl})";
+            return (true, "Upload successful.", absoluteUrl, markdown);
         }
 
         private static bool IsValidinput(SaveQuizDto? input)

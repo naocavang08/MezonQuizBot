@@ -19,16 +19,13 @@ namespace WebApp.Application.ManageQuiz
     {
         private readonly IQuizService _quizService;
         private readonly ILogger<QuizController> _logger;
-        private readonly IWebHostEnvironment _webHostEnvironment;
 
         public QuizController(
             IQuizService quizService,
-            ILogger<QuizController> logger,
-            IWebHostEnvironment webHostEnvironment)
+            ILogger<QuizController> logger)
         {
             _quizService = quizService;
             _logger = logger;
-            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet("available-quiz")]
@@ -230,42 +227,15 @@ namespace WebApp.Application.ManageQuiz
         [Authorize]
         [Consumes("multipart/form-data")]
         [RequestSizeLimit(10 * 1024 * 1024)]
-        public IActionResult UploadQuestionMedia([FromForm] UploadQuestionMediaRequest request)
+        public async Task<IActionResult> UploadQuestionMedia([FromForm] UploadQuestionMediaRequest request)
         {
-            var file = request.File;
-            if (file is null || file.Length == 0)
+            var result = await _quizService.UploadQuestionMedia(request.File, Request);
+            if (!result.Success)
             {
-                return BadRequest(new { Message = "File is required." });
+                return BadRequest(new { Message = result.Message });
             }
 
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg" };
-            var extension = Path.GetExtension(file.FileName);
-            if (string.IsNullOrWhiteSpace(extension) ||
-                !allowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
-            {
-                return BadRequest(new { Message = "Only image files are allowed (.jpg, .jpeg, .png, .webp, .gif, .svg)." });
-            }
-
-            var webRootPath = _webHostEnvironment.WebRootPath;
-            if (string.IsNullOrWhiteSpace(webRootPath))
-            {
-                webRootPath = Path.Combine(_webHostEnvironment.ContentRootPath, "wwwroot");
-            }
-
-            var relativeFolder = Path.Combine("uploads", "quiz-media");
-            var targetFolder = Path.Combine(webRootPath, relativeFolder);
-            Directory.CreateDirectory(targetFolder);
-
-            var safeFileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
-            var savePath = Path.Combine(targetFolder, safeFileName);
-
-            using (var stream = System.IO.File.Create(savePath))
-            {
-                file.CopyTo(stream);
-            }
-
-            var mediaUrl = $"/{relativeFolder.Replace('\\', '/')}/{safeFileName}";
-            return Ok(new { Url = mediaUrl });
+            return Ok(new { Url = result.Url, Markdown = result.Markdown });
         }
     }
 }

@@ -1,5 +1,6 @@
 using WebApp.Application.ManageQuiz.Dtos;
 using WebApp.Domain.Entites;
+using Microsoft.AspNetCore.Http;
 
 namespace WebApp.Application.ManageQuiz
 {
@@ -30,5 +31,8 @@ namespace WebApp.Application.ManageQuiz
 
         // Setting Options
         Task<bool> UpdateQuizSettings(Guid quizId, QuizSettings settingsData);
+
+        // Media operations
+        Task<(bool Success, string Message, string? Url, string? Markdown)> UploadQuestionMedia(IFormFile? file, HttpRequest request);
     }
 }
