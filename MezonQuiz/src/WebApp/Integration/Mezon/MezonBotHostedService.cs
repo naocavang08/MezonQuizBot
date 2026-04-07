@@ -25,6 +25,9 @@ public sealed class MezonBotHostedService : BackgroundService
     private static readonly Regex JoinCommandRegex = new(
         @"^/join\s+([a-zA-Z0-9]{4,16})$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    private static readonly Regex ExitCommandRegex = new(
+        @"^/exit$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
     private static readonly Regex QuizButtonRegex = new(
         @"^quiz:([0-9a-fA-F\-]{36}):q:(\d+):a:(\d+)$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
@@ -175,7 +178,10 @@ public sealed class MezonBotHostedService : BackgroundService
         CacheDmRoute(message);
 
         var messageText = ExtractMessageText(message.Content);
-        if (!TryParseJoinCode(messageText, out var code))
+        var isExitCommand = IsExitCommand(messageText);
+        var hasJoinCode = TryParseJoinCode(messageText, out var code);
+
+        if (!isExitCommand && !hasJoinCode)
         {
             _logger.LogDebug(
                 "Ignored message from sender {SenderId}. RawContent={RawContent}",
@@ -184,7 +190,14 @@ public sealed class MezonBotHostedService : BackgroundService
             return;
         }
 
-        _logger.LogInformation("Received join command from sender {SenderId} with code {SessionCode}.", senderId, code);
+        if (isExitCommand)
+        {
+            _logger.LogInformation("Received exit command from sender {SenderId}.", senderId);
+        }
+        else
+        {
+            _logger.LogInformation("Received join command from sender {SenderId} with code {SessionCode}.", senderId, code);
+        }
 
         SessionOperationResult operationResult;
 
@@ -227,21 +240,32 @@ public sealed class MezonBotHostedService : BackgroundService
                     senderId);
             }
 
-            operationResult = await quizSessionService.JoinByCode(code, new JoinQuizSessionDto
+            if (isExitCommand)
             {
-                UserId = user.Id
-            });
+                operationResult = await quizSessionService.LeaveSessions(user.Id);
+            }
+            else
+            {
+                operationResult = await quizSessionService.JoinByCode(code, new JoinQuizSessionDto
+                {
+                    UserId = user.Id
+                });
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to process /join command for sender {SenderId}.", senderId);
+            _logger.LogError(ex, "Failed to process command for sender {SenderId}.", senderId);
             await SendReplyAsync(message, "System is currently unavailable. Please try again later.");
             return;
         }
 
-        var replyMessage = operationResult.Success
-            ? $"Join successful for session {code}. {operationResult.Message}"
-            : $"Join failed for session {code}. {operationResult.Message}";
+        var replyMessage = isExitCommand
+            ? (operationResult.Success
+                ? $"Leave successful. {operationResult.Message}"
+                : $"Leave failed. {operationResult.Message}")
+            : (operationResult.Success
+                ? $"Join successful for session {code}. {operationResult.Message}"
+                : $"Join failed for session {code}. {operationResult.Message}");
 
         await SendReplyAsync(message, replyMessage);
     }
@@ -628,6 +652,16 @@ public sealed class MezonBotHostedService : BackgroundService
 
         code = match.Groups[1].Value.Trim().ToUpperInvariant();
         return code.Length > 0;
+    }
+
+    private static bool IsExitCommand(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return false;
+        }
+
+        return ExitCommandRegex.IsMatch(input.Trim());
     }
 
     private static bool TryParseQuizButtonId(string input, out Guid sessionId, out int questionIndex, out int selectedOption)

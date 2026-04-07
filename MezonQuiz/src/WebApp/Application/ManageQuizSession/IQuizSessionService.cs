@@ -10,6 +10,7 @@ namespace WebApp.Application.ManageQuizSession
         Task<QuizSessionDto?> GetSession(Guid sessionId);
         Task<(SessionOperationResult Result, QuizSessionDto? Session)> CreateSession(CreateQuizSessionDto request, Guid hostId);
         Task<SessionOperationResult> JoinByCode(string code, JoinQuizSessionDto request);
+        Task<SessionOperationResult> LeaveSessions(Guid userId);
         Task<SessionOperationResult> ClearParticipant(Guid sessionId, Guid hostId, ClearParticipantDto request);
         Task<SessionOperationResult> StartSession(Guid sessionId, Guid hostId);
         Task<SessionOperationResult> PauseSession(Guid sessionId, Guid hostId);

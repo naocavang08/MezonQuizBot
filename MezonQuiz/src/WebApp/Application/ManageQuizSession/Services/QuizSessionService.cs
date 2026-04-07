@@ -255,6 +255,40 @@ namespace WebApp.Application.ManageQuizSession.Services
             return new SessionOperationResult { Success = true, Message = "Joined session successfully.", SessionId = session.Id };
         }
 
+        public async Task<SessionOperationResult> LeaveSessions(Guid userId)
+        {
+            if (userId == Guid.Empty)
+            {
+                return Fail("Invalid exit request.");
+            }
+
+            var openSessions = await _dbContext.QuizSessions
+                .Where(s => s.Status != SessionStatus.Finished && s.Status != SessionStatus.Cancelled)
+                .Where(s => _dbContext.SessionParticipants.Any(p => p.SessionId == s.Id && p.UserId == userId))
+                .ToListAsync();
+
+            if (openSessions.Count == 0)
+            {
+                return Fail("User is not in any open session.");
+            }
+
+            var openSessionIds = openSessions.Select(s => s.Id).ToList();
+
+            var participants = await _dbContext.SessionParticipants
+                .Where(p => p.UserId == userId && openSessionIds.Contains(p.SessionId))
+                .ToListAsync();
+
+            _dbContext.SessionParticipants.RemoveRange(participants);
+            await _dbContext.SaveChangesAsync();
+
+            foreach (var session in openSessions)
+            {
+                await BroadcastSessionStateChanged(session);
+            }
+
+            return Success($"Left session successfully.");
+        }
+
         public async Task<SessionOperationResult> ClearParticipant(Guid sessionId, Guid hostId, ClearParticipantDto request)
         {
             if (request is null || request.UserId == Guid.Empty)
