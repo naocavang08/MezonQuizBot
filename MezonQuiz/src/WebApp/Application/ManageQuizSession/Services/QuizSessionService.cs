@@ -214,6 +214,21 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return new SessionOperationResult { Success = true, Message = "Participant already joined.", SessionId = session.Id };
             }
 
+            var joinedAnotherOpenSession = await _dbContext.SessionParticipants
+                .Where(p => p.UserId == request.UserId && p.SessionId != session.Id)
+                .Join(
+                    _dbContext.QuizSessions,
+                    participant => participant.SessionId,
+                    quizSession => quizSession.Id,
+                    (participant, quizSession) => quizSession.Status)
+                .AnyAsync(status =>
+                    status != SessionStatus.Finished && status != SessionStatus.Cancelled);
+
+            if (joinedAnotherOpenSession)
+            {
+                return Fail("User has already joined another session.");
+            }
+
             if (session.MaxParticipants.HasValue)
             {
                 var currentCount = await _dbContext.SessionParticipants.CountAsync(p => p.SessionId == session.Id);
