@@ -11,6 +11,7 @@ using Mezon_sdk.Constants;
 using Mezon_sdk.Models;
 using Mezon_sdk.Utils;
 using WebApp.Application.ManageQuizSession.Dtos;
+using WebApp.Application.ManageQuizSession.Formatters;
 using WebApp.Application.ManageQuizSession.Services;
 using WebApp.Data;
 using WebApp.Application.ManageQuizSession;
@@ -322,7 +323,7 @@ public sealed class MezonBotHostedService : BackgroundService
                 SelectedOptions = [resolvedOption]
             });
 
-            var feedbackContent = BuildAnswerFeedbackMessageContent(submitResult, questionIndex, selectedOption);
+            var feedbackContent = QuizBotMessageFormatter.BuildAnswerFeedbackMessageContent(submitResult, questionIndex, selectedOption);
             await SendDmFeedbackAsync(mezonUserId, feedbackContent);
 
             var shouldLockQuestionMessage = submitResult.Success
@@ -357,7 +358,7 @@ public sealed class MezonBotHostedService : BackgroundService
 
             await SendDmFeedbackAsync(
                 mezonUserId,
-                BuildFailureFeedbackMessageContent("System is currently unavailable. Please try again."));
+                QuizBotMessageFormatter.BuildFailureFeedbackMessageContent("System is currently unavailable. Please try again."));
         }
     }
 
@@ -461,68 +462,6 @@ public sealed class MezonBotHostedService : BackgroundService
         await SendDmMessageToUserAsync(userId, content);
     }
 
-    private static ChannelMessageContent BuildAnswerFeedbackMessageContent(
-        SessionOperationResult submitResult,
-        int fallbackQuestionIndex,
-        int fallbackSelectedDisplay)
-    {
-        if (!submitResult.Success)
-        {
-            return BuildFailureFeedbackMessageContent($"Cannot submit answer: {submitResult.Message}");
-        }
-
-        var isCorrect = submitResult.IsCorrect ?? false;
-        var selectedDisplay = submitResult.SelectedOptionDisplay ?? fallbackSelectedDisplay;
-        var questionIndex = submitResult.QuestionIndex ?? fallbackQuestionIndex;
-        var totalScore = submitResult.TotalScore ?? 0;
-        var pointsEarned = submitResult.PointsEarned ?? 0;
-        var correctAnswerLabel = FormatOptionList(submitResult.CorrectOptionDisplays);
-
-        var title = isCorrect
-            ? $"Correct!!!, you have {totalScore} points"
-            : $"Incorrect!!!, The correct answer is {correctAnswerLabel}";
-
-        return new ChannelMessageContent
-        {
-            Text = string.Empty,
-            Embed =
-            [
-                new InteractiveMessageProps
-                {
-                    Color = isCorrect ? "#22C55E" : "#EF4444",
-                    Title = title,
-                }
-            ]
-        };
-    }
-
-    private static ChannelMessageContent BuildFailureFeedbackMessageContent(string message)
-    {
-        return new ChannelMessageContent
-        {
-            Text = string.Empty,
-            Embed =
-            [
-                new InteractiveMessageProps
-                {
-                    Color = "#F59E0B",
-                    Title = "Cannot submit answer",
-                    Description = message
-                }
-            ]
-        };
-    }
-
-    private static string FormatOptionList(List<int> options)
-    {
-        if (options.Count == 0)
-        {
-            return "N/A";
-        }
-
-        return string.Join(", ", options.OrderBy(index => index));
-    }
-
     private async Task TryLockAnsweredQuestionMessageAsync(
         Rt.MessageButtonClicked clickEvent,
         IQuizSessionService quizSessionService,
@@ -595,120 +534,21 @@ public sealed class MezonBotHostedService : BackgroundService
         var currentQuestion = await quizSessionService.GetCurrentQuestion(sessionId);
         if (!currentQuestion.Result.Success || currentQuestion.Question is null)
         {
-            return BuildAnsweredQuestionFallbackContent(clickedQuestionIndex);
+            return QuizBotMessageFormatter.BuildAnsweredQuestionMessageContent(
+                question: null,
+                fallbackQuestionIndex: clickedQuestionIndex);
         }
 
         if (currentQuestion.Question.QuestionIndex != clickedQuestionIndex)
         {
-            return BuildAnsweredQuestionFallbackContent(clickedQuestionIndex);
+            return QuizBotMessageFormatter.BuildAnsweredQuestionMessageContent(
+                question: null,
+                fallbackQuestionIndex: clickedQuestionIndex);
         }
 
-        var question = currentQuestion.Question;
-        var orderedOptions = (question.Options ?? [])
-            .OrderBy(option => option.Index)
-            .ToList();
-
-        var hasZeroBasedIndex = orderedOptions.Any(option => option.Index == 0);
-        var optionLines = orderedOptions
-            .Select(option => $"{NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex)} - {option.Content}")
-            .ToList();
-
-        var sections = new List<string>
-        {
-            question.Content
-        };
-
-        if (!string.IsNullOrWhiteSpace(question.MediaUrl))
-        {
-            sections.Add($"Media: {question.MediaUrl}");
-        }
-
-        var optionBlock = BuildOptionsPseudoCodeBlock(optionLines);
-        if (!string.IsNullOrWhiteSpace(optionBlock))
-        {
-            sections.Add(optionBlock);
-        }
-
-        sections.Add("Câu hỏi đã được trả lời");
-
-        return new ChannelMessageContent
-        {
-            Text = string.Empty,
-            Embed =
-            [
-                new InteractiveMessageProps
-                {
-                    Color = "#64748B",
-                    Title = $"Question {question.QuestionIndex + 1}",
-                    Description = string.Join("\n\n", sections),
-                    Image = BuildEmbedImage(question.MediaUrl)
-                }
-            ],
-            Components = []
-        };
-    }
-
-    private static ChannelMessageContent BuildAnsweredQuestionFallbackContent(int clickedQuestionIndex)
-    {
-        return new ChannelMessageContent
-        {
-            Text = string.Empty,
-            Embed =
-            [
-                new InteractiveMessageProps
-                {
-                    Color = "#64748B",
-                    Title = $"Question {clickedQuestionIndex + 1}",
-                    Description = "Câu hỏi đã được trả lời"
-                }
-            ],
-            Components = []
-        };
-    }
-
-    private static InteractiveMessageMedia? BuildEmbedImage(string? mediaUrl)
-    {
-        if (string.IsNullOrWhiteSpace(mediaUrl))
-        {
-            return null;
-        }
-
-        if (!Uri.TryCreate(mediaUrl, UriKind.Absolute, out var uri))
-        {
-            return null;
-        }
-
-        if (!string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        return new InteractiveMessageMedia
-        {
-            Url = mediaUrl
-        };
-    }
-
-    private static string BuildOptionsPseudoCodeBlock(List<string> optionLines)
-    {
-        if (optionLines.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        var optionsBody = string.Join("\n", optionLines);
-        return $"```\n{optionsBody}\n```";
-    }
-
-    private static int NormalizeOptionDisplayIndex(int optionIndex, bool hasZeroBasedIndex)
-    {
-        if (hasZeroBasedIndex)
-        {
-            return optionIndex + 1;
-        }
-
-        return optionIndex;
+        return QuizBotMessageFormatter.BuildAnsweredQuestionMessageContent(
+            question: currentQuestion.Question,
+            fallbackQuestionIndex: clickedQuestionIndex);
     }
 
     private void CacheDmRoute(PbChannelMessage message)

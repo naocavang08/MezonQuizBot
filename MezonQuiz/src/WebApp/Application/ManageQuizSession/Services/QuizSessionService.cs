@@ -8,6 +8,7 @@ using WebApp.Realtime;
 using static WebApp.Domain.Enums.Status;
 using WebApp.Application.ManageQuiz.Dtos;
 using WebApp.Application.ManageQuizSession.Dtos;
+using WebApp.Application.ManageQuizSession.Formatters;
 using WebApp.Integration.Mezon;
 
 namespace WebApp.Application.ManageQuizSession.Services
@@ -533,11 +534,11 @@ namespace WebApp.Application.ManageQuizSession.Services
             }
 
             var hasZeroBasedOption = question.Options.Any(option => option.Index == 0);
-            var selectedOptionDisplay = NormalizeOptionDisplayIndex(selectedOptions[0], hasZeroBasedOption);
+            var selectedOptionDisplay = QuizBotMessageFormatter.NormalizeOptionDisplayIndex(selectedOptions[0], hasZeroBasedOption);
             var correctOptionDisplays = question.Options
                 .Where(option => option.IsCorrect)
                 .OrderBy(option => option.Index)
-                .Select(option => NormalizeOptionDisplayIndex(option.Index, hasZeroBasedOption))
+                .Select(option => QuizBotMessageFormatter.NormalizeOptionDisplayIndex(option.Index, hasZeroBasedOption))
                 .Distinct()
                 .ToList();
 
@@ -785,7 +786,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return;
             }
 
-            var content = BuildQuestionMessageContent(session, quiz, question);
+            var content = QuizBotMessageFormatter.BuildQuestionMessageContent(session, quiz, question);
             var sendResult = await _mezonBotHostedService.SendDmMessageToUsersAsync(targets, content);
 
             _logger.LogInformation(
@@ -793,186 +794,6 @@ namespace WebApp.Application.ManageQuizSession.Services
                 session.Id,
                 sendResult.SentCount,
                 sendResult.RequestedCount);
-        }
-
-        private static ChannelMessageContent BuildQuestionMessageContent(QuizSession session, Quiz quiz, QuizQuestion question)
-        {
-            var orderedOptions = (question.Options ?? new List<QuizOption>())
-                .OrderBy(option => option.Index)
-                .ToList();
-
-            var hasZeroBasedIndex = orderedOptions.Any(option => option.Index == 0);
-            var optionLines = orderedOptions
-                .Select(option => $"{NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex)} - {option.Content}")
-                .ToList();
-
-            var totalQuestionCount = quiz.Questions?.Count ?? 0;
-            var questionTypeLabel = GetQuestionTypeLabel(question.QuestionType);
-            var title = $"[{questionTypeLabel}] {quiz.Title} | Question {session.CurrentQuestion + 1}/{Math.Max(totalQuestionCount, 1)}";
-            var optionsBlock = BuildOptionsPseudoCodeBlock(optionLines);
-            var instruction = GetInstructionText(question.QuestionType);
-
-            var descriptionSections = new List<string>
-            {
-                question.Content
-            };
-
-            if (!string.IsNullOrWhiteSpace(question.MediaUrl))
-            {
-                descriptionSections.Add($"Media: {question.MediaUrl}");
-            }
-
-            if (!string.IsNullOrWhiteSpace(optionsBlock))
-            {
-                descriptionSections.Add(optionsBlock);
-            }
-
-            descriptionSections.Add(instruction);
-
-            var panelDescription = string.Join("\n\n", descriptionSections);
-
-            return new ChannelMessageContent
-            {
-                Text = string.Empty,
-                Embed =
-                [
-                    new InteractiveMessageProps
-                    {
-                        Color = GetPanelColor(question.QuestionType),
-                        Title = title,
-                        Description = panelDescription,
-                        Image = BuildEmbedImage(question.MediaUrl)
-                    }
-                ],
-                Components = BuildOptionButtons(session, question.QuestionType, orderedOptions, hasZeroBasedIndex)
-            };
-        }
-
-        private static string GetQuestionTypeLabel(QuestionType questionType)
-        {
-            return questionType switch
-            {
-                QuestionType.MultipleChoice => "MULTI CHOICE",
-                QuestionType.TrueFalse => "TRUE/FALSE",
-                _ => "SINGLE CHOICE"
-            };
-        }
-
-        private static string GetInstructionText(QuestionType questionType)
-        {
-            return questionType switch
-            {
-                QuestionType.MultipleChoice => "(Chọn môt hoặc nhiểu đáp án đúng tương ứng phía bên dưới!)",
-                QuestionType.TrueFalse => "(Chọn Đúng hoặc Sai bằng nút bên dưới!)",
-                _ => "(Chọn đáp án đúng tương ứng phía bên dưới!)"
-            };
-        }
-
-        private static string GetPanelColor(QuestionType questionType)
-        {
-            return questionType switch
-            {
-                QuestionType.MultipleChoice => "#F59E0B",
-                QuestionType.TrueFalse => "#06B6D4",
-                _ => "#22C55E"
-            };
-        }
-
-        private static InteractiveMessageMedia? BuildEmbedImage(string? mediaUrl)
-        {
-            if (string.IsNullOrWhiteSpace(mediaUrl))
-            {
-                return null;
-            }
-
-            if (!Uri.TryCreate(mediaUrl, UriKind.Absolute, out var uri))
-            {
-                return null;
-            }
-
-            if (!string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            return new InteractiveMessageMedia
-            {
-                Url = mediaUrl
-            };
-        }
-
-        private static string BuildOptionsPseudoCodeBlock(List<string> optionLines)
-        {
-            if (optionLines.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            var optionsBody = string.Join("\n", optionLines);
-            return $"```\n{optionsBody}\n```";
-        }
-
-        private static List<MessageActionRow> BuildOptionButtons(
-            QuizSession session,
-            QuestionType questionType,
-            List<QuizOption> options,
-            bool hasZeroBasedIndex)
-        {
-            if (options.Count == 0)
-            {
-                return [];
-            }
-
-            var buttonBuilder = new ButtonBuilder();
-            foreach (var option in options)
-            {
-                var displayIndex = NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex);
-                var componentId = $"quiz:{session.Id}:q:{session.CurrentQuestion}:a:{displayIndex}";
-
-                buttonBuilder.AddButton(
-                    componentId: componentId,
-                    label: displayIndex.ToString(),
-                    style: ResolveButtonStyle(questionType, displayIndex));
-            }
-
-            var components = buttonBuilder
-                .Build()
-                .Select(component => new MessageComponent
-                {
-                    Type = component["type"],
-                    ComponentId = component["id"].ToString(),
-                    Component = component["component"] as Dictionary<string, object>
-                })
-                .ToList();
-
-            return
-            [
-                new MessageActionRow
-                {
-                    Components = components
-                }
-            ];
-        }
-
-        private static ButtonMessageStyle ResolveButtonStyle(QuestionType questionType, int displayIndex)
-        {
-            return questionType switch
-            {
-                QuestionType.MultipleChoice => ButtonMessageStyle.Secondary,
-                QuestionType.TrueFalse => displayIndex == 1 ? ButtonMessageStyle.Success : ButtonMessageStyle.Danger,
-                _ => ButtonMessageStyle.Primary
-            };
-        }
-
-        private static int NormalizeOptionDisplayIndex(int optionIndex, bool hasZeroBasedIndex)
-        {
-            if (hasZeroBasedIndex)
-            {
-                return optionIndex + 1;
-            }
-
-            return optionIndex;
         }
 
         private static SessionOperationResult Fail(string message)
