@@ -39,8 +39,16 @@ namespace WebApp.Application.ManageQuizSession.Services
         {
             var sessionsQuery = _dbContext.QuizSessions
                 .AsNoTracking()
-                .Include(s => s.Quiz)
                 .AsQueryable();
+
+            var participantCountsQuery = _dbContext.SessionParticipants
+                .AsNoTracking()
+                .GroupBy(p => p.SessionId)
+                .Select(g => new
+                {
+                    SessionId = g.Key,
+                    Count = g.Count()
+                });
 
             if (QuizId.HasValue && QuizId.Value != Guid.Empty)
             {
@@ -48,24 +56,29 @@ namespace WebApp.Application.ManageQuizSession.Services
             }
 
             var sessions = await sessionsQuery
-                .OrderByDescending(s => s.CreatedAt)
-                .Select(s => new QuizSessionDto
+                .GroupJoin(
+                    participantCountsQuery,
+                    session => session.Id,
+                    count => count.SessionId,
+                    (session, counts) => new { Session = session, ParticipantCount = counts.Select(c => c.Count).FirstOrDefault() })
+                .OrderByDescending(x => x.Session.CreatedAt)
+                .Select(x => new QuizSessionDto
                 {
-                    Id = s.Id,
-                    Code = s.Code ?? string.Empty,
-                    QuizId = s.QuizId,
-                    QuizTitle = s.Quiz.Title,
-                    HostId = s.HostId,
-                    Status = s.Status,
-                    CurrentQuestion = s.CurrentQuestion,
-                    DeepLink = s.DeepLink,
-                    QrCodeUrl = s.QrCodeUrl,
-                    MezonChannelId = s.MezonChannelId,
-                    MaxParticipants = s.MaxParticipants,
-                    ParticipantCount = _dbContext.SessionParticipants.Count(p => p.SessionId == s.Id),
-                    StartedAt = s.StartedAt,
-                    FinishedAt = s.FinishedAt,
-                    CreatedAt = s.CreatedAt
+                    Id = x.Session.Id,
+                    Code = x.Session.Code ?? string.Empty,
+                    QuizId = x.Session.QuizId,
+                    QuizTitle = x.Session.Quiz.Title,
+                    HostId = x.Session.HostId,
+                    Status = x.Session.Status,
+                    CurrentQuestion = x.Session.CurrentQuestion,
+                    DeepLink = x.Session.DeepLink,
+                    QrCodeUrl = x.Session.QrCodeUrl,
+                    MezonChannelId = x.Session.MezonChannelId,
+                    MaxParticipants = x.Session.MaxParticipants,
+                    ParticipantCount = x.ParticipantCount,
+                    StartedAt = x.Session.StartedAt,
+                    FinishedAt = x.Session.FinishedAt,
+                    CreatedAt = x.Session.CreatedAt
                 })
                 .ToListAsync();
 
@@ -74,27 +87,40 @@ namespace WebApp.Application.ManageQuizSession.Services
 
         public async Task<QuizSessionDto?> GetSession(Guid sessionId)
         {
+            var participantCountsQuery = _dbContext.SessionParticipants
+                .AsNoTracking()
+                .GroupBy(p => p.SessionId)
+                .Select(g => new
+                {
+                    SessionId = g.Key,
+                    Count = g.Count()
+                });
+
             var session = await _dbContext.QuizSessions
                 .AsNoTracking()
-                .Include(s => s.Quiz)
                 .Where(s => s.Id == sessionId)
-                .Select(s => new QuizSessionDto
+                .GroupJoin(
+                    participantCountsQuery,
+                    s => s.Id,
+                    count => count.SessionId,
+                    (s, counts) => new { Session = s, ParticipantCount = counts.Select(c => c.Count).FirstOrDefault() })
+                .Select(x => new QuizSessionDto
                 {
-                    Id = s.Id,
-                    Code = s.Code ?? string.Empty,
-                    QuizId = s.QuizId,
-                    QuizTitle = s.Quiz.Title,
-                    HostId = s.HostId,
-                    Status = s.Status,
-                    CurrentQuestion = s.CurrentQuestion,
-                    DeepLink = s.DeepLink,
-                    QrCodeUrl = s.QrCodeUrl,
-                    MezonChannelId = s.MezonChannelId,
-                    MaxParticipants = s.MaxParticipants,
-                    ParticipantCount = _dbContext.SessionParticipants.Count(p => p.SessionId == s.Id),
-                    StartedAt = s.StartedAt,
-                    FinishedAt = s.FinishedAt,
-                    CreatedAt = s.CreatedAt
+                    Id = x.Session.Id,
+                    Code = x.Session.Code ?? string.Empty,
+                    QuizId = x.Session.QuizId,
+                    QuizTitle = x.Session.Quiz.Title,
+                    HostId = x.Session.HostId,
+                    Status = x.Session.Status,
+                    CurrentQuestion = x.Session.CurrentQuestion,
+                    DeepLink = x.Session.DeepLink,
+                    QrCodeUrl = x.Session.QrCodeUrl,
+                    MezonChannelId = x.Session.MezonChannelId,
+                    MaxParticipants = x.Session.MaxParticipants,
+                    ParticipantCount = x.ParticipantCount,
+                    StartedAt = x.Session.StartedAt,
+                    FinishedAt = x.Session.FinishedAt,
+                    CreatedAt = x.Session.CreatedAt
                 })
                 .FirstOrDefaultAsync();
 
@@ -262,9 +288,15 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return Fail("Invalid exit request.");
             }
 
-            var openSessions = await _dbContext.QuizSessions
-                .Where(s => s.Status != SessionStatus.Finished && s.Status != SessionStatus.Cancelled)
-                .Where(s => _dbContext.SessionParticipants.Any(p => p.SessionId == s.Id && p.UserId == userId))
+            var openSessions = await _dbContext.SessionParticipants
+                .AsNoTracking()
+                .Where(p => p.UserId == userId)
+                .Join(
+                    _dbContext.QuizSessions.AsNoTracking().Where(s => s.Status != SessionStatus.Finished && s.Status != SessionStatus.Cancelled),
+                    participant => participant.SessionId,
+                    session => session.Id,
+                    (participant, session) => session)
+                .Distinct()
                 .ToListAsync();
 
             if (openSessions.Count == 0)

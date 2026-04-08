@@ -39,6 +39,7 @@ import {
     type SessionStateChangedDto,
 } from "../Interface/session.dto";
 import useAuthStore from "../Stores/login.store";
+import { isSameLeaderboard, isSameQuestion, isSameSession } from "../Lib/Utils/sessionRender";
 
 const statusLabel: Record<number, string> = {
     [SessionStatusValue.Waiting]: "Waiting",
@@ -82,7 +83,7 @@ const StartQuizPage = () => {
             const data = await getCurrentSessionQuestion(sessionId);
             const previousQuestionIndex = questionIndexRef.current;
 
-            setCurrentQuestion(data);
+            setCurrentQuestion((previous) => (isSameQuestion(previous, data) ? previous : data));
 
             if (previousQuestionIndex !== data.questionIndex) {
                 questionIndexRef.current = data.questionIndex;
@@ -112,8 +113,12 @@ const StartQuizPage = () => {
                 getSessionLeaderboard(sessionId),
             ]);
 
-            setSession(sessionData);
-            setLeaderboard(Array.isArray(leaderboardData) ? leaderboardData : []);
+            const normalizedLeaderboard = Array.isArray(leaderboardData) ? leaderboardData : [];
+
+            setSession((previous) => (isSameSession(previous, sessionData) ? previous : sessionData));
+            setLeaderboard((previous) =>
+                isSameLeaderboard(previous, normalizedLeaderboard) ? previous : normalizedLeaderboard
+            );
 
             if (
                 sessionData.status === SessionStatusValue.Active ||

@@ -35,6 +35,7 @@ import {
 } from "../Interface/session.dto";
 import { QuestionType } from "../Interface/quiz.dto";
 import useAuthStore from "../Stores/login.store";
+import { isSameLeaderboard, isSameQuestion, isSameSession } from "../Lib/Utils/sessionRender";
 
 const resolveHubUrl = () => {
     return "/hubs/quiz-session";
@@ -76,16 +77,18 @@ const PlayerQuizPage = () => {
             const data = await getCurrentSessionQuestion(sessionId);
             const previousQuestionIndex = questionIndexRef.current;
 
-            setCurrentQuestion(data);
+            setCurrentQuestion((previous) => (isSameQuestion(previous, data) ? previous : data));
 
             if (previousQuestionIndex !== data.questionIndex) {
                 setSelectedOptions([]);
                 setSubmittedQuestionIndex(null);
                 setQuestionStartedAtMs(Date.now());
                 setRemainingSeconds(data.timeLimitSeconds);
-            } else if (questionStartedAtMs === null) {
-                setQuestionStartedAtMs(Date.now());
-                setRemainingSeconds(data.timeLimitSeconds);
+            } else {
+                setQuestionStartedAtMs((previousStartedAt) => previousStartedAt ?? Date.now());
+                setRemainingSeconds((previousRemaining) =>
+                    previousRemaining === data.timeLimitSeconds ? previousRemaining : data.timeLimitSeconds
+                );
             }
 
             questionIndexRef.current = data.questionIndex;
@@ -94,7 +97,7 @@ const PlayerQuizPage = () => {
             setQuestionStartedAtMs(null);
             setRemainingSeconds(0);
         }
-    }, [questionStartedAtMs, sessionId]);
+    }, [sessionId]);
 
     const loadSession = useCallback(async (silent = false) => {
         if (!sessionId) {
@@ -113,8 +116,12 @@ const PlayerQuizPage = () => {
                 getSessionLeaderboard(sessionId),
             ]);
 
-            setSession(sessionData);
-            setLeaderboard(Array.isArray(leaderboardData) ? leaderboardData : []);
+            const normalizedLeaderboard = Array.isArray(leaderboardData) ? leaderboardData : [];
+
+            setSession((previous) => (isSameSession(previous, sessionData) ? previous : sessionData));
+            setLeaderboard((previous) =>
+                isSameLeaderboard(previous, normalizedLeaderboard) ? previous : normalizedLeaderboard
+            );
 
             if (
                 sessionData.status === SessionStatusValue.Active ||

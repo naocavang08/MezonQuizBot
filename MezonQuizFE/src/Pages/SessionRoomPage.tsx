@@ -30,6 +30,7 @@ import {
     type SessionStateChangedDto,
 } from "../Interface/session.dto";
 import useAuthStore from "../Stores/login.store";
+import { isSameLeaderboard, isSameSession } from "../Lib/Utils/sessionRender";
 
 const statusLabel: Record<number, string> = {
     [SessionStatusValue.Waiting]: "Waiting",
@@ -96,8 +97,12 @@ const SessionRoomPage = () => {
                 getSessionLeaderboard(sessionId),
             ]);
 
-            setSession(sessionData);
-            setLeaderboard(Array.isArray(leaderboardData) ? leaderboardData : []);
+            const normalizedLeaderboard = Array.isArray(leaderboardData) ? leaderboardData : [];
+
+            setSession((previous) => (isSameSession(previous, sessionData) ? previous : sessionData));
+            setLeaderboard((previous) =>
+                isSameLeaderboard(previous, normalizedLeaderboard) ? previous : normalizedLeaderboard
+            );
         } catch {
             showError("Can not load session room right now.");
         } finally {
