@@ -18,18 +18,15 @@ import { alpha, useTheme } from "@mui/material/styles";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdRefresh, MdSearch } from "react-icons/md";
-import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
 import { getAvailableQuizzes } from "../Api/quiz.api";
-import { joinQuizSession } from "../Api/session.api";
 import type { CategoryDto } from "../Interface/category.dto";
 import type { AvailableQuizDto } from "../Interface/quiz.dto";
-import useAuthStore from "../Stores/login.store";
+import CategoryIconBadge from "../Lib/Utils/categoryIconBadge";
 
 const PAGE_SIZE = 9;
 
 const FindQuizPage = () => {
-    const navigate = useNavigate();
     const theme = useTheme();
     const isDark = theme.palette.mode === "dark";
     const panelBackground = isDark
@@ -42,7 +39,6 @@ const FindQuizPage = () => {
     const strongText = theme.palette.text.primary;
     const softText = theme.palette.text.secondary;
 
-    const userId = useAuthStore((state) => state.user?.id);
     const [categories, setCategories] = useState<CategoryDto[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [searchTitle, setSearchTitle] = useState("");
@@ -53,9 +49,7 @@ const FindQuizPage = () => {
     const [totalCount, setTotalCount] = useState(0);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [code, setCode] = useState("");
-    const [isJoining, setIsJoining] = useState(false);
-    const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
+    const { snackbar, showError, closeSnackbar } = useAppSnackbar();
 
     const categoryParam = selectedCategory === "all" ? undefined : selectedCategory;
     const titleParam = searchTitle.trim() || undefined;
@@ -66,6 +60,14 @@ const FindQuizPage = () => {
         if (titleParam) count += 1;
         return count;
     }, [categoryParam, titleParam]);
+
+    const categoryById = useMemo(() => {
+        const map = new Map<string, CategoryDto>();
+        categories.forEach((category) => {
+            map.set(category.id, category);
+        });
+        return map;
+    }, [categories]);
 
     useEffect(() => {
         const loadCategories = async () => {
@@ -117,37 +119,6 @@ const FindQuizPage = () => {
         void fetchQuizzes();
         // Intentionally include all query states to refetch as user changes filters.
     }, [fetchQuizzes]);
-
-    const handleJoinSession = async () => {
-        const normalizedCode = code.trim().toUpperCase();
-        if (!normalizedCode) {
-            showError("Please enter a session code.");
-            return;
-        }
-
-        if (!userId) {
-            showError("User is not available. Please login again.");
-            return;
-        }
-
-        try {
-            setIsJoining(true);
-
-            const response = await joinQuizSession(normalizedCode, { userId });
-            showSuccess(response.message || "Joined session successfully.");
-
-            const sessionId = response.sessionId;
-            if (sessionId) {
-                navigate(`/app/sessions/${sessionId}/play`);
-            } else {
-                showError("Joined but could not retrieve session info.");
-            }
-        } catch {
-            showError("Can not join this session now. Please check the code and try again.");
-        } finally {
-            setIsJoining(false);
-        }
-    };
 
     return (
         <Box
@@ -265,7 +236,12 @@ const FindQuizPage = () => {
                                         return (
                                             <Chip
                                                 key={category.id}
-                                                label={category.name}
+                                                label={(
+                                                    <Stack direction="row" spacing={0.8} alignItems="center">
+                                                        <CategoryIconBadge iconKey={category.icon} size={20} fallback={null} />
+                                                        <Box component="span">{category.name}</Box>
+                                                    </Stack>
+                                                )}
                                                 clickable
                                                 color={selected ? "primary" : "default"}
                                                 variant={selected ? "filled" : "outlined"}
@@ -283,35 +259,6 @@ const FindQuizPage = () => {
                                 {totalCount} quizzes found
                                 {activeFilterCount > 0 ? ` • ${activeFilterCount} active filter(s)` : ""}
                             </Typography>
-
-                            <Stack
-                                direction={{ xs: "column", sm: "row" }}
-                                spacing={1.2}
-                                alignItems={{ xs: "stretch", sm: "center" }}
-                            >
-                                <TextField
-                                    size="small"
-                                    label="Join by Session Code"
-                                    placeholder="Enter 6-digit code"
-                                    value={code}
-                                    onChange={(event) => {
-                                        setCode(event.target.value.toUpperCase());
-                                    }}
-                                    inputProps={{ maxLength: 6, style: { letterSpacing: "0.15em", fontWeight: 700 } }}
-                                    sx={{ maxWidth: { xs: "100%", sm: 240 } }}
-                                />
-                                <Chip
-                                    label={isJoining ? "Joining..." : "Join Session"}
-                                    color="primary"
-                                    clickable={!isJoining}
-                                    sx={{ color: "#fff", fontWeight: 600 }}
-                                    onClick={() => {
-                                        if (!isJoining) {
-                                            void handleJoinSession();
-                                        }
-                                    }}
-                                />
-                            </Stack>
                         </Stack>
                     </Box>
 
@@ -353,6 +300,8 @@ const FindQuizPage = () => {
                                 }}
                             >
                                 {items.map((quiz, index) => {
+                                    const quizCategory = quiz.categoryId ? categoryById.get(quiz.categoryId) : undefined;
+
                                     return (
                                         <Card
                                             key={quiz.id}
@@ -381,6 +330,12 @@ const FindQuizPage = () => {
                                                     <Typography variant="h6" sx={{ fontWeight: 700, color: strongText }}>
                                                         {quiz.title}
                                                     </Typography>
+                                                    <Stack direction="row" spacing={0.8} alignItems="center">
+                                                        <CategoryIconBadge iconKey={quizCategory?.icon} size={20} fallback={null} />
+                                                        <Typography sx={{ fontSize: "0.85rem", color: softText }}>
+                                                            {quizCategory?.name || "Uncategorized"}
+                                                        </Typography>
+                                                    </Stack>
                                                     <Typography
                                                         sx={{
                                                             fontSize: "0.8rem",

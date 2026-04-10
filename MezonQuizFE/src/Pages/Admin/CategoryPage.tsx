@@ -7,7 +7,9 @@ import {
 	DialogActions,
 	DialogContent,
 	DialogTitle,
+	MenuItem,
 	Paper,
+	Select,
 	Stack,
 	Table,
 	TableBody,
@@ -23,6 +25,8 @@ import useAuthStore from "../../Stores/login.store";
 import { hasAnyPermission, PERMISSIONS } from "../../Lib/Utils/permissions";
 import { createCategory, deleteCategory, getAllCategories, updateCategory } from "../../Api/category.api";
 import type { CategoryDto, SaveCategoryDto } from "../../Interface/category.dto";
+import { CATEGORY_ICON_OPTIONS, getCategoryIconOption } from "../../Lib/Utils/categoryIconOptions";
+import CategoryIconBadge from "../../Lib/Utils/categoryIconBadge";
 
 const defaultForm: SaveCategoryDto = {
 	name: "",
@@ -75,6 +79,12 @@ const CategoryPage = () => {
 	const validateForm = (form: SaveCategoryDto): boolean => {
 		if (!form.name.trim() || !form.slug.trim()) {
 			showError("Name và Slug là bắt buộc.");
+			return false;
+		}
+
+		const iconKey = form.icon?.trim();
+		if (iconKey && !getCategoryIconOption(iconKey)) {
+			showError("Icon không hợp lệ. Vui lòng chọn từ danh sách.");
 			return false;
 		}
 
@@ -205,7 +215,14 @@ const CategoryPage = () => {
 								<TableRow key={category.id} hover>
 									<TableCell>{category.name}</TableCell>
 									<TableCell>{category.slug}</TableCell>
-									<TableCell>{category.icon || "-"}</TableCell>
+									<TableCell>
+										<Stack direction="row" spacing={1} alignItems="center">
+											<CategoryIconBadge iconKey={category.icon} fallback="-" />
+											<Typography variant="body2" color="text.secondary">
+												{category.icon || "No icon"}
+											</Typography>
+										</Stack>
+									</TableCell>
 									<TableCell>{category.sortOrder ?? 0}</TableCell>
 									{hasAnyRowAction ? (
 										<TableCell align="right">
@@ -258,12 +275,39 @@ const CategoryPage = () => {
 							onChange={(e) => setCreateForm((prev) => ({ ...prev, slug: e.target.value }))}
 							fullWidth
 						/>
-						<TextField
-							label="Icon"
-							value={createForm.icon || ""}
-							onChange={(e) => setCreateForm((prev) => ({ ...prev, icon: e.target.value }))}
+						<Select
+							displayEmpty
 							fullWidth
-						/>
+							value={createForm.icon || ""}
+							onChange={(e) => setCreateForm((prev) => ({ ...prev, icon: String(e.target.value) }))}
+							renderValue={(value) => {
+								const selectedIcon = String(value);
+								const selectedOption = getCategoryIconOption(selectedIcon);
+
+								if (!selectedOption) {
+									return <Typography color="text.secondary">Select icon</Typography>;
+								}
+
+								return (
+									<Stack direction="row" spacing={1} alignItems="center">
+										<CategoryIconBadge iconKey={selectedOption.key} fallback={null} />
+										<Typography>{selectedOption.label}</Typography>
+									</Stack>
+								);
+							}}
+						>
+							<MenuItem value="">
+								No icon
+							</MenuItem>
+							{CATEGORY_ICON_OPTIONS.map((option) => (
+								<MenuItem key={option.key} value={option.key}>
+									<Stack direction="row" spacing={1} alignItems="center">
+										<CategoryIconBadge iconKey={option.key} fallback={null} />
+										<Typography>{option.label}</Typography>
+									</Stack>
+								</MenuItem>
+							))}
+						</Select>
 						<TextField
 							label="Sort Order"
 							type="number"
@@ -299,12 +343,39 @@ const CategoryPage = () => {
 							onChange={(e) => setEditForm((prev) => ({ ...prev, slug: e.target.value }))}
 							fullWidth
 						/>
-						<TextField
-							label="Icon"
-							value={editForm.icon || ""}
-							onChange={(e) => setEditForm((prev) => ({ ...prev, icon: e.target.value }))}
+						<Select
+							displayEmpty
 							fullWidth
-						/>
+							value={editForm.icon || ""}
+							onChange={(e) => setEditForm((prev) => ({ ...prev, icon: String(e.target.value) }))}
+							renderValue={(value) => {
+								const selectedIcon = String(value);
+								const selectedOption = getCategoryIconOption(selectedIcon);
+
+								if (!selectedOption) {
+									return <Typography color="text.secondary">Select icon</Typography>;
+								}
+
+								return (
+									<Stack direction="row" spacing={1} alignItems="center">
+										<CategoryIconBadge iconKey={selectedOption.key} fallback={null} />
+										<Typography>{selectedOption.label}</Typography>
+									</Stack>
+								);
+							}}
+						>
+							<MenuItem value="">
+								No icon
+							</MenuItem>
+							{CATEGORY_ICON_OPTIONS.map((option) => (
+								<MenuItem key={option.key} value={option.key}>
+									<Stack direction="row" spacing={1} alignItems="center">
+										<CategoryIconBadge iconKey={option.key} fallback={null} />
+										<Typography>{option.label}</Typography>
+									</Stack>
+								</MenuItem>
+							))}
+						</Select>
 						<TextField
 							label="Sort Order"
 							type="number"
