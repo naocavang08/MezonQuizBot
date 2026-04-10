@@ -10,11 +10,15 @@ using WebApp.Application.ManageQuiz.Dtos;
 using WebApp.Application.ManageQuizSession.Dtos;
 using WebApp.Application.ManageQuizSession.Formatters;
 using WebApp.Integration.Mezon;
+using System.Collections.Concurrent;
 
 namespace WebApp.Application.ManageQuizSession.Services
 {
     public class QuizSessionService : IQuizSessionService
     {
+        private static readonly ConcurrentDictionary<string, DateTime> RecentQuestionDispatches = new();
+        private static readonly TimeSpan QuestionDispatchDedupWindow = TimeSpan.FromSeconds(3);
+
         private readonly AppDbContext _dbContext;
         private readonly IDynamicLinkService _dynamicLinkService;
         private readonly IHubContext<QuizHub> _hubContext;
@@ -825,6 +829,15 @@ namespace WebApp.Application.ManageQuizSession.Services
 
         private async Task SendCurrentQuestionToParticipants(QuizSession session)
         {
+            if (ShouldSkipDuplicateQuestionDispatch(session.Id, session.CurrentQuestion))
+            {
+                _logger.LogInformation(
+                    "Skip duplicate DM question dispatch for session {SessionId}, question index {QuestionIndex}.",
+                    session.Id,
+                    session.CurrentQuestion);
+                return;
+            }
+
             var quiz = await _dbContext.Quizzes
                 .AsNoTracking()
                 .FirstOrDefaultAsync(q => q.Id == session.QuizId);
@@ -875,6 +888,29 @@ namespace WebApp.Application.ManageQuizSession.Services
                 session.Id,
                 sendResult.SentCount,
                 sendResult.RequestedCount);
+        }
+
+        private static bool ShouldSkipDuplicateQuestionDispatch(Guid sessionId, int questionIndex)
+        {
+            var now = DateTime.UtcNow;
+            var key = $"{sessionId:N}:{questionIndex}";
+
+            foreach (var item in RecentQuestionDispatches)
+            {
+                if (now - item.Value > QuestionDispatchDedupWindow)
+                {
+                    RecentQuestionDispatches.TryRemove(item.Key, out _);
+                }
+            }
+
+            if (RecentQuestionDispatches.TryGetValue(key, out var lastDispatch)
+                && now - lastDispatch <= QuestionDispatchDedupWindow)
+            {
+                return true;
+            }
+
+            RecentQuestionDispatches[key] = now;
+            return false;
         }
 
         private static SessionOperationResult Fail(string message)
