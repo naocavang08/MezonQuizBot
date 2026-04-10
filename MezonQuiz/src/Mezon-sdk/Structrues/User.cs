@@ -7,7 +7,7 @@ namespace Mezon_sdk.Structures
 {
     public class User
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string? Avatar { get; set; }
         public long? DmChannelId { get; set; }
         public string? Username { get; set; }

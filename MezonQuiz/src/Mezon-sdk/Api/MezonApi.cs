@@ -200,7 +200,7 @@ public class MezonApi
             Type = request.Type ?? 0
         };
 
-        proto.UserIds.Add((request.UserIds ?? new List<int>()).Select(static id => (long)id));
+        proto.UserIds.Add((request.UserIds ?? new List<long>()));
 
         var data = await CallApiAsync(
             HttpMethod.Post,

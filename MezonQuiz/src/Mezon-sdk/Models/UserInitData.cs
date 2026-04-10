@@ -9,7 +9,7 @@ namespace Mezon_sdk.Models
     public class UserInitData
     {
         [JsonPropertyName("sender_id")]
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [JsonPropertyName("username")]
         public string? Username { get; set; }
@@ -27,13 +27,13 @@ namespace Mezon_sdk.Models
         public string? DisplayName { get; set; }
 
         [JsonPropertyName("dmChannelId")]
-        public int DmChannelId { get; set; }
+        public long DmChannelId { get; set; }
 
-        public static UserInitData FromProtobuf (Mezon.Protobuf.ChannelMessage message, int dmChannelId = 0)
+        public static UserInitData FromProtobuf (Mezon.Protobuf.ChannelMessage message, long dmChannelId = 0)
         {
             return new UserInitData
             {
-                Id = ToInt(message.SenderId) ?? 0,
+                Id = message.SenderId,
                 Username = message.Username ?? "",
                 ClanNick = message.ClanNick ?? "",
                 ClanAvatar = message.ClanAvatar ?? "",

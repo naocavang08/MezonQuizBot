@@ -28,7 +28,7 @@ namespace Mezon_sdk.Models
         public int? Type { get; set; }
 
         [JsonPropertyName("user_ids")]
-        public List<int>? UserIds { get; set; }
+        public List<long>? UserIds { get; set; }
 
     }
 }

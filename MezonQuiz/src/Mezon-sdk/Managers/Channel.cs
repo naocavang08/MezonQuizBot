@@ -68,7 +68,7 @@ namespace Mezon_sdk.Managers
             return _allDmChannels;
         }
 
-        public async Task<ApiChannelDescription> CreateDmChannelAsync(int userId)
+        public async Task<ApiChannelDescription> CreateDmChannelAsync(long userId)
         {
             var session = _sessionManager.GetSession();
             if (session == null || string.IsNullOrEmpty(session.Token))
@@ -82,7 +82,7 @@ namespace Mezon_sdk.Managers
                 ChannelId = 0,
                 CategoryId = 0,
                 Type = ToInt(ChannelType.ChannelTypeDm),      
-                UserIds = new List<int> { userId },
+                UserIds = new List<long> { userId },
                 ChannelPrivate = 1
             };
 

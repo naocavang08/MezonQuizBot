@@ -560,14 +560,6 @@ public sealed class MezonBotHostedService : BackgroundService
                 return true;
             }
 
-            if (userId > int.MaxValue)
-            {
-                _logger.LogWarning(
-                    "Cannot create DM channel via SDK for user {UserId} because ID exceeds Int32. User should message bot first to establish DM route.",
-                    userId);
-                return false;
-            }
-
             var user = await _client.GetUserFromIdAsync(userId);
             await user.SendDmMessageAsync(content);
 

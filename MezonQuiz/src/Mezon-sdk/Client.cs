@@ -258,7 +258,7 @@ namespace Mezon_sdk
             }
 
             EnsureInitialized();
-            var dmChannel = await ChannelManager!.CreateDmChannelAsync((int)userId);
+            var dmChannel = await ChannelManager!.CreateDmChannelAsync(userId);
             var channelId = dmChannel.ChannelId ?? 0;
             if (channelId == 0)
             {
@@ -268,8 +268,8 @@ namespace Mezon_sdk
             var user = new User(
                 new UserInitData
                 {
-                    Id = (int)userId,
-                    DmChannelId = (int)channelId
+                    Id = userId,
+                    DmChannelId = channelId
                 },
                 SocketManager!,
                 ChannelManager);
@@ -694,7 +694,7 @@ namespace Mezon_sdk
             var user = new User(
                 new UserInitData
                 {
-                    Id = (int)message.User.UserId,
+                    Id = message.User.UserId,
                     Username = message.User.Username,
                     Avatar = message.User.Avatar,
                     DisplayName = message.User.DisplayName,
