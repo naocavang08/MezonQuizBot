@@ -18,6 +18,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdRefresh, MdSearch } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
 import { getAvailableQuizzes } from "../Api/quiz.api";
 import type { CategoryDto } from "../Interface/category.dto";
@@ -27,6 +28,7 @@ import CategoryIconBadge from "../Lib/Utils/categoryIconBadge";
 const PAGE_SIZE = 9;
 
 const FindQuizPage = () => {
+    const navigate = useNavigate();
     const theme = useTheme();
     const isDark = theme.palette.mode === "dark";
     const panelBackground = isDark
@@ -305,6 +307,9 @@ const FindQuizPage = () => {
                                     return (
                                         <Card
                                             key={quiz.id}
+                                            onClick={() => {
+                                                navigate(`/app/find-quizzes/${quiz.id}`);
+                                            }}
                                             sx={{
                                                 borderRadius: 3,
                                                 border: `1px solid ${alpha(theme.palette.text.secondary, 0.3)}`,
@@ -312,6 +317,7 @@ const FindQuizPage = () => {
                                                     ? "linear-gradient(160deg, rgba(15,23,42,0.94) 0%, rgba(10,18,33,0.92) 100%)"
                                                     : "linear-gradient(160deg, rgba(255,255,255,0.96) 0%, rgba(241,245,249,0.94) 100%)",
                                                 transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                                                cursor: "pointer",
                                                 animation: `fade-up 300ms ease ${Math.min(index * 45, 280)}ms both`,
                                                 "@keyframes fade-up": {
                                                     from: { opacity: 0, transform: "translateY(10px)" },
