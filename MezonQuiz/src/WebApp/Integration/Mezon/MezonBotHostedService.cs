@@ -1,18 +1,14 @@
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
-using Mezon.Protobuf;
 using Mezon_sdk;
 using Mezon_sdk.Constants;
 using Mezon_sdk.Models;
 using Mezon_sdk.Utils;
 using WebApp.Application.ManageQuizSession.Dtos;
 using WebApp.Application.ManageQuizSession.Formatters;
-using WebApp.Application.ManageQuizSession.Services;
 using WebApp.Data;
 using WebApp.Application.ManageQuizSession;
 using PbChannelMessage = Mezon.Protobuf.ChannelMessage;
@@ -212,38 +208,7 @@ public sealed class MezonBotHostedService : BackgroundService
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var quizSessionService = scope.ServiceProvider.GetRequiredService<IQuizSessionService>();
 
-            var incomingUsername = (message.Username ?? string.Empty).Trim();
-            var normalizedIncomingUsername = incomingUsername.ToLowerInvariant();
-
-            var user = await dbContext.Users
-                .FirstOrDefaultAsync(u =>
-                    u.MezonUserId == senderId ||
-                    (!string.IsNullOrWhiteSpace(incomingUsername) &&
-                     u.Username.ToLower() == normalizedIncomingUsername));
-
-            if (user is null)
-            {
-                _logger.LogWarning(
-                    "Cannot map Mezon sender to local user. SenderId={SenderId}, Username={Username}",
-                    senderId,
-                    incomingUsername);
-
-                await SendReplyAsync(
-                    message,
-                    "Cannot map Mezon sender to local user. Please login with Mezon on the web first and then try /join.");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(user.MezonUserId))
-            {
-                user.MezonUserId = senderId;
-                await dbContext.SaveChangesAsync();
-
-                _logger.LogInformation(
-                    "Linked local user {UserId} with Mezon user id {SenderId} during /join.",
-                    user.Id,
-                    senderId);
-            }
+            var user = await ResolveOrCreateJoinUserAsync(dbContext, message, senderId);
 
             if (isExitCommand)
             {
@@ -543,6 +508,108 @@ public sealed class MezonBotHostedService : BackgroundService
 
             return false;
         }
+    }
+
+    private async Task<Domain.Entites.User> ResolveOrCreateJoinUserAsync(AppDbContext dbContext, PbChannelMessage message, string senderId)
+    {
+        var incomingUsername = (message.Username ?? string.Empty).Trim();
+        var normalizedIncomingUsername = incomingUsername.ToLowerInvariant();
+
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(u =>
+                u.MezonUserId == senderId ||
+                (!string.IsNullOrWhiteSpace(incomingUsername) &&
+                 u.Username.ToLower() == normalizedIncomingUsername));
+
+        if (user is null)
+        {
+            var baseUsername = !string.IsNullOrWhiteSpace(incomingUsername)
+                ? incomingUsername
+                : $"mezon_{senderId}";
+
+            var uniqueUsername = await GenerateUniqueUsernameAsync(dbContext, baseUsername);
+            var now = DateTime.UtcNow;
+
+            user = new Domain.Entites.User
+            {
+                MezonUserId = senderId,
+                Username = uniqueUsername,
+                DisplayName = string.IsNullOrWhiteSpace(message.DisplayName) ? null : message.DisplayName.Trim(),
+                AvatarUrl = string.IsNullOrWhiteSpace(message.Avatar) ? null : message.Avatar.Trim(),
+                IsActive = true,
+                LastLoginAt = now,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            dbContext.Users.Add(user);
+            await dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Provisioned local user {UserId} for Mezon sender {SenderId} during /join.",
+                user.Id,
+                senderId);
+
+            return user;
+        }
+
+        var hasChanges = false;
+        if (string.IsNullOrWhiteSpace(user.MezonUserId))
+        {
+            user.MezonUserId = senderId;
+            hasChanges = true;
+
+            _logger.LogInformation(
+                "Linked local user {UserId} with Mezon user id {SenderId} during /join.",
+                user.Id,
+                senderId);
+        }
+
+        if (!user.IsActive)
+        {
+            user.IsActive = true;
+            hasChanges = true;
+        }
+
+        user.LastLoginAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+        hasChanges = true;
+
+        if (hasChanges)
+        {
+            await dbContext.SaveChangesAsync();
+        }
+
+        return user;
+    }
+
+    private static async Task<string> GenerateUniqueUsernameAsync(AppDbContext dbContext, string baseUsername)
+    {
+        var sanitizedBase = string.IsNullOrWhiteSpace(baseUsername)
+            ? "mezon_user"
+            : baseUsername.Trim();
+
+        if (sanitizedBase.Length > 255)
+        {
+            sanitizedBase = sanitizedBase.Substring(0, 255);
+        }
+
+        var uniqueUsername = sanitizedBase;
+        var suffix = 1;
+
+        while (await dbContext.Users.AnyAsync(u => u.Username == uniqueUsername))
+        {
+            var suffixText = $"_{suffix}";
+            var maxBaseLength = Math.Max(1, 255 - suffixText.Length);
+            var shortenedBase = sanitizedBase.Length > maxBaseLength
+                ? sanitizedBase.Substring(0, maxBaseLength)
+                : sanitizedBase;
+
+            uniqueUsername = $"{shortenedBase}{suffixText}";
+            suffix++;
+        }
+
+        return uniqueUsername;
     }
 
     private async Task<bool> SendDmMessageToUserAsync(long userId, ChannelMessageContent content)
