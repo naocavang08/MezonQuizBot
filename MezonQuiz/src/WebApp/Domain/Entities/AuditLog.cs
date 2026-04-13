@@ -1,4 +1,7 @@
-﻿using System.Text.Json;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
+using WebApp.Application.Dashboard.Dtos;
 
 namespace WebApp.Domain.Entites
 {
@@ -13,7 +16,9 @@ namespace WebApp.Domain.Entites
         public string? ResourceType { get; set; }
         public Guid? ResourceId { get; set; }
 
-        public JsonDocument? Details { get; set; }
+        [Required]
+        [Column("details", TypeName = "jsonb")]
+        public AuditDetailsDto Details { get; set; } = new();
         public string? IpAddress { get; set; }
 
         public DateTime CreatedAt { get; set; }

@@ -368,6 +368,7 @@ const DashboardPage = () => {
 								<TableRow>
 									<TableCell>Type</TableCell>
 									<TableCell>Title</TableCell>
+									<TableCell>User</TableCell>
 									<TableCell>Description</TableCell>
 									<TableCell>Status</TableCell>
 									<TableCell align="right">Participants</TableCell>
@@ -377,6 +378,7 @@ const DashboardPage = () => {
 							<TableBody>
 								{summary.recentActivities.map((activity: DashboardAuditLogDto) => {
 									const details = activity.details;
+									const userId = activity.userId ? `User ${activity.userId}` : "System";
 									const title = details?.title || activity.action || "-";
 									const description = details?.description || activity.ipAddress || "-";
 									const status = details?.status || "Logged";
@@ -393,8 +395,9 @@ const DashboardPage = () => {
 												variant="outlined"
 											/>
 										</TableCell>
-											<TableCell>{title}</TableCell>
-											<TableCell>{description}</TableCell>
+										<TableCell>{title}</TableCell>
+										<TableCell>{userId}</TableCell>
+										<TableCell>{description}</TableCell>
 										<TableCell>
 											<Chip
 												size="small"
@@ -409,7 +412,7 @@ const DashboardPage = () => {
 							})}
 								{summary.recentActivities.length === 0 ? (
 									<TableRow>
-										<TableCell colSpan={6} align="center">
+										<TableCell colSpan={7} align="center">
 											<Typography variant="body2" color="text.secondary">
 												No recent activities.
 											</Typography>

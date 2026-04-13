@@ -3,15 +3,16 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using System.Text.Json;
+using WebApp.Application.Dashboard.Dtos;
 using WebApp.Application.ManageQuiz.Dtos;
 using WebApp.Domain.Entites;
 using static WebApp.Domain.Enums.Status;
 
 namespace WebApp.Data
 {
-    public class AppDbContext : DbContext
-    {
-          private readonly IHttpContextAccessor? _httpContextAccessor;
+      public class AppDbContext : DbContext
+      {
+            private readonly IHttpContextAccessor? _httpContextAccessor;
             private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
             private static readonly ValueComparer<List<QuizQuestion>> QuestionsComparer = new(
@@ -26,22 +27,28 @@ namespace WebApp.Data
                   value => JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(value ?? new QuizSettings(), JsonOptions), JsonOptions) ?? new QuizSettings()
             );
 
-            public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor? httpContextAccessor = null) : base(options)
-        {
-                  _httpContextAccessor = httpContextAccessor;
-        }
-        public DbSet<User> Users => Set<User>();
-        public DbSet<Role> Roles => Set<Role>();
-        public DbSet<Permission> Permissions => Set<Permission>();
-        public DbSet<UserRole> UserRoles => Set<UserRole>();
-        public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+            private static readonly ValueComparer<AuditDetailsDto> AuditDetailsComparer = new(
+                  (left, right) => JsonSerializer.Serialize(left ?? new AuditDetailsDto(), JsonOptions) == JsonSerializer.Serialize(right ?? new AuditDetailsDto(), JsonOptions),
+                  value => JsonSerializer.Serialize(value ?? new AuditDetailsDto(), JsonOptions).GetHashCode(),
+                  value => JsonSerializer.Deserialize<AuditDetailsDto>(JsonSerializer.Serialize(value ?? new AuditDetailsDto(), JsonOptions), JsonOptions) ?? new AuditDetailsDto()
+            );
 
-        public DbSet<Quiz> Quizzes => Set<Quiz>();
-        public DbSet<QuizCategory> QuizCategories => Set<QuizCategory>();
-        public DbSet<QuizSession> QuizSessions => Set<QuizSession>();
-        public DbSet<SessionParticipant> SessionParticipants => Set<SessionParticipant>();
-        public DbSet<Answer> Answers => Set<Answer>();
-        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+            public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor? httpContextAccessor = null) : base(options)
+            {
+                  _httpContextAccessor = httpContextAccessor;
+            }
+            public DbSet<User> Users => Set<User>();
+            public DbSet<Role> Roles => Set<Role>();
+            public DbSet<Permission> Permissions => Set<Permission>();
+            public DbSet<UserRole> UserRoles => Set<UserRole>();
+            public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+
+            public DbSet<Quiz> Quizzes => Set<Quiz>();
+            public DbSet<QuizCategory> QuizCategories => Set<QuizCategory>();
+            public DbSet<QuizSession> QuizSessions => Set<QuizSession>();
+            public DbSet<SessionParticipant> SessionParticipants => Set<SessionParticipant>();
+            public DbSet<Answer> Answers => Set<Answer>();
+            public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
             public override int SaveChanges()
             {
@@ -140,7 +147,7 @@ namespace WebApp.Data
                   return Guid.TryParse(value?.ToString(), out var parsedGuid) ? parsedGuid : null;
             }
 
-            private static JsonDocument BuildAuditDetails(EntityEntry entry)
+            private static AuditDetailsDto BuildAuditDetails(EntityEntry entry)
             {
                   var payload = new Dictionary<string, object?>
                   {
@@ -170,7 +177,12 @@ namespace WebApp.Data
                         payload["changes"] = changes;
                   }
 
-                  return JsonSerializer.SerializeToDocument(payload, JsonOptions);
+                  return new AuditDetailsDto
+                  {
+                        Title = entry.Metadata.ClrType.Name,
+                        Description = JsonSerializer.Serialize(payload, JsonOptions),
+                        Status = ResolveAction(entry.State),
+                  };
             }
 
             private static Dictionary<string, object?> ReadPropertyValues(IEnumerable<PropertyEntry> properties, bool useOriginalValues)
@@ -198,150 +210,160 @@ namespace WebApp.Data
                   };
             }
 
-        protected override void OnModelCreating(ModelBuilder b)
-        {
-            b.HasPostgresEnum<QuizVisibility>();
-            b.HasPostgresEnum<QuizStatus>();
-            b.HasPostgresEnum<SessionStatus>();
-
-            b.Entity<User>(entity =>
+            protected override void OnModelCreating(ModelBuilder b)
             {
-                entity.HasIndex(e => e.MezonUserId).IsUnique();
-                entity.HasIndex(e => e.Email).IsUnique();
-            });
+                  b.HasPostgresEnum<QuizVisibility>();
+                  b.HasPostgresEnum<QuizStatus>();
+                  b.HasPostgresEnum<SessionStatus>();
 
-            b.Entity<Role>(entity =>
-            {
-                entity.HasIndex(e => e.Name).IsUnique();
-            });
+                  b.Entity<User>(entity =>
+                  {
+                        entity.HasIndex(e => e.MezonUserId).IsUnique();
+                        entity.HasIndex(e => e.Email).IsUnique();
+                  });
 
-            b.Entity<Permission>(entity =>
-            {
-                entity.HasIndex(e => new { e.Resource, e.Action }).IsUnique();
-            });
+                  b.Entity<Role>(entity =>
+                  {
+                        entity.HasIndex(e => e.Name).IsUnique();
+                  });
 
-            b.Entity<UserRole>(entity =>
-            {
-                entity.HasIndex(e => new { e.UserId, e.RoleId }).IsUnique();
+                  b.Entity<Permission>(entity =>
+                  {
+                        entity.HasIndex(e => new { e.Resource, e.Action }).IsUnique();
+                  });
 
-                // user_id ON DELETE CASCADE
-                entity.HasOne(e => e.User)
-                      .WithMany()
-                      .HasForeignKey(e => e.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                  b.Entity<UserRole>(entity =>
+                  {
+                        entity.HasIndex(e => new { e.UserId, e.RoleId }).IsUnique();
 
-                // role_id ON DELETE CASCADE
-                entity.HasOne(e => e.Role)
-                      .WithMany()
-                      .HasForeignKey(e => e.RoleId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                        // user_id ON DELETE CASCADE
+                        entity.HasOne(e => e.User)
+                        .WithMany()
+                        .HasForeignKey(e => e.UserId)
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                // assigned_by ON DELETE SET NULL
-                entity.HasOne(e => e.AssignedByUser)
-                      .WithMany()
-                      .HasForeignKey(e => e.AssignedBy)
-                      .OnDelete(DeleteBehavior.SetNull);
-            });
+                        // role_id ON DELETE CASCADE
+                        entity.HasOne(e => e.Role)
+                        .WithMany()
+                        .HasForeignKey(e => e.RoleId)
+                        .OnDelete(DeleteBehavior.Cascade);
 
-            b.Entity<RolePermission>(entity =>
-            {
-                entity.HasIndex(e => new { e.RoleId, e.PermissionId }).IsUnique();
+                        // assigned_by ON DELETE SET NULL
+                        entity.HasOne(e => e.AssignedByUser)
+                        .WithMany()
+                        .HasForeignKey(e => e.AssignedBy)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
 
-                entity.HasOne(e => e.Role)
-                      .WithMany()
-                      .HasForeignKey(e => e.RoleId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                  b.Entity<RolePermission>(entity =>
+                  {
+                        entity.HasIndex(e => new { e.RoleId, e.PermissionId }).IsUnique();
 
-                entity.HasOne(e => e.Permission)
-                      .WithMany()
-                      .HasForeignKey(e => e.PermissionId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+                        entity.HasOne(e => e.Role)
+                        .WithMany()
+                        .HasForeignKey(e => e.RoleId)
+                        .OnDelete(DeleteBehavior.Cascade);
 
-            b.Entity<QuizCategory>(entity =>
-            {
-                entity.HasIndex(e => e.Slug).IsUnique();
-            });
+                        entity.HasOne(e => e.Permission)
+                        .WithMany()
+                        .HasForeignKey(e => e.PermissionId)
+                        .OnDelete(DeleteBehavior.Cascade);
+                  });
 
-            b.Entity<Quiz>(entity =>
-            {
+                  b.Entity<QuizCategory>(entity =>
+                  {
+                        entity.HasIndex(e => e.Slug).IsUnique();
+                  });
+
+                  b.Entity<Quiz>(entity =>
+                  {
                         entity.Property(e => e.Questions)
-                                .HasColumnType("jsonb")
-                                .HasConversion(
-                                      value => JsonSerializer.Serialize(value ?? new List<QuizQuestion>(), JsonOptions),
-                                      value => JsonSerializer.Deserialize<List<QuizQuestion>>(value, JsonOptions) ?? new List<QuizQuestion>())
-                                .Metadata.SetValueComparer(QuestionsComparer);
+                          .HasColumnType("jsonb")
+                          .HasConversion(
+                                value => JsonSerializer.Serialize(value ?? new List<QuizQuestion>(), JsonOptions),
+                                value => JsonSerializer.Deserialize<List<QuizQuestion>>(value, JsonOptions) ?? new List<QuizQuestion>())
+                          .Metadata.SetValueComparer(QuestionsComparer);
 
                         entity.Property(e => e.Settings)
-                                .HasColumnType("jsonb")
-                                .HasConversion(
-                                      value => JsonSerializer.Serialize(value ?? new QuizSettings(), JsonOptions),
-                                      value => JsonSerializer.Deserialize<QuizSettings>(value, JsonOptions) ?? new QuizSettings())
-                                .Metadata.SetValueComparer(SettingsComparer);
+                          .HasColumnType("jsonb")
+                          .HasConversion(
+                                value => JsonSerializer.Serialize(value ?? new QuizSettings(), JsonOptions),
+                                value => JsonSerializer.Deserialize<QuizSettings>(value, JsonOptions) ?? new QuizSettings())
+                          .Metadata.SetValueComparer(SettingsComparer);
 
-                entity.Property(e => e.Visibility)
-                      .HasColumnType("quiz_visibility");
+                        entity.Property(e => e.Visibility)
+                        .HasColumnType("quiz_visibility");
 
-                entity.Property(e => e.Status)
-                      .HasColumnType("quiz_status");
+                        entity.Property(e => e.Status)
+                        .HasColumnType("quiz_status");
 
-                entity.HasOne(e => e.Creator)
-                      .WithMany()
-                      .HasForeignKey(e => e.CreatorId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                        entity.HasOne(e => e.Creator)
+                        .WithMany()
+                        .HasForeignKey(e => e.CreatorId)
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(e => e.Category)
-                      .WithMany()
-                      .HasForeignKey(e => e.CategoryId)
-                      .OnDelete(DeleteBehavior.SetNull);
-            });
+                        entity.HasOne(e => e.Category)
+                        .WithMany()
+                        .HasForeignKey(e => e.CategoryId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
 
-            b.Entity<QuizSession>(entity =>
-            {
+                  b.Entity<AuditLog>(entity =>
+                  {
+                        entity.Property(e => e.Details)
+                        .HasColumnType("jsonb")
+                        .HasConversion(
+                              value => JsonSerializer.Serialize(value ?? new AuditDetailsDto(), JsonOptions),
+                              value => JsonSerializer.Deserialize<AuditDetailsDto>(value, JsonOptions) ?? new AuditDetailsDto())
+                        .Metadata.SetValueComparer(AuditDetailsComparer);
+                  });
 
-                entity.Property(e => e.Status)
-                      .HasColumnType("session_status");
+                  b.Entity<QuizSession>(entity =>
+                  {
 
-                entity.HasOne(e => e.Quiz)
-                      .WithMany()
-                      .HasForeignKey(e => e.QuizId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                        entity.Property(e => e.Status)
+                        .HasColumnType("session_status");
 
-                entity.HasOne(e => e.Host)
-                      .WithMany()
-                      .HasForeignKey(e => e.HostId)
-                      .OnDelete(DeleteBehavior.Restrict);
-            });
+                        entity.HasOne(e => e.Quiz)
+                        .WithMany()
+                        .HasForeignKey(e => e.QuizId)
+                        .OnDelete(DeleteBehavior.Cascade);
 
-            b.Entity<SessionParticipant>(entity =>
-            {
-                entity.HasIndex(e => new { e.SessionId, e.UserId }).IsUnique();
+                        entity.HasOne(e => e.Host)
+                        .WithMany()
+                        .HasForeignKey(e => e.HostId)
+                        .OnDelete(DeleteBehavior.Restrict);
+                  });
 
-                entity.HasOne(e => e.Session)
-                      .WithMany()
-                      .HasForeignKey(e => e.SessionId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                  b.Entity<SessionParticipant>(entity =>
+                  {
+                        entity.HasIndex(e => new { e.SessionId, e.UserId }).IsUnique();
 
-                entity.HasOne(e => e.User)
-                      .WithMany()
-                      .HasForeignKey(e => e.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+                        entity.HasOne(e => e.Session)
+                        .WithMany()
+                        .HasForeignKey(e => e.SessionId)
+                        .OnDelete(DeleteBehavior.Cascade);
 
-            b.Entity<Answer>(entity =>
-            {
-                entity.HasIndex(e => new { e.SessionId, e.UserId, e.QuestionIndex }).IsUnique();
+                        entity.HasOne(e => e.User)
+                        .WithMany()
+                        .HasForeignKey(e => e.UserId)
+                        .OnDelete(DeleteBehavior.Cascade);
+                  });
 
-                entity.HasOne(e => e.Session)
-                      .WithMany()
-                      .HasForeignKey(e => e.SessionId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                  b.Entity<Answer>(entity =>
+                  {
+                        entity.HasIndex(e => new { e.SessionId, e.UserId, e.QuestionIndex }).IsUnique();
 
-                entity.HasOne(e => e.User)
-                      .WithMany()
-                      .HasForeignKey(e => e.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
-        }
-    }
+                        entity.HasOne(e => e.Session)
+                        .WithMany()
+                        .HasForeignKey(e => e.SessionId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(e => e.User)
+                        .WithMany()
+                        .HasForeignKey(e => e.UserId)
+                        .OnDelete(DeleteBehavior.Cascade);
+                  });
+            }
+      }
 }

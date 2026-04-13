@@ -159,12 +159,23 @@ public sealed class DashboardService : IDashboardService
         return stats;
     }
 
-    private async Task<List<AuditLog>> BuildRecentActivitiesAsync(int recentLimit)
+    private async Task<List<DashboardAuditLogDto>> BuildRecentActivitiesAsync(int recentLimit)
     {
         return await _dbContext.AuditLogs
+            .Include(log => log.Details)
+            .Include(log => log.User)
             .AsNoTracking()
             .OrderByDescending(log => log.CreatedAt)
             .Take(recentLimit)
+            .Select(log => new DashboardAuditLogDto
+            {
+                Id = log.Id,
+                Action = log.Action,
+                DisplayName = log.User != null ? log.User.DisplayName : "System",
+                IpAddress = log.IpAddress,
+                Timestamp = log.CreatedAt,
+                Details = log.Details
+            })
             .ToListAsync();
     }
 }
