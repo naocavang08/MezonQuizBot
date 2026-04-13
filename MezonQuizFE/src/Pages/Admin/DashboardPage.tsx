@@ -367,7 +367,7 @@ const DashboardPage = () => {
 							<TableHead>
 								<TableRow>
 									<TableCell>Resource Type</TableCell>
-									<TableCell>Title</TableCell>
+									<TableCell>Action</TableCell>
 									<TableCell>User</TableCell>
 									<TableCell>Ip Address</TableCell>
 									<TableCell>Status</TableCell>
@@ -379,7 +379,7 @@ const DashboardPage = () => {
 									const details = activity.details;
 									const userDisplayName = activity.userDisplayName;
 									const resourceType = activity.resourceType || "audit";
-									const title = details?.title || activity.action || "-";
+									const action = activity.action || "-";
 									const ipAddress = activity.ipAddress || "-";
 									const status = details?.status || "Logged";
 
@@ -392,7 +392,7 @@ const DashboardPage = () => {
 												variant="outlined"
 											/>
 										</TableCell>
-										<TableCell>{title}</TableCell>
+										<TableCell>{action}</TableCell>
 										<TableCell>{userDisplayName}</TableCell>
 										<TableCell>{ipAddress}</TableCell>
 										<TableCell>

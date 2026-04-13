@@ -3,9 +3,11 @@ using Microsoft.Extensions.Caching.Memory;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
+using WebApp.Application.Dashboard.Dtos;
 using WebApp.Application.Auth.Login;
 using WebApp.Application.Auth.MezonAuth.Dtos;
 using WebApp.Data;
+using WebApp.Domain.Entites;
 using DomainUser = WebApp.Domain.Entites.User;
 
 namespace WebApp.Application.Auth.MezonAuth
@@ -18,6 +20,7 @@ namespace WebApp.Application.Auth.MezonAuth
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly IMemoryCache _memoryCache;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private static readonly TimeSpan OAuthStateTtl = TimeSpan.FromMinutes(5);
         private const string OAuthStateCacheKeyPrefix = "mezon_oauth_state:";
 
@@ -27,7 +30,8 @@ namespace WebApp.Application.Auth.MezonAuth
             ILogger<MezonAuthService> logger,
             IHttpClientFactory httpClientFactory,
             IConfiguration configuration,
-            IMemoryCache memoryCache)
+            IMemoryCache memoryCache,
+            IHttpContextAccessor httpContextAccessor)
         {
             _dbContext = dbContext;
             _tokenService = tokenService;
@@ -35,6 +39,7 @@ namespace WebApp.Application.Auth.MezonAuth
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _memoryCache = memoryCache;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public Task<MezonCallbackResult> GetAuthorizeUrlAsync()
@@ -69,17 +74,35 @@ namespace WebApp.Application.Auth.MezonAuth
         {
             if (string.IsNullOrWhiteSpace(request.Code))
             {
+                await WriteMezonAuditAsync(
+                    action: "mezon.login.failed",
+                    userId: null,
+                    title: "Mezon Login Failed",
+                    description: "Authorization code is missing.",
+                    status: "failed");
                 return MezonCallbackResult.Failure(StatusCodes.Status400BadRequest, "Authorization code is missing.");
             }
 
             if (string.IsNullOrWhiteSpace(request.State))
             {
+                await WriteMezonAuditAsync(
+                    action: "mezon.login.failed",
+                    userId: null,
+                    title: "Mezon Login Failed",
+                    description: "OAuth state is missing.",
+                    status: "failed");
                 return MezonCallbackResult.Failure(StatusCodes.Status400BadRequest, "OAuth state is missing.");
             }
 
             var stateCacheKey = GetOAuthStateCacheKey(request.State);
             if (!_memoryCache.TryGetValue(stateCacheKey, out _))
             {
+                await WriteMezonAuditAsync(
+                    action: "mezon.login.failed",
+                    userId: null,
+                    title: "Mezon Login Failed",
+                    description: "Invalid or expired OAuth state.",
+                    status: "failed");
                 return MezonCallbackResult.Failure(StatusCodes.Status400BadRequest, "Invalid or expired OAuth state.");
             }
             _memoryCache.Remove(stateCacheKey);
@@ -93,6 +116,12 @@ namespace WebApp.Application.Auth.MezonAuth
             if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret) || string.IsNullOrWhiteSpace(configuredRedirectUri))
             {
                 _logger.LogError("Mezon OAuth is not configured correctly. Missing ClientId/ClientSecret/RedirectUri.");
+                await WriteMezonAuditAsync(
+                    action: "mezon.login.failed",
+                    userId: null,
+                    title: "Mezon Login Failed",
+                    description: "OAuth configuration is incomplete.",
+                    status: "failed");
                 return MezonCallbackResult.Failure(StatusCodes.Status500InternalServerError, "Cấu hình OAuth của server chưa đầy đủ.");
             }
 
@@ -112,6 +141,12 @@ namespace WebApp.Application.Auth.MezonAuth
             {
                 var errorContent = await tokenResponse.Content.ReadAsStringAsync();
                 _logger.LogWarning("Mezon token exchange failed. Status: {StatusCode}, Body: {Body}", tokenResponse.StatusCode, errorContent);
+                await WriteMezonAuditAsync(
+                    action: "mezon.login.failed",
+                    userId: null,
+                    title: "Mezon Login Failed",
+                    description: $"Token exchange failed with status {(int)tokenResponse.StatusCode}.",
+                    status: "failed");
                 return MezonCallbackResult.Failure((int)tokenResponse.StatusCode, new { Message = "Lỗi khi đổi token từ Mezon.", Details = errorContent });
             }
 
@@ -122,6 +157,12 @@ namespace WebApp.Application.Auth.MezonAuth
             {
                 var tokenRaw = await tokenResponse.Content.ReadAsStringAsync();
                 _logger.LogWarning("Mezon token response does not contain access_token. Body: {Body}", tokenRaw);
+                await WriteMezonAuditAsync(
+                    action: "mezon.login.failed",
+                    userId: null,
+                    title: "Mezon Login Failed",
+                    description: "Token response does not contain access_token.",
+                    status: "failed");
                 return MezonCallbackResult.Failure(StatusCodes.Status502BadGateway, new { Message = "Phản hồi token từ Mezon không hợp lệ.", Details = tokenRaw });
             }
 
@@ -135,6 +176,12 @@ namespace WebApp.Application.Auth.MezonAuth
             {
                 var userInfoError = await userInfoResponse.Content.ReadAsStringAsync();
                 _logger.LogWarning("Mezon userinfo failed. Status: {StatusCode}, Body: {Body}", userInfoResponse.StatusCode, userInfoError);
+                await WriteMezonAuditAsync(
+                    action: "mezon.login.failed",
+                    userId: null,
+                    title: "Mezon Login Failed",
+                    description: $"Userinfo request failed with status {(int)userInfoResponse.StatusCode}.",
+                    status: "failed");
                 return MezonCallbackResult.Failure((int)userInfoResponse.StatusCode, new { Message = "Không thể lấy thông tin người dùng từ Mezon.", Details = userInfoError });
             }
 
@@ -143,6 +190,12 @@ namespace WebApp.Application.Auth.MezonAuth
             {
                 var userInfoRaw = await userInfoResponse.Content.ReadAsStringAsync();
                 _logger.LogWarning("Unexpected Mezon userinfo payload: {Body}", userInfoRaw);
+                await WriteMezonAuditAsync(
+                    action: "mezon.login.failed",
+                    userId: null,
+                    title: "Mezon Login Failed",
+                    description: "Userinfo payload is invalid.",
+                    status: "failed");
                 return MezonCallbackResult.Failure(StatusCodes.Status502BadGateway, new { Message = "Phản hồi userinfo từ Mezon không hợp lệ.", Details = userInfoRaw });
             }
 
@@ -192,6 +245,12 @@ namespace WebApp.Application.Auth.MezonAuth
             if (string.IsNullOrWhiteSpace(mezonUserId) && string.IsNullOrWhiteSpace(username))
             {
                 _logger.LogWarning("Mezon userinfo does not contain enough identity fields. Payload: {Payload}", userInfo.ToString());
+                await WriteMezonAuditAsync(
+                    action: "mezon.login.failed",
+                    userId: null,
+                    title: "Mezon Login Failed",
+                    description: "Mezon userinfo does not contain enough identity fields.",
+                    status: "failed");
                 return MezonCallbackResult.Failure(StatusCodes.Status502BadGateway, new { Message = "Không thể xác định người dùng từ Mezon." });
             }
 
@@ -232,8 +291,7 @@ namespace WebApp.Application.Auth.MezonAuth
                     AvatarUrl = avatarUrl,
                     IsActive = true,
                     LastLoginAt = now,
-                    CreatedAt = now,
-                    UpdatedAt = now
+                    CreatedAt = now
                 };
 
                 _dbContext.Users.Add(user);
@@ -271,6 +329,13 @@ namespace WebApp.Application.Auth.MezonAuth
                 .Distinct()
                 .ToListAsync();
 
+            await WriteMezonAuditAsync(
+                action: "mezon.login.success",
+                userId: user.Id,
+                title: "Mezon Login Success",
+                description: $"User '{user.Username}' logged in via Mezon OAuth.",
+                status: "success");
+
             return MezonCallbackResult.Success(new
             {
                 Token = token,
@@ -289,6 +354,36 @@ namespace WebApp.Application.Auth.MezonAuth
         }
 
         private static string GetOAuthStateCacheKey(string state) => $"{OAuthStateCacheKeyPrefix}{state}";
+
+        private async Task WriteMezonAuditAsync(string action, Guid? userId, string title, string description, string status)
+        {
+            try
+            {
+                _dbContext.AuditLogs.Add(new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    User = userId.HasValue ? await _dbContext.Users.FindAsync(userId.Value) : null,
+                    Action = action,
+                    ResourceType = "auth",
+                    ResourceId = userId,
+                    Details = new AuditDetailsDto
+                    {
+                        Title = title,
+                        Description = description,
+                        Status = status,
+                    },
+                    IpAddress = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString(),
+                    CreatedAt = DateTime.UtcNow,
+                });
+
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to write Mezon auth audit log.");
+            }
+        }
 
         private string GenerateMezonState()
         {
