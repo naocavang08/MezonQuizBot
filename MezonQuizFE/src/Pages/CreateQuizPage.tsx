@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Box,
     Button,
     Card,
     CardContent,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
     Divider,
     FormControl,
     FormControlLabel,
@@ -22,9 +26,11 @@ import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { getAllCategories } from "../Api/category.api";
+import { createCategory, getAllCategories } from "../Api/category.api";
 import { createQuiz, uploadQuizMedia } from "../Api/quiz.api";
 import type { CategoryDto } from "../Interface/category.dto";
+import { CATEGORY_ICON_OPTIONS, getCategoryIconOption } from "../Lib/Utils/categoryIconOptions";
+import CategoryIconBadge from "../Lib/Utils/categoryIconBadge";
 import {
     QuestionType,
     QuizStatus,
@@ -42,6 +48,20 @@ type FormState = {
     status: SaveQuizDto["status"];
     settings: SaveQuizDto["settings"];
     questions: QuizQuestionDto[];
+};
+
+type CategoryFormState = {
+	name: string;
+	slug: string;
+	icon: string;
+	sortOrder: number;
+};
+
+const defaultCategoryForm: CategoryFormState = {
+	name: "",
+	slug: "",
+	icon: "",
+	sortOrder: 0,
 };
 
 const makeDefaultOptions = (type: QuizQuestionDto["questionType"]): QuizOptionDto[] => {
@@ -92,6 +112,9 @@ const CreateQuizPage = () => {
 	const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadingQuestionIndex, setUploadingQuestionIndex] = useState<number | null>(null);
+	const [openCreateCategoryDialog, setOpenCreateCategoryDialog] = useState(false);
+	const [createCategoryForm, setCreateCategoryForm] = useState<CategoryFormState>(defaultCategoryForm);
+	const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 	const [form, setForm] = useState<FormState>({
 		title: "",
@@ -108,33 +131,78 @@ const CreateQuizPage = () => {
 		questions: [makeDefaultQuestion(1)],
 	});
 
-	useEffect(() => {
-		let isMounted = true;
-
-		const loadCategories = async () => {
-			try {
-				setIsLoadingCategories(true);
-				const data = await getAllCategories();
-				if (isMounted) {
-					setCategories(data);
-				}
-			} catch {
-				if (isMounted) {
-					showError("Failed to load categories.");
-				}
-			} finally {
-				if (isMounted) {
-					setIsLoadingCategories(false);
-				}
-			}
-		};
-
-		loadCategories();
-
-		return () => {
-			isMounted = false;
-		};
+	const loadCategories = useCallback(async () => {
+		try {
+			setIsLoadingCategories(true);
+			const data = await getAllCategories();
+			setCategories(Array.isArray(data) ? data : []);
+			return Array.isArray(data) ? data : [];
+		} catch {
+			showError("Failed to load categories.");
+			return [];
+		} finally {
+			setIsLoadingCategories(false);
+		}
 	}, [showError]);
+
+	useEffect(() => {
+		void loadCategories();
+	}, [loadCategories]);
+
+	const normalizeCategoryForm = (): CategoryFormState => ({
+		name: createCategoryForm.name.trim(),
+		slug: createCategoryForm.slug.trim(),
+		icon: createCategoryForm.icon.trim(),
+		sortOrder: Number(createCategoryForm.sortOrder) || 0,
+	});
+
+	const validateCategoryForm = (formValue: CategoryFormState): boolean => {
+		if (!formValue.name || !formValue.slug) {
+			showError("Name và Slug là bắt buộc.");
+			return false;
+		}
+
+		if (formValue.icon && !getCategoryIconOption(formValue.icon)) {
+			showError("Icon không hợp lệ. Vui lòng chọn từ danh sách.");
+			return false;
+		}
+
+		return true;
+	};
+
+	const handleCreateCategory = async () => {
+		const normalized = normalizeCategoryForm();
+		if (!validateCategoryForm(normalized)) {
+			return;
+		}
+
+		try {
+			setIsCreatingCategory(true);
+			await createCategory({
+				name: normalized.name,
+				slug: normalized.slug,
+				icon: normalized.icon || undefined,
+				sortOrder: normalized.sortOrder,
+			});
+
+			const updatedCategories = await loadCategories();
+			const createdCategory = updatedCategories.find(
+				(category) => category.slug.toLowerCase() === normalized.slug.toLowerCase(),
+			);
+
+			if (createdCategory) {
+				setForm((prev) => ({ ...prev, categoryId: createdCategory.id }));
+			}
+
+			showSuccess("Category created successfully.");
+			setOpenCreateCategoryDialog(false);
+			setCreateCategoryForm(defaultCategoryForm);
+		} catch {
+			showError("Failed to create category.");
+		} finally {
+			setIsCreatingCategory(false);
+		}
+	};
 
 	const totalPoints = useMemo(
 		() => form.questions.reduce((sum, question) => sum + Number(question.points || 0), 0),
@@ -444,23 +512,48 @@ const CreateQuizPage = () => {
 							onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
 						/>
 
-						<FormControl fullWidth>
-							<FormLabel>Category</FormLabel>
-							<Select
-								value={form.categoryId}
-								onChange={(event) =>
-									setForm((prev) => ({ ...prev, categoryId: String(event.target.value) }))
-								}
-								disabled={isLoadingCategories}
+						<Stack
+							direction={{ xs: "column", sm: "row" }}
+							spacing={2}
+							alignItems={{ xs: "stretch", sm: "flex-end" }}
 							>
-								<MenuItem value="">No Category</MenuItem>
-								{categories.map((category) => (
-									<MenuItem key={category.id} value={category.id}>
-										{category.name}
+							<FormControl fullWidth size="small">
+								<FormLabel sx={{ mb: 0.5 }}>Category</FormLabel>
+								<Select
+									value={form.categoryId}
+									displayEmpty
+									onChange={(event) =>
+										setForm((prev) => ({
+										...prev,
+										categoryId: String(event.target.value),
+										}))
+									}
+									disabled={isLoadingCategories}
+								>
+									<MenuItem value="">
+										<Typography>No Category</Typography>
 									</MenuItem>
-								))}
-							</Select>
-						</FormControl>
+
+									{categories.map((category) => (
+										<MenuItem key={category.id} value={category.id}>
+										{category.name}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+
+							<Button
+								variant="contained"
+								color="primary"
+								onClick={() => setOpenCreateCategoryDialog(true)}
+								sx={{
+								minWidth: { xs: "100%", sm: 160 },
+								height: 40,
+								}}
+							>
+								+ Add
+							</Button>
+						</Stack>
 
 						<Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
 							<FormControl fullWidth>
@@ -734,6 +827,79 @@ const CreateQuizPage = () => {
 				severity={snackbar.severity}
 				onClose={closeSnackbar}
 			/>
+
+			<Dialog
+				open={openCreateCategoryDialog}
+				onClose={() => setOpenCreateCategoryDialog(false)}
+				maxWidth="sm"
+				fullWidth
+			>
+				<DialogTitle>Create Category</DialogTitle>
+				<DialogContent>
+					<Stack spacing={2} sx={{ mt: 1 }}>
+						<TextField
+							label="Name"
+							value={createCategoryForm.name}
+							onChange={(event) => setCreateCategoryForm((prev) => ({ ...prev, name: event.target.value }))}
+							fullWidth
+						/>
+						<TextField
+							label="Slug"
+							value={createCategoryForm.slug}
+							onChange={(event) => setCreateCategoryForm((prev) => ({ ...prev, slug: event.target.value }))}
+							fullWidth
+						/>
+						<Select
+							displayEmpty
+							fullWidth
+							value={createCategoryForm.icon || ""}
+							onChange={(event) => setCreateCategoryForm((prev) => ({ ...prev, icon: String(event.target.value) }))}
+							renderValue={(value) => {
+								const selectedIcon = String(value);
+								const selectedOption = getCategoryIconOption(selectedIcon);
+
+								if (!selectedOption) {
+									return <Typography color="text.secondary">Select icon</Typography>;
+								}
+
+								return (
+									<Stack direction="row" spacing={1} alignItems="center">
+										<CategoryIconBadge iconKey={selectedOption.key} fallback={null} />
+										<Typography>{selectedOption.label}</Typography>
+									</Stack>
+								);
+							}}
+						>
+							<MenuItem value="">
+								No icon
+							</MenuItem>
+							{CATEGORY_ICON_OPTIONS.map((option) => (
+								<MenuItem key={option.key} value={option.key}>
+									<Stack direction="row" spacing={1} alignItems="center">
+										<CategoryIconBadge iconKey={option.key} fallback={null} />
+										<Typography>{option.label}</Typography>
+									</Stack>
+								</MenuItem>
+							))}
+						</Select>
+						<TextField
+							label="Sort Order"
+							type="number"
+							value={createCategoryForm.sortOrder}
+							onChange={(event) =>
+								setCreateCategoryForm((prev) => ({ ...prev, sortOrder: Number(event.target.value) || 0 }))
+							}
+							fullWidth
+						/>
+					</Stack>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setOpenCreateCategoryDialog(false)}>Cancel</Button>
+					<Button onClick={handleCreateCategory} variant="contained" disabled={isCreatingCategory}>
+						{isCreatingCategory ? "Creating..." : "Create"}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Box>
 	);
 };
