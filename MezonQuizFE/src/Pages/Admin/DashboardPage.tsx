@@ -366,38 +366,35 @@ const DashboardPage = () => {
 						<Table>
 							<TableHead>
 								<TableRow>
-									<TableCell>Type</TableCell>
+									<TableCell>Resource Type</TableCell>
 									<TableCell>Title</TableCell>
 									<TableCell>User</TableCell>
-									<TableCell>Description</TableCell>
+									<TableCell>Ip Address</TableCell>
 									<TableCell>Status</TableCell>
-									<TableCell align="right">Participants</TableCell>
 									<TableCell>Created At</TableCell>
 								</TableRow>
 							</TableHead>
 							<TableBody>
 								{summary.recentActivities.map((activity: DashboardAuditLogDto) => {
 									const details = activity.details;
-									const userId = activity.userId ? `User ${activity.userId}` : "System";
+									const userDisplayName = activity.userDisplayName;
+									const resourceType = activity.resourceType || "audit";
 									const title = details?.title || activity.action || "-";
-									const description = details?.description || activity.ipAddress || "-";
+									const ipAddress = activity.ipAddress || "-";
 									const status = details?.status || "Logged";
-									const participantCount = details?.participantCount;
-									const type = activity.resourceType || "audit";
-									const entityId = activity.resourceId || activity.id;
 
 									return (
-										<TableRow key={`${type}-${entityId}`}>
+										<TableRow key={`${resourceType}`}>
 										<TableCell>
 											<Chip
 												size="small"
-													label={type.toUpperCase()}
+													label={resourceType.toUpperCase()}
 												variant="outlined"
 											/>
 										</TableCell>
 										<TableCell>{title}</TableCell>
-										<TableCell>{userId}</TableCell>
-										<TableCell>{description}</TableCell>
+										<TableCell>{userDisplayName}</TableCell>
+										<TableCell>{ipAddress}</TableCell>
 										<TableCell>
 											<Chip
 												size="small"
@@ -405,14 +402,13 @@ const DashboardPage = () => {
 													color={getStatusChipColor(status)}
 											/>
 										</TableCell>
-											<TableCell align="right">{participantCount ?? "-"}</TableCell>
 										<TableCell>{formatDate(activity.createdAt)}</TableCell>
 									</TableRow>
 								);
 							})}
 								{summary.recentActivities.length === 0 ? (
 									<TableRow>
-										<TableCell colSpan={7} align="center">
+										<TableCell colSpan={6} align="center">
 											<Typography variant="body2" color="text.secondary">
 												No recent activities.
 											</Typography>

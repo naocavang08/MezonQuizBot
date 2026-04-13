@@ -162,7 +162,6 @@ public sealed class DashboardService : IDashboardService
     private async Task<List<DashboardAuditLogDto>> BuildRecentActivitiesAsync(int recentLimit)
     {
         return await _dbContext.AuditLogs
-            .Include(log => log.Details)
             .Include(log => log.User)
             .AsNoTracking()
             .OrderByDescending(log => log.CreatedAt)
@@ -171,9 +170,10 @@ public sealed class DashboardService : IDashboardService
             {
                 Id = log.Id,
                 Action = log.Action,
-                DisplayName = log.User != null ? log.User.DisplayName : "System",
+                UserDisplayName = log.User != null ? log.User.DisplayName : "System",
+                ResourceType = log.ResourceType,
                 IpAddress = log.IpAddress,
-                Timestamp = log.CreatedAt,
+                CreatedAt = log.CreatedAt,
                 Details = log.Details
             })
             .ToListAsync();

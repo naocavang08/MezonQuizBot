@@ -33,10 +33,9 @@ export type DashboardAuditDetailsDto = {
 
 export type DashboardAuditLogDto = {
 	id: string;
-	userId?: string | null;
+	userDisplayName: string;
 	action: string;
 	resourceType?: string | null;
-	resourceId?: string | null;
 	details?: DashboardAuditDetailsDto | null;
 	ipAddress?: string | null;
 	createdAt: string;
