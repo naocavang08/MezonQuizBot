@@ -1101,30 +1101,6 @@ public sealed class MezonBotHostedService : BackgroundService
         return trimmed;
     }
 
-    private sealed class ClanWebhookRequest
-    {
-        [JsonPropertyName("content")]
-        public string Content { get; init; } = string.Empty;
-
-        [JsonPropertyName("attachments")]
-        public List<ClanWebhookAttachment> Attachments { get; init; } = [];
-    }
-
-    private sealed class ClanWebhookContent
-    {
-        [JsonPropertyName("t")]
-        public string T { get; init; } = string.Empty;
-    }
-
-    private sealed class ClanWebhookAttachment
-    {
-        [JsonPropertyName("url")]
-        public string Url { get; init; } = string.Empty;
-
-        [JsonPropertyName("filetype")]
-        public string Filetype { get; init; } = string.Empty;
-    }
-
     public sealed class BatchDmSendResult
     {
         public int RequestedCount { get; init; }
