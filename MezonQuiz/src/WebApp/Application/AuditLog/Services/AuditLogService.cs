@@ -24,13 +24,15 @@ public sealed class AuditLogService : IAuditLogService
         if (!string.IsNullOrWhiteSpace(query.Action))
         {
             var action = query.Action.Trim();
-            logs = logs.Where(log => EF.Functions.ILike(log.Action, $"%{action}%"));
+            logs = logs.Where(log => log.Action != null && log.Action.Contains(action));
         }
 
         if (!string.IsNullOrWhiteSpace(query.ResourceType))
         {
             var resourceType = query.ResourceType.Trim();
-            logs = logs.Where(log => log.ResourceType != null && EF.Functions.ILike(log.ResourceType, $"%{resourceType}%"));
+            logs = logs.Where(log =>
+                log.ResourceType != null &&
+                log.ResourceType.Contains(resourceType));
         }
 
         if (!string.IsNullOrWhiteSpace(query.User))
@@ -38,25 +40,30 @@ public sealed class AuditLogService : IAuditLogService
             var user = query.User.Trim();
             logs = logs.Where(log =>
                 log.User != null &&
-                ((log.User.DisplayName != null && EF.Functions.ILike(log.User.DisplayName, $"%{user}%")) ||
-                 (log.User.Username != null && EF.Functions.ILike(log.User.Username, $"%{user}%"))));
+                (
+                    (log.User.DisplayName != null && log.User.DisplayName.Contains(user)) ||
+                    (log.User.Username != null && log.User.Username.Contains(user))
+                )
+            );
         }
 
         if (!string.IsNullOrWhiteSpace(query.Status))
         {
             var status = query.Status.Trim();
-            logs = logs.Where(log => log.Details.Status != null && EF.Functions.ILike(log.Details.Status, $"%{status}%"));
+            logs = logs.Where(log =>
+                log.Details.Status != null &&
+                log.Details.Status.Contains(status));
         }
 
         if (query.FromDate.HasValue)
         {
-            var fromDate = query.FromDate.Value.Date;
+            var fromDate = ToUtcDateStart(query.FromDate.Value);
             logs = logs.Where(log => log.CreatedAt >= fromDate);
         }
 
         if (query.ToDate.HasValue)
         {
-            var toExclusive = query.ToDate.Value.Date.AddDays(1);
+            var toExclusive = ToUtcDateStart(query.ToDate.Value).AddDays(1);
             logs = logs.Where(log => log.CreatedAt < toExclusive);
         }
 
@@ -78,14 +85,14 @@ public sealed class AuditLogService : IAuditLogService
         };
     }
 
-    private IQueryable<WebApp.Domain.Entites.AuditLog> BuildBaseQuery()
+    private IQueryable<Domain.Entites.AuditLog> BuildBaseQuery()
     {
         return _dbContext.AuditLogs
             .Include(log => log.User)
             .AsNoTracking();
     }
 
-    private static Expression<Func<WebApp.Domain.Entites.AuditLog, AuditLogItemDto>> MapAuditLogItem()
+    private static Expression<Func<Domain.Entites.AuditLog, AuditLogItemDto>> MapAuditLogItem()
     {
         return log => new AuditLogItemDto
         {
@@ -96,6 +103,18 @@ public sealed class AuditLogService : IAuditLogService
             IpAddress = log.IpAddress,
             CreatedAt = log.CreatedAt,
             Details = log.Details,
+        };
+    }
+
+    private static DateTime ToUtcDateStart(DateTime input)
+    {
+        var dateOnly = input.Date;
+
+        return input.Kind switch
+        {
+            DateTimeKind.Utc => dateOnly,
+            DateTimeKind.Local => dateOnly.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(dateOnly, DateTimeKind.Utc),
         };
     }
 }
