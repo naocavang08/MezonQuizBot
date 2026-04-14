@@ -1,6 +1,7 @@
 ﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, mezonAuthorize } from "../Api/login.api";
+import { resolveDefaultAppPath } from "../Lib/Utils/permissions";
 import useAuthStore from "../Stores/login.store";
 
 export type LoginFormValues = {
@@ -30,7 +31,7 @@ const useLoginPage = () => {
 			}
 
 			setAuth(response);
-			navigate(response.hasSystemRole ? "/admin/dashboard" : "/user/home", { replace: true });
+			navigate(resolveDefaultAppPath(response.permissionName ?? [], response.hasSystemRole ?? false), { replace: true });
 		} catch (error: unknown) {
 			if (error && typeof error === "object" && "response" in error) {
 				const errorResponse = (error as { response?: { data?: { message?: string } } }).response;

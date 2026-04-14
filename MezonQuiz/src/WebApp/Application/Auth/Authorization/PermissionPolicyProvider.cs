@@ -13,6 +13,19 @@ public sealed class PermissionPolicyProvider : DefaultAuthorizationPolicyProvide
 
     public override Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
+        if (policyName.StartsWith(PermissionPolicy.AnyPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var permissions = policyName[PermissionPolicy.AnyPrefix.Length..]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            var policy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .AddRequirements(new PermissionRequirement(permissions))
+                .Build();
+
+            return Task.FromResult<AuthorizationPolicy?>(policy);
+        }
+
         if (policyName.StartsWith(PermissionPolicy.Prefix, StringComparison.OrdinalIgnoreCase))
         {
             var permission = policyName[PermissionPolicy.Prefix.Length..];

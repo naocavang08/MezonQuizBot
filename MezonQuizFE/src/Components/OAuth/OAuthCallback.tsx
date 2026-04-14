@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { mezonCallbackLogin } from '../../Api/login.api';
 import { getMezonCallbackParams } from '../../Lib/Utils/auth';
+import { resolveDefaultAppPath } from '../../Lib/Utils/permissions';
 import useAuthStore from '../../Stores/login.store';
 
 const OAuthCallback: React.FC = () => {
@@ -32,7 +33,7 @@ const OAuthCallback: React.FC = () => {
         }
 
         setAuth(response);
-        navigate('/app/dashboard', { replace: true });
+        navigate(resolveDefaultAppPath(response.permissionName ?? [], response.hasSystemRole ?? false), { replace: true });
       } catch {
         setError('Không thể kết nối tới server hoặc xác thực thất bại.');
       }

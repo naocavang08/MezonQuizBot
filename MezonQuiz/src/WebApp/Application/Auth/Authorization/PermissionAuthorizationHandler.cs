@@ -22,12 +22,16 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
             return;
         }
 
+        var requiredPermissions = requirement.Permissions
+            .Select(p => p.ToLowerInvariant())
+            .ToArray();
+
         var hasPermission = await _dbContext.UserRoles
             .AsNoTracking()
             .Where(ur => ur.UserId == userId)
             .Join(_dbContext.RolePermissions.AsNoTracking(), ur => ur.RoleId, rp => rp.RoleId, (ur, rp) => rp.PermissionId)
             .Join(_dbContext.Permissions.AsNoTracking(), permissionId => permissionId, p => p.Id, (permissionId, p) => new { p.Resource, p.Action })
-            .AnyAsync(p => (p.Resource + "." + p.Action) == requirement.Permission);
+            .AnyAsync(p => requiredPermissions.Contains((p.Resource + "." + p.Action).ToLower()));
 
         if (hasPermission)
         {

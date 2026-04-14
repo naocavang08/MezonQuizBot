@@ -16,9 +16,7 @@ namespace WebApp.Application.Categories
         }
 
         [HttpGet]
-        [PermissionAuthorize(PermissionNames.Categories.Admin_List)]
-        [PermissionAuthorize(PermissionNames.Categories.Creator_List)]
-        [PermissionAuthorize(PermissionNames.Categories.Player_List)]
+        [PermissionAuthorize(PermissionNames.Categories.Admin_List, PermissionNames.Categories.Creator_List, PermissionNames.Categories.Player_List)]
         public async Task<IActionResult> GetAllCategories()
         {
             var categories = await _categoryService.GetAllCategoriesAsync();

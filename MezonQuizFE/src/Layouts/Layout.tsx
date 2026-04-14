@@ -17,7 +17,7 @@ import {
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { hasAnyPermission, PERMISSIONS } from '../Lib/Utils/permissions'
+import { ACCESS_PERMISSIONS, hasAnyPermission, PERMISSIONS } from '../Lib/Utils/permissions'
 import useAuthStore from '../Stores/login.store'
 import useThemeStore from '../Stores/theme.store'
 import { MdDarkMode, MdLightMode, MdLogout, MdSettings } from 'react-icons/md'
@@ -27,22 +27,25 @@ type NavItem = {
   path: string
   icon: string
   badge?: string
-  requiredPermissions?: string[]
+  requiredPermissions?: readonly string[]
 }
 
 type NavSection = {
   title: string
+  systemOnly?: boolean
   items: NavItem[]
 }
 
 const navSections: NavSection[] = [
   {
     title: 'Administration',
+    systemOnly: true,
     items: [
       {
         label: 'Dashboard',
         path: '/app/dashboard',
         icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
+        requiredPermissions: ACCESS_PERMISSIONS.DASHBOARD,
       },
       {
         label: 'Users',
@@ -60,13 +63,13 @@ const navSections: NavSection[] = [
         label: 'Quizzes',
         path: '/app/quizzes',
         icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-        requiredPermissions: [PERMISSIONS.QUIZZES_LIST],
+        requiredPermissions: ACCESS_PERMISSIONS.QUIZ_MANAGEMENT_PAGE,
       },
       {
         label: 'Categories',
         path: '/app/categories',
         icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z',
-        requiredPermissions: [PERMISSIONS.CATEGORIES_LIST],
+        requiredPermissions: ACCESS_PERMISSIONS.CATEGORY_PAGE,
       },
     ],
   },
@@ -77,13 +80,13 @@ const navSections: NavSection[] = [
         label: 'Find Quizzes',
         path: '/app/find-quizzes',
         icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
-        requiredPermissions: [PERMISSIONS.QUIZZES_VIEW],
+        requiredPermissions: ACCESS_PERMISSIONS.QUIZ_WORKSPACE,
       },
       {
         label: 'My Quizzes',
         path: '/app/my-quizzes',
         icon: 'M4 6h16M4 12h16M4 18h10',
-        requiredPermissions: [PERMISSIONS.QUIZZES_VIEW],
+        requiredPermissions: [PERMISSIONS.QUIZZES_CREATOR_LIST],
       },
       {
         label: 'Create Quiz',
@@ -175,6 +178,7 @@ const Layout = () => {
   const filteredNavSections = useMemo(
     () =>
       navSections
+        .filter((section) => !section.systemOnly || hasSystemRole)
         .map((section) => ({
           ...section,
           items: section.items.filter((item) =>

@@ -52,7 +52,7 @@ namespace WebApp.Application.ManageQuiz
         }
 
         [HttpGet]
-        [PermissionAuthorize(PermissionNames.Quizzes.Creator_List)]
+        [PermissionAuthorize(PermissionNames.Quizzes.Creator_List, PermissionNames.Quizzes.Admin_List)]
         public async Task<IActionResult> GetAllQuizzes([FromQuery] QuizQuery input)
         {
             var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);

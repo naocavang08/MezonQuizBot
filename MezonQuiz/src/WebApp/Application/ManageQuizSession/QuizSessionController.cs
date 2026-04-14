@@ -19,9 +19,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpGet]
-        [PermissionAuthorize(PermissionNames.Sessions.Creator_List)]
-        [PermissionAuthorize(PermissionNames.Sessions.Admin_List)]
-        [PermissionAuthorize(PermissionNames.Sessions.Player_List)]
+        [PermissionAuthorize(PermissionNames.Sessions.Creator_List, PermissionNames.Sessions.Admin_List, PermissionNames.Sessions.Player_List)]
         public async Task<IActionResult> GetAllSessions(Guid? quizId)
         {
             if (quizId == null)
@@ -33,8 +31,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpGet("{sessionId}")]
-        [PermissionAuthorize(PermissionNames.Sessions.Creator_View)]
-        [PermissionAuthorize(PermissionNames.Sessions.Admin_View)]
+        [PermissionAuthorize(PermissionNames.Sessions.Creator_View, PermissionNames.Sessions.Admin_View)]
         public async Task<IActionResult> GetSession(Guid sessionId)
         {
             var session = await _sessionService.GetSession(sessionId);

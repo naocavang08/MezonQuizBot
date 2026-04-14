@@ -30,7 +30,11 @@ const RolePage = () => {
 	const permissionName = useAuthStore((state) => state.permissionName);
 	const hasSystemRole = useAuthStore((state) => state.hasSystemRole);
 	const canCreateRole = hasAnyPermission(permissionName, [PERMISSIONS.ROLES_CREATE], hasSystemRole);
-	const canUpdateRole = hasAnyPermission(permissionName, [PERMISSIONS.ROLES_UPDATE], hasSystemRole);
+	const canUpdateRole = hasAnyPermission(
+		permissionName,
+		[PERMISSIONS.ROLES_ASSIGN_PERMISSION, PERMISSIONS.ROLES_UPDATE],
+		hasSystemRole,
+	);
 	const canDeleteRole = hasAnyPermission(permissionName, [PERMISSIONS.ROLES_DELETE], hasSystemRole);
 	const hasAnyRoleAction = canUpdateRole || canDeleteRole;
 

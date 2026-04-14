@@ -16,10 +16,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { getAllCategories } from "../Api/category.api";
-import { getQuiz } from "../Api/quiz.api";
+import { getAvailableQuiz } from "../Api/quiz.api";
 import { getQuizSessions } from "../Api/session.api";
 import type { CategoryDto } from "../Interface/category.dto";
-import type { Quiz } from "../Interface/quiz.dto";
+import type { AvailableQuizDto } from "../Interface/quiz.dto";
 import { SessionStatusValue, type QuizSessionDto } from "../Interface/session.dto";
 import CategoryIconBadge from "../Lib/Utils/categoryIconBadge";
 
@@ -37,7 +37,7 @@ const QuizDetailPage = () => {
   const { quizId } = useParams<{ quizId: string }>();
   const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [quiz, setQuiz] = useState<AvailableQuizDto | null>(null);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [sessions, setSessions] = useState<QuizSessionDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,7 +67,7 @@ const QuizDetailPage = () => {
       setIsLoading(true);
       setIsLoadingSessions(true);
       const [quizData, categoryData, sessionData] = await Promise.all([
-        getQuiz(quizId),
+        getAvailableQuiz(quizId),
         getAllCategories(),
         getQuizSessions({ quizId, page: 1, pageSize: 50 }),
       ]);
