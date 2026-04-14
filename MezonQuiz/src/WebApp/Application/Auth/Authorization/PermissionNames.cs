@@ -19,12 +19,17 @@ public static class PermissionNames
         public const string Create = "roles.create";
         public const string Update = "roles.update";
         public const string Delete = "roles.delete";
+        public const string AssignPermission = "roles.assign_permission";
     }
 
     public static class Quizzes
     {
-        public const string List = "quizzes.list";
-        public const string View = "quizzes.view";
+        public const string Admin_List = "quizzes.admin_list";
+        public const string Creator_List = "quizzes.creator_list";
+        public const string Player_List = "quizzes.player_list";
+        public const string Admin_View = "quizzes.admin_view";
+        public const string Creator_View = "quizzes.creator_view";
+        public const string Player_View = "quizzes.player_view";
         public const string Create = "quizzes.create";
         public const string Update = "quizzes.update";
         public const string Delete = "quizzes.delete";
@@ -34,7 +39,9 @@ public static class PermissionNames
 
     public static class Categories
     {
-        public const string List = "categories.list";
+        public const string Admin_List = "categories.admin_list";
+        public const string Creator_List = "categories.creator_list";
+        public const string Player_List = "categories.player_list";
         public const string Create = "categories.create";
         public const string Update = "categories.update";
         public const string Delete = "categories.delete";
@@ -42,25 +49,31 @@ public static class PermissionNames
 
     public static class Sessions
     {
-        public const string List = "sessions.list";
-        public const string View = "sessions.view";
+        public const string Admin_List = "sessions.admin_list";
+        public const string Creator_List = "sessions.creator_list";
+        public const string Player_List = "sessions.player_list";
+        public const string Admin_View = "sessions.admin_view";
+        public const string Creator_View = "sessions.creator_view";
+        public const string Player_View = "sessions.player_view";
         public const string Create = "sessions.create";
-        public const string Start = "sessions.start";
-        public const string End = "sessions.end";
+        public const string Moderate = "sessions.moderate";
         public const string Delete = "sessions.delete";
     }
 
-    public static class Reports {
+    public static class Reports
+    {
         public const string View = "reports.view";
         public const string Export = "reports.export";
     }
 
-    public static class AuditLogs {
+    public static class AuditLogs
+    {
         public const string List = "audit_logs.list";
         public const string View = "audit_logs.view";
     }
 
-    public static class Settings {
+    public static class Settings
+    {
         public const string View = "settings.view";
         public const string Update = "settings.update";
     }

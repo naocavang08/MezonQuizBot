@@ -8,13 +8,6 @@ export const getAllCategories = () => {
         });
 }
 
-export const getCategoryById = (categoryId: string) => {
-    return apiClient.get<CategoryDto>(`/api/Category/${categoryId}`)
-        .then((res) => {
-            return res.data;
-        });
-}
-
 export const createCategory = (body: SaveCategoryDto) => {
     return apiClient.post<createCategoryResponse>('/api/Category', body)
         .then((res) => {

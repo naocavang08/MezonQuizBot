@@ -29,7 +29,7 @@ namespace WebApp.Application.ManageQuiz
         }
 
         [HttpGet("available-quiz")]
-        public async Task<IActionResult> GetAllAvailableQuizzes([FromQuery] QuizQuery input) 
+        public async Task<IActionResult> GetAllAvailableQuizzes([FromQuery] QuizQuery input)
         {
             Guid? viewerId = null;
             var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -52,7 +52,7 @@ namespace WebApp.Application.ManageQuiz
         }
 
         [HttpGet]
-        [PermissionAuthorize(PermissionNames.Quizzes.List)]
+        [PermissionAuthorize(PermissionNames.Quizzes.Creator_List)]
         public async Task<IActionResult> GetAllQuizzes([FromQuery] QuizQuery input)
         {
             var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -66,7 +66,7 @@ namespace WebApp.Application.ManageQuiz
         }
 
         [HttpGet("{quizId}")]
-        [PermissionAuthorize(PermissionNames.Quizzes.View)]
+        [PermissionAuthorize(PermissionNames.Quizzes.Creator_View)]
         public async Task<IActionResult> GetQuiz(Guid quizId)
         {
             var quiz = await _quizService.GetQuiz(quizId);
@@ -227,6 +227,7 @@ namespace WebApp.Application.ManageQuiz
         [Authorize]
         [Consumes("multipart/form-data")]
         [RequestSizeLimit(10 * 1024 * 1024)]
+        [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UploadQuestionMedia([FromForm] UploadQuestionMediaRequest request)
         {
             var result = await _quizService.UploadQuestionMedia(request.File, Request);

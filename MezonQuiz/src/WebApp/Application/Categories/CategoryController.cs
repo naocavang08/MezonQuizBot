@@ -16,20 +16,13 @@ namespace WebApp.Application.Categories
         }
 
         [HttpGet]
-        [PermissionAuthorize(PermissionNames.Categories.List)]
+        [PermissionAuthorize(PermissionNames.Categories.Admin_List)]
+        [PermissionAuthorize(PermissionNames.Categories.Creator_List)]
+        [PermissionAuthorize(PermissionNames.Categories.Player_List)]
         public async Task<IActionResult> GetAllCategories()
         {
             var categories = await _categoryService.GetAllCategoriesAsync();
             return Ok(categories);
-        }
-
-        [HttpGet("{id}")]
-        [PermissionAuthorize(PermissionNames.Categories.List)]
-        public async Task<IActionResult> GetCategoryById(Guid id)
-        {
-            var category = await _categoryService.GetCategoryByIdAsync(id);
-            if (category == null) return NotFound("Category not found");
-            return Ok(category);
         }
 
         [HttpPost]

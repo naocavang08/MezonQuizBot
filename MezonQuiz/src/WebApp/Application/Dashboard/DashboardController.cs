@@ -15,7 +15,7 @@ public sealed class DashboardController : ControllerBase
     }
 
     [HttpGet("summary")]
-    [PermissionAuthorize(PermissionNames.Quizzes.List)]
+    [PermissionAuthorize(PermissionNames.Reports.View)]
     public async Task<IActionResult> GetSummary([FromQuery] int days = 7, [FromQuery] int recentLimit = 8)
     {
         var summary = await _dashboardService.GetSummaryAsync(days, recentLimit);

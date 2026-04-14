@@ -59,7 +59,7 @@ namespace WebApp.Application.Auth.Roles
 
         [HttpDelete("{id}")]
         [PermissionAuthorize(PermissionNames.Roles.Delete)]
-        public async Task<IActionResult> DeleteRole(Guid id)    
+        public async Task<IActionResult> DeleteRole(Guid id)
         {
             try
             {
@@ -100,7 +100,7 @@ namespace WebApp.Application.Auth.Roles
         }
 
         [HttpPost("{id}/permissions")]
-        [PermissionAuthorize(PermissionNames.Roles.Update)]
+        [PermissionAuthorize(PermissionNames.Roles.AssignPermission)]
         public async Task<IActionResult> AssignPermissionsToRole(Guid id, [FromBody] List<Guid> permissionIds)
         {
             try

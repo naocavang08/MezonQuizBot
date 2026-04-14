@@ -19,10 +19,13 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpGet]
-        [PermissionAuthorize(PermissionNames.Sessions.List)]
+        [PermissionAuthorize(PermissionNames.Sessions.Creator_List)]
+        [PermissionAuthorize(PermissionNames.Sessions.Admin_List)]
+        [PermissionAuthorize(PermissionNames.Sessions.Player_List)]
         public async Task<IActionResult> GetAllSessions(Guid? quizId)
         {
-            if (quizId == null) {
+            if (quizId == null)
+            {
                 return BadRequest(new { Message = "Quiz ID is required." });
             }
             var sessions = await _sessionService.GetAllSessions(quizId);
@@ -30,7 +33,8 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpGet("{sessionId}")]
-        [PermissionAuthorize(PermissionNames.Sessions.View)]
+        [PermissionAuthorize(PermissionNames.Sessions.Creator_View)]
+        [PermissionAuthorize(PermissionNames.Sessions.Admin_View)]
         public async Task<IActionResult> GetSession(Guid sessionId)
         {
             var session = await _sessionService.GetSession(sessionId);
@@ -72,7 +76,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/start")]
-        [PermissionAuthorize(PermissionNames.Sessions.Start)]
+        [PermissionAuthorize(PermissionNames.Sessions.Moderate)]
         public async Task<IActionResult> StartSession(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -88,6 +92,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/pause")]
+        [PermissionAuthorize(PermissionNames.Sessions.Moderate)]
         public async Task<IActionResult> PauseSession(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -103,6 +108,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/resume")]
+        [PermissionAuthorize(PermissionNames.Sessions.Moderate)]
         public async Task<IActionResult> ResumeSession(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -118,7 +124,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/finish")]
-        [PermissionAuthorize(PermissionNames.Sessions.End)]
+        [PermissionAuthorize(PermissionNames.Sessions.Moderate)]
         public async Task<IActionResult> FinishSession(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -134,6 +140,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/cancel")]
+        [PermissionAuthorize(PermissionNames.Sessions.Moderate)]
         public async Task<IActionResult> CancelSession(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -165,6 +172,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/next-question")]
+        [PermissionAuthorize(PermissionNames.Sessions.Moderate)]
         public async Task<IActionResult> NextQuestion(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -202,6 +210,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpGet("{sessionId}/leaderboard")]
+        [PermissionAuthorize(PermissionNames.Sessions.Creator_View)]
         public async Task<IActionResult> GetLeaderboard(Guid sessionId)
         {
             var leaderboard = await _sessionService.GetLeaderboard(sessionId);
