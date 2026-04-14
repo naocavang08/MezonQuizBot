@@ -1,5 +1,6 @@
 namespace WebApp.Application.Dashboard.Dtos;
 
+using WebApp.Application.AuditLog.Dtos;
 using WebApp.Domain.Entites;
 
 public sealed class DashboardSummaryDto
@@ -9,7 +10,6 @@ public sealed class DashboardSummaryDto
     public List<DashboardStatusCountDto> SessionStatusDistribution { get; set; } = new();
     public List<DashboardCategoryStatDto> TopCategories { get; set; } = new();
     public List<DashboardDailyStatDto> DailyStats { get; set; } = new();
-    public List<DashboardAuditLogDto> RecentActivities { get; set; } = new();
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
 }
 
@@ -41,16 +41,5 @@ public sealed class DashboardDailyStatDto
     public int Users { get; set; }
     public int Quizzes { get; set; }
     public int Sessions { get; set; }
-}
-
-public sealed class DashboardAuditLogDto
-{
-    public Guid Id { get; set; }
-    public string Action { get; set; } = string.Empty;
-    public string? UserDisplayName { get; set; }
-    public string? ResourceType { get; set; }
-    public string? IpAddress { get; set; }
-    public AuditDetailsDto? Details { get; set; }
-    public DateTime CreatedAt { get; set; }
 }
 

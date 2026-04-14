@@ -39,6 +39,8 @@ export const PERMISSIONS = {
   SESSIONS_DELETE: 'sessions.delete',
   REPORTS_VIEW: 'reports.view',
   REPORTS_EXPORT: 'reports.export',
+  AUDIT_LOGS_LIST: 'audit_logs.list',
+  AUDIT_LOGS_VIEW: 'audit_logs.view',
 } as const
 
 export const ACCESS_PERMISSIONS = {

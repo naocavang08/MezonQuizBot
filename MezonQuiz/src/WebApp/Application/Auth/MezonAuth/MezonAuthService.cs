@@ -3,7 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
-using WebApp.Application.Dashboard.Dtos;
+using WebApp.Application.AuditLog.Dtos;
 using WebApp.Application.Auth.Login;
 using WebApp.Application.Auth.MezonAuth.Dtos;
 using WebApp.Data;
@@ -359,7 +359,7 @@ namespace WebApp.Application.Auth.MezonAuth
         {
             try
             {
-                _dbContext.AuditLogs.Add(new AuditLog
+                _dbContext.AuditLogs.Add(new WebApp.Domain.Entites.AuditLog
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,

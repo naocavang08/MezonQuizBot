@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using System.Text.Json;
-using WebApp.Application.Dashboard.Dtos;
+using WebApp.Application.AuditLog.Dtos;
 using WebApp.Application.ManageQuiz.Dtos;
 using WebApp.Domain.Entites;
 using static WebApp.Domain.Enums.Status;

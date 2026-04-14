@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using WebApp.Application.AuditLog;
 using WebApp.Application.Dashboard.Dtos;
 using WebApp.Data;
 using WebApp.Domain.Entites;
@@ -8,10 +9,12 @@ namespace WebApp.Application.Dashboard.Services;
 public sealed class DashboardService : IDashboardService
 {
     private readonly AppDbContext _dbContext;
+    private readonly IAuditLogService _auditLogService;
 
-    public DashboardService(AppDbContext dbContext)
+    public DashboardService(AppDbContext dbContext, IAuditLogService auditLogService)
     {
         _dbContext = dbContext;
+        _auditLogService = auditLogService;
     }
 
     public async Task<DashboardSummaryDto> GetSummaryAsync(int days = 7, int recentLimit = 8)
@@ -25,7 +28,6 @@ public sealed class DashboardService : IDashboardService
         var sessionStatusDistribution = await BuildSessionStatusDistributionAsync();
         var topCategories = await BuildTopCategoriesAsync();
         var dailyStats = await BuildDailyStatsAsync(startDate, safeDays);
-        var recentActivities = await BuildRecentActivitiesAsync(safeRecentLimit);
 
         return new DashboardSummaryDto
         {
@@ -34,7 +36,6 @@ public sealed class DashboardService : IDashboardService
             SessionStatusDistribution = sessionStatusDistribution,
             TopCategories = topCategories,
             DailyStats = dailyStats,
-            RecentActivities = recentActivities,
             GeneratedAt = DateTime.UtcNow,
         };
     }
@@ -159,23 +160,4 @@ public sealed class DashboardService : IDashboardService
         return stats;
     }
 
-    private async Task<List<DashboardAuditLogDto>> BuildRecentActivitiesAsync(int recentLimit)
-    {
-        return await _dbContext.AuditLogs
-            .Include(log => log.User)
-            .AsNoTracking()
-            .OrderByDescending(log => log.CreatedAt)
-            .Take(recentLimit)
-            .Select(log => new DashboardAuditLogDto
-            {
-                Id = log.Id,
-                Action = log.Action,
-                UserDisplayName = log.User != null ? log.User.DisplayName : "System",
-                ResourceType = log.ResourceType,
-                IpAddress = log.IpAddress,
-                CreatedAt = log.CreatedAt,
-                Details = log.Details
-            })
-            .ToListAsync();
-    }
 }

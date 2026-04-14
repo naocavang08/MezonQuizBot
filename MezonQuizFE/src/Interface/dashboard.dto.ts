@@ -24,29 +24,11 @@ export type DashboardDailyStatDto = {
 	sessions: number;
 };
 
-export type DashboardAuditDetailsDto = {
-	title?: string;
-	description?: string;
-	status?: string;
-	participantCount?: number | null;
-};
-
-export type DashboardAuditLogDto = {
-	id: string;
-	userDisplayName: string;
-	action: string;
-	resourceType?: string | null;
-	details?: DashboardAuditDetailsDto | null;
-	ipAddress?: string | null;
-	createdAt: string;
-};
-
 export type DashboardSummaryDto = {
 	kpis: DashboardKpiDto;
 	quizStatusDistribution: DashboardStatusCountDto[];
 	sessionStatusDistribution: DashboardStatusCountDto[];
 	topCategories: DashboardCategoryStatDto[];
 	dailyStats: DashboardDailyStatDto[];
-	recentActivities: DashboardAuditLogDto[];
 	generatedAt: string;
 };

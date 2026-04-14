@@ -1,4 +1,4 @@
-namespace WebApp.Application.Dashboard.Dtos;
+namespace WebApp.Application.AuditLog.Dtos;
 
 public sealed class AuditDetailsDto
 {

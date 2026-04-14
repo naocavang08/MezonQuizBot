@@ -1,6 +1,5 @@
 import apiClient from "./ApiClient";
 import type {
-	DashboardAuditLogDto,
 	DashboardCategoryStatDto,
 	DashboardDailyStatDto,
 	DashboardKpiDto,
@@ -77,14 +76,11 @@ const normalizeDashboardSummary = (raw: unknown): DashboardSummaryDto => {
 		),
 		topCategories: toArray(data.topCategories ?? data.TopCategories, normalizeTopCategory),
 		dailyStats: toArray(data.dailyStats ?? data.DailyStats, normalizeDailyStat),
-		recentActivities: (Array.isArray(data.recentActivities ?? data.RecentActivities)
-			? (data.recentActivities ?? data.RecentActivities)
-			: []) as DashboardAuditLogDto[],
 		generatedAt: toString(data.generatedAt ?? data.GeneratedAt),
 	};
 };
 
-export const getDashboardSummary = (params?: { days?: number; recentLimit?: number }) => {
+export const getDashboardSummary = (params?: { days?: number }) => {
 	return apiClient
 		.get("/api/Dashboard/summary", { params })
 		.then((res) => normalizeDashboardSummary(res.data));

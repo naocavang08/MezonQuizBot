@@ -71,6 +71,12 @@ const navSections: NavSection[] = [
         icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z',
         requiredPermissions: ACCESS_PERMISSIONS.CATEGORY_PAGE,
       },
+      {
+        label: 'Audit Logs',
+        path: '/app/audit-logs',
+        icon: 'M9 12h6m-6 4h6M8 4h8a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z',
+        requiredPermissions: [PERMISSIONS.AUDIT_LOGS_LIST],
+      },
     ],
   },
   {
@@ -105,6 +111,7 @@ const pageTitleMap: Record<string, string> = {
   '/app/roles': 'Role Management',
   '/app/quizzes': 'Quiz Management',
   '/app/categories': 'Category Management',
+  '/app/audit-logs': 'Audit Logs',
   '/app/find-quizzes': 'Find Quizzes',
   '/app/my-quizzes': 'My Quizzes',
   '/app/create-quiz': 'Create Quiz',

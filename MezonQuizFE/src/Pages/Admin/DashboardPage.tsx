@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Box,
 	Button,
-	Chip,
 	CircularProgress,
 	Grid,
 	LinearProgress,
@@ -19,7 +18,6 @@ import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import { getDashboardSummary } from "../../Api/dashboard.api";
 import type {
-	DashboardAuditLogDto,
 	DashboardDailyStatDto,
 	DashboardStatusCountDto,
 	DashboardSummaryDto,
@@ -56,23 +54,6 @@ const formatDay = (isoDate: string) => {
 		day: "2-digit",
 		month: "short",
 	}).format(parsed);
-};
-
-const getStatusChipColor = (status: string): "default" | "warning" | "success" | "error" | "info" => {
-	const normalized = status.toLowerCase();
-	if (["published", "active", "finished"].includes(normalized)) {
-		return "success";
-	}
-
-	if (["draft", "paused", "waiting"].includes(normalized)) {
-		return "warning";
-	}
-
-	if (["cancelled", "archived"].includes(normalized)) {
-		return "error";
-	}
-
-	return "info";
 };
 
 const renderStatusDistribution = (items: DashboardStatusCountDto[]) => {
@@ -204,7 +185,7 @@ const DashboardPage = () => {
 		}
 
 		try {
-			const data = await getDashboardSummary({ days: 7, recentLimit: 10 });
+			const data = await getDashboardSummary({ days: 7 });
 			setSummary(data);
 		} catch {
 			showError("Failed to load dashboard summary.");
@@ -358,66 +339,6 @@ const DashboardPage = () => {
 							</Paper>
 						</Grid>
 					</Grid>
-
-					<Paper variant="outlined" sx={{ p: 2.25, boxShadow: "none" }}>
-						<Typography variant="h6" fontWeight={700} mb={1.25}>
-							Recent Activities
-						</Typography>
-						<Table>
-							<TableHead>
-								<TableRow>
-									<TableCell>Resource Type</TableCell>
-									<TableCell>Action</TableCell>
-									<TableCell>User</TableCell>
-									<TableCell>Ip Address</TableCell>
-									<TableCell>Status</TableCell>
-									<TableCell>Created At</TableCell>
-								</TableRow>
-							</TableHead>
-							<TableBody>
-								{summary.recentActivities.map((activity: DashboardAuditLogDto) => {
-									const details = activity.details;
-									const userDisplayName = activity.userDisplayName;
-									const resourceType = activity.resourceType || "audit";
-									const action = activity.action || "-";
-									const ipAddress = activity.ipAddress || "-";
-									const status = details?.status || "Logged";
-
-									return (
-										<TableRow key={`${resourceType}`}>
-										<TableCell>
-											<Chip
-												size="small"
-													label={resourceType.toUpperCase()}
-												variant="outlined"
-											/>
-										</TableCell>
-										<TableCell>{action}</TableCell>
-										<TableCell>{userDisplayName}</TableCell>
-										<TableCell>{ipAddress}</TableCell>
-										<TableCell>
-											<Chip
-												size="small"
-													label={status}
-													color={getStatusChipColor(status)}
-											/>
-										</TableCell>
-										<TableCell>{formatDate(activity.createdAt)}</TableCell>
-									</TableRow>
-								);
-							})}
-								{summary.recentActivities.length === 0 ? (
-									<TableRow>
-										<TableCell colSpan={6} align="center">
-											<Typography variant="body2" color="text.secondary">
-												No recent activities.
-											</Typography>
-										</TableCell>
-									</TableRow>
-								) : null}
-							</TableBody>
-						</Table>
-					</Paper>
 				</Stack>
 			)}
 

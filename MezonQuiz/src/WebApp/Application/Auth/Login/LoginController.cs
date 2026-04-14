@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Application.Dashboard.Dtos;
+using WebApp.Application.AuditLog.Dtos;
 using WebApp.Application.Auth.Login.Dtos;
 using WebApp.Application.Auth.MezonAuth;
 using WebApp.Application.Auth.MezonAuth.Dtos;
@@ -138,7 +138,7 @@ namespace WebApp.Application.Auth.Login
         {
             try
             {
-                _dbContext.AuditLogs.Add(new AuditLog
+                _dbContext.AuditLogs.Add(new WebApp.Domain.Entites.AuditLog
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,

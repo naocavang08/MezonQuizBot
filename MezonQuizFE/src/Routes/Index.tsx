@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import OAuthCallback from "../Components/OAuth/OAuthCallback";
 import LoginPage from "../Pages/Auth/LoginPage";
 import DashboardPage from "../Pages/Admin/DashboardPage";
+import AuditLogPage from "../Pages/Admin/AuditLogPage";
 import QuizPage from "../Pages/Admin/QuizPage";
 import RolePage from "../Pages/Admin/RolePage";
 import UserPage from "../Pages/Admin/UserPage";
@@ -62,6 +63,10 @@ const AppRoutes = () => {
 
             <Route element={<ProtectedRoute requiredPermissions={ACCESS_PERMISSIONS.CATEGORY_PAGE} />}>
               <Route path="categories" element={<CategoryPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.AUDIT_LOGS_LIST]} />}>
+              <Route path="audit-logs" element={<AuditLogPage />} />
             </Route>
           </Route>
 
