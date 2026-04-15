@@ -25,7 +25,7 @@ const useLoginPage = () => {
 		try {
 			const response = await login(data);
 
-			if (!response?.token) {
+			if (!response?.token || !response?.refreshToken) {
 				setErrorMessage(DEFAULT_ERROR_MESSAGE);
 				return;
 			}

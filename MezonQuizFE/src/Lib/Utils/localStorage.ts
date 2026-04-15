@@ -1,6 +1,8 @@
 import type { User } from "../../Interface/login.dto";
 
 const ACCESS_TOKEN_KEY = 'accessToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
+const ACCESS_TOKEN_EXPIRES_AT_KEY = 'accessTokenExpiresAt';
 const HAS_SYSTEM_ROLE_KEY = 'hasSystemRole';
 const USER_KEY = 'user';
 const ROLE_NAMES_KEY = 'roleNames';
@@ -42,6 +44,62 @@ export const removeTokenAccess = (): void => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
   } catch (error) {
     console.error('Error removing access token:', error);
+  }
+};
+
+export const getRefreshToken = (): string | null => {
+  try {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  } catch (error) {
+    console.error('Error getting refresh token:', error);
+    return null;
+  }
+};
+
+export const setRefreshToken = (token: string): void => {
+  try {
+    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  } catch (error) {
+    console.error('Error setting refresh token:', error);
+  }
+};
+
+export const removeRefreshToken = (): void => {
+  try {
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+  } catch (error) {
+    console.error('Error removing refresh token:', error);
+  }
+};
+
+export const getAccessTokenExpiresAt = (): number | null => {
+  try {
+    const rawValue = localStorage.getItem(ACCESS_TOKEN_EXPIRES_AT_KEY);
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = Number(rawValue);
+    return Number.isFinite(parsedValue) ? parsedValue : null;
+  } catch (error) {
+    console.error('Error getting access token expiry:', error);
+    return null;
+  }
+};
+
+export const setAccessTokenExpiresAt = (expiresAtEpochMs: number): void => {
+  try {
+    localStorage.setItem(ACCESS_TOKEN_EXPIRES_AT_KEY, String(expiresAtEpochMs));
+  } catch (error) {
+    console.error('Error setting access token expiry:', error);
+  }
+};
+
+export const removeAccessTokenExpiresAt = (): void => {
+  try {
+    localStorage.removeItem(ACCESS_TOKEN_EXPIRES_AT_KEY);
+  } catch (error) {
+    console.error('Error removing access token expiry:', error);
   }
 };
 

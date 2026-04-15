@@ -1,5 +1,4 @@
 import type { LoginResponse } from "../Interface/login.dto";
-import { setTokenAccess } from "../Lib/Utils/localStorage";
 import apiClient from "./ApiClient";
 
 export const login = (body: {
@@ -8,11 +7,7 @@ export const login = (body: {
 }) => {
   return apiClient
     .post<LoginResponse>('/api/Login', body)
-    .then((res) => {
-      const token = res.data?.token;
-      if (token) setTokenAccess(token);
-      return res.data;
-    });
+    .then((res) => res.data);
 };
 
 export const mezonCallbackLogin = (body: {
@@ -21,11 +16,13 @@ export const mezonCallbackLogin = (body: {
 }) => {
   return apiClient
     .post<LoginResponse>('/api/Login/mezon-callback', body)
-    .then((res) => {
-      const token = res.data?.token;
-      if (token) setTokenAccess(token);
-      return res.data;
-    });
+    .then((res) => res.data);
+};
+
+export const refreshLogin = (refreshToken: string) => {
+  return apiClient
+    .post<LoginResponse>('/api/Login/refresh', { refreshToken }, { headers: { 'X-Skip-Auth-Refresh': 'true' } })
+    .then((res) => res.data);
 };
 
 export const mezonAuthorize = () => {

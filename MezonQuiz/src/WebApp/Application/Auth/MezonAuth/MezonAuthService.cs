@@ -2,9 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using WebApp.Application.AuditLog.Dtos;
 using WebApp.Application.Auth.Login;
+using WebApp.Application.Auth.Login.Dtos;
 using WebApp.Application.Auth.MezonAuth.Dtos;
 using WebApp.Data;
 using WebApp.Domain.Entites;
@@ -166,10 +168,10 @@ namespace WebApp.Application.Auth.MezonAuth
                 return MezonCallbackResult.Failure(StatusCodes.Status502BadGateway, new { Message = "Phản hồi token từ Mezon không hợp lệ.", Details = tokenRaw });
             }
 
-            var accessToken = accessTokenNode.GetString()!;
+            var mezonAccessToken = accessTokenNode.GetString()!;
 
             var userInfoRequest = new HttpRequestMessage(HttpMethod.Get, userInfoUrl);
-            userInfoRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            userInfoRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", mezonAccessToken);
 
             var userInfoResponse = await httpClient.SendAsync(userInfoRequest);
             if (!userInfoResponse.IsSuccessStatusCode)
@@ -307,9 +309,21 @@ namespace WebApp.Application.Auth.MezonAuth
                 user.IsActive = true;
             }
 
+            var accessTokenResult = _tokenService.CreateAccessToken(user);
+            var refreshTokenValue = _tokenService.GenerateRefreshToken();
+            var refreshTokenHash = HashToken(refreshTokenValue);
+
+            _dbContext.RefreshTokens.Add(new RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TokenHash = refreshTokenHash,
+                ExpiresAt = _tokenService.GetRefreshTokenExpiration(),
+                CreatedAt = DateTime.UtcNow
+            });
+
             await _dbContext.SaveChangesAsync();
 
-            var token = _tokenService.CreateToken(user);
             var roles = await _dbContext.UserRoles
                 .Where(ur => ur.UserId == user.Id)
                 .Join(_dbContext.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { r.Name, r.IsSystem })
@@ -336,9 +350,11 @@ namespace WebApp.Application.Auth.MezonAuth
                 description: $"User '{user.Username}' logged in via Mezon OAuth.",
                 status: "success");
 
-            return MezonCallbackResult.Success(new
+            return MezonCallbackResult.Success(new AuthResponseDto
             {
-                Token = token,
+                Token = accessTokenResult.Token,
+                RefreshToken = refreshTokenValue,
+                ExpiresIn = accessTokenResult.ExpiresIn,
                 User = new
                 {
                     user.Id,
@@ -402,6 +418,12 @@ namespace WebApp.Application.Auth.MezonAuth
             }
 
             return new string(state);
+        }
+
+        private static string HashToken(string token)
+        {
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+            return Convert.ToHexString(bytes);
         }
     }
 }

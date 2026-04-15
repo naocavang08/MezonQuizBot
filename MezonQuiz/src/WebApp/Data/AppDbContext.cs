@@ -38,6 +38,7 @@ namespace WebApp.Data
                   _httpContextAccessor = httpContextAccessor;
             }
             public DbSet<User> Users => Set<User>();
+            public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
             public DbSet<Role> Roles => Set<Role>();
             public DbSet<Permission> Permissions => Set<Permission>();
             public DbSet<UserRole> UserRoles => Set<UserRole>();
@@ -220,6 +221,17 @@ namespace WebApp.Data
                   {
                         entity.HasIndex(e => e.MezonUserId).IsUnique();
                         entity.HasIndex(e => e.Email).IsUnique();
+                  });
+
+                  b.Entity<RefreshToken>(entity =>
+                  {
+                        entity.HasIndex(e => e.TokenHash).IsUnique();
+                        entity.HasIndex(e => new { e.UserId, e.ExpiresAt });
+
+                        entity.HasOne(e => e.User)
+                              .WithMany()
+                              .HasForeignKey(e => e.UserId)
+                              .OnDelete(DeleteBehavior.Cascade);
                   });
 
                   b.Entity<Role>(entity =>

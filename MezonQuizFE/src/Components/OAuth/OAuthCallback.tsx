@@ -27,7 +27,7 @@ const OAuthCallback: React.FC = () => {
           state: returnedState,
         });
 
-        if (!response?.token) {
+        if (!response?.token || !response?.refreshToken) {
           setError('Lỗi từ server khi xử lý đăng nhập Mezon.');
           return;
         }

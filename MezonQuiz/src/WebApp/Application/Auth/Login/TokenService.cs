@@ -1,14 +1,17 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
+using WebApp.Application.Auth.Login.Dtos;
 using WebApp.Domain.Entites;
 
 namespace WebApp.Application.Auth.Login
 {
     public class TokenService : ITokenService
     {
-        private const int ExpirationMinutes = 60;
+        private const int DefaultAccessTokenExpirationMinutes = 60;
+        private const int DefaultRefreshTokenExpirationDays = 30;
         private readonly ILogger<TokenService> _logger;
         private readonly IConfiguration _configuration;
 
@@ -18,19 +21,38 @@ namespace WebApp.Application.Auth.Login
             _configuration = configuration;
         }
 
-        public string CreateToken(User user)
+        public AccessTokenResult CreateAccessToken(User user)
         {
-            var expiration = DateTime.UtcNow.AddMinutes(ExpirationMinutes);
+            var expirationMinutes = GetOptionalIntJwtSetting("AccessTokenExpirationMinutes", DefaultAccessTokenExpirationMinutes);
+            var expiration = DateTime.UtcNow.AddMinutes(expirationMinutes);
             var token = CreateJwtToken(
                 CreateClaims(user),
                 CreateSigningCredentials(),
                 expiration
             );
             var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenValue = tokenHandler.WriteToken(token);
 
             _logger.LogInformation("JWT Token created");
 
-            return tokenHandler.WriteToken(token);
+            return new AccessTokenResult
+            {
+                Token = tokenValue,
+                ExpiresIn = (int)Math.Max(0, (expiration - DateTime.UtcNow).TotalSeconds),
+                ExpiresAt = expiration
+            };
+        }
+
+        public string GenerateRefreshToken()
+        {
+            var randomBytes = RandomNumberGenerator.GetBytes(64);
+            return Base64UrlEncoder.Encode(randomBytes);
+        }
+
+        public DateTime GetRefreshTokenExpiration()
+        {
+            var refreshExpirationDays = GetOptionalIntJwtSetting("RefreshTokenExpirationDays", DefaultRefreshTokenExpirationDays);
+            return DateTime.UtcNow.AddDays(refreshExpirationDays);
         }
 
         private JwtSecurityToken CreateJwtToken(List<Claim> claims, SigningCredentials credentials,
@@ -86,6 +108,14 @@ namespace WebApp.Application.Auth.Login
             }
 
             return value;
+        }
+
+        private int GetOptionalIntJwtSetting(string key, int defaultValue)
+        {
+            var value = _configuration[$"JwtTokenSettings:{key}"];
+            return int.TryParse(value, out var parsedValue) && parsedValue > 0
+                ? parsedValue
+                : defaultValue;
         }
     }
 }

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 using WebApp.Application.AuditLog.Dtos;
 using WebApp.Application.Auth.Login.Dtos;
 using WebApp.Application.Auth.MezonAuth;
@@ -72,27 +74,8 @@ namespace WebApp.Application.Auth.Login
             }
 
             user.LastLoginAt = DateTime.UtcNow;
-            await _dbContext.SaveChangesAsync();
-
-            var token = _tokenService.CreateToken(user);
-            var roles = await _dbContext.UserRoles
-                .Where(ur => ur.UserId == user.Id)
-                .Join(_dbContext.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { r.Name, r.IsSystem })
-                .Distinct()
-                .ToListAsync();
-
-            var roleNames = roles
-                .Select(r => r.Name)
-                .ToList();
-
-            var hasSystemRole = roles.Any(r => r.IsSystem);
-
-            var permissionNames = await _dbContext.UserRoles
-                .Where(ur => ur.UserId == user.Id)
-                .Join(_dbContext.RolePermissions, ur => ur.RoleId, rp => rp.RoleId, (ur, rp) => rp.PermissionId)
-                .Join(_dbContext.Permissions, permissionId => permissionId, p => p.Id, (permissionId, p) => p.Resource + "." + p.Action)
-                .Distinct()
-                .ToListAsync();
+            user.UpdatedAt = DateTime.UtcNow;
+            var authResponse = await BuildAuthResponseAsync(user);
 
             await WriteLoginAuditAsync(
                 action: "login.success",
@@ -101,21 +84,42 @@ namespace WebApp.Application.Auth.Login
                 description: $"User '{user.Username}' logged in successfully.",
                 status: "success");
 
-            return Ok(new
+            return Ok(authResponse);
+        }
+
+        [HttpPost("refresh")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+        {
+            if (!ModelState.IsValid)
             {
-                Token = token,
-                User = new
-                {
-                    user.Id,
-                    user.Username,
-                    user.Email,
-                    user.DisplayName,
-                    user.AvatarUrl
-                },
-                RoleName = roleNames,
-                PermissionName = permissionNames,
-                HasSystemRole = hasSystemRole
-            });
+                return ValidationProblem(ModelState);
+            }
+
+            var incomingRefreshToken = request.RefreshToken?.Trim();
+            if (string.IsNullOrWhiteSpace(incomingRefreshToken))
+            {
+                return Unauthorized(new { Message = "Refresh token is required." });
+            }
+
+            var tokenHash = HashToken(incomingRefreshToken);
+            var storedRefreshToken = await _dbContext.RefreshTokens
+                .Include(rt => rt.User)
+                .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash);
+
+            if (storedRefreshToken is null || storedRefreshToken.RevokedAt is not null || storedRefreshToken.ExpiresAt <= DateTime.UtcNow)
+            {
+                return Unauthorized(new { Message = "Invalid or expired refresh token." });
+            }
+
+            var user = storedRefreshToken.User;
+            if (!user.IsActive)
+            {
+                return Unauthorized(new { Message = "User is inactive." });
+            }
+
+            var authResponse = await BuildAuthResponseAsync(user, storedRefreshToken);
+            return Ok(authResponse);
         }
 
         [HttpPost("mezon-callback")]
@@ -132,6 +136,70 @@ namespace WebApp.Application.Auth.Login
         {
             var result = await _mezonAuthService.GetAuthorizeUrlAsync();
             return StatusCode(result.StatusCode, result.Payload);
+        }
+
+        private async Task<AuthResponseDto> BuildAuthResponseAsync(User user, RefreshToken? rotatingToken = null)
+        {
+            var accessToken = _tokenService.CreateAccessToken(user);
+            var refreshTokenValue = _tokenService.GenerateRefreshToken();
+            var refreshTokenHash = HashToken(refreshTokenValue);
+
+            if (rotatingToken is not null)
+            {
+                rotatingToken.RevokedAt = DateTime.UtcNow;
+                rotatingToken.ReplacedByTokenHash = refreshTokenHash;
+            }
+
+            _dbContext.RefreshTokens.Add(new RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TokenHash = refreshTokenHash,
+                ExpiresAt = _tokenService.GetRefreshTokenExpiration(),
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _dbContext.SaveChangesAsync();
+
+            var roles = await _dbContext.UserRoles
+                .Where(ur => ur.UserId == user.Id)
+                .Join(_dbContext.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { r.Name, r.IsSystem })
+                .Distinct()
+                .ToListAsync();
+
+            var roleNames = roles.Select(r => r.Name).ToList();
+            var hasSystemRole = roles.Any(r => r.IsSystem);
+
+            var permissionNames = await _dbContext.UserRoles
+                .Where(ur => ur.UserId == user.Id)
+                .Join(_dbContext.RolePermissions, ur => ur.RoleId, rp => rp.RoleId, (ur, rp) => rp.PermissionId)
+                .Join(_dbContext.Permissions, permissionId => permissionId, p => p.Id, (permissionId, p) => p.Resource + "." + p.Action)
+                .Distinct()
+                .ToListAsync();
+
+            return new AuthResponseDto
+            {
+                Token = accessToken.Token,
+                RefreshToken = refreshTokenValue,
+                ExpiresIn = accessToken.ExpiresIn,
+                User = new
+                {
+                    user.Id,
+                    user.Username,
+                    user.Email,
+                    user.DisplayName,
+                    user.AvatarUrl
+                },
+                RoleName = roleNames,
+                PermissionName = permissionNames,
+                HasSystemRole = hasSystemRole
+            };
+        }
+
+        private static string HashToken(string token)
+        {
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+            return Convert.ToHexString(bytes);
         }
 
         private async Task WriteLoginAuditAsync(string action, Guid? userId, string title, string description, string status)
