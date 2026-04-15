@@ -33,11 +33,6 @@ public static class QuizBotMessageFormatter
             question.Content
         };
 
-        if (!string.IsNullOrWhiteSpace(resolvedMediaUrl))
-        {
-            descriptionSections.Add($"Media: {resolvedMediaUrl}");
-        }
-
         if (!string.IsNullOrWhiteSpace(optionsBlock))
         {
             descriptionSections.Add(optionsBlock);
@@ -100,11 +95,6 @@ public static class QuizBotMessageFormatter
         {
             question.Content
         };
-
-        if (!string.IsNullOrWhiteSpace(resolvedMediaUrl))
-        {
-            sections.Add($"Media: {resolvedMediaUrl}");
-        }
 
         var optionBlock = BuildOptionsPseudoCodeBlock(optionLines);
         if (!string.IsNullOrWhiteSpace(optionBlock))
@@ -220,11 +210,6 @@ public static class QuizBotMessageFormatter
         {
             question.Content
         };
-
-        if (!string.IsNullOrWhiteSpace(resolvedMediaUrl))
-        {
-            sections.Add($"Media: {resolvedMediaUrl}");
-        }
 
         var optionBlock = BuildOptionsPseudoCodeBlock(optionLines);
         if (!string.IsNullOrWhiteSpace(optionBlock))
