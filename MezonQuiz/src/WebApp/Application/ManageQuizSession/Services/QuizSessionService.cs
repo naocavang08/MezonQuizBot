@@ -997,14 +997,28 @@ namespace WebApp.Application.ManageQuizSession.Services
                 }
             }
 
-            if (RecentQuestionDispatches.TryGetValue(key, out var lastDispatch)
-                && now - lastDispatch <= QuestionDispatchDedupWindow)
+            while (true)
             {
-                return true;
-            }
+                if (RecentQuestionDispatches.TryGetValue(key, out var lastDispatch))
+                {
+                    if (now - lastDispatch <= QuestionDispatchDedupWindow)
+                    {
+                        return true;
+                    }
 
-            RecentQuestionDispatches[key] = now;
-            return false;
+                    if (RecentQuestionDispatches.TryUpdate(key, now, lastDispatch))
+                    {
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                if (RecentQuestionDispatches.TryAdd(key, now))
+                {
+                    return false;
+                }
+            }
         }
 
         private static SessionOperationResult Fail(string message)
