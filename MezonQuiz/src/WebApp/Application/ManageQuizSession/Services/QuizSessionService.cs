@@ -409,6 +409,11 @@ namespace WebApp.Application.ManageQuizSession.Services
 
             session.Status = SessionStatus.Paused;
             await _dbContext.SaveChangesAsync();
+            await NotifySessionParticipantsAsync(
+                session,
+                title: "Session Paused",
+                description: "Host has paused the quiz session. Please wait for resume.",
+                color: "#F59E0B");
             await BroadcastSessionStateChanged(session);
             return Success("Session paused successfully.");
         }
@@ -428,6 +433,11 @@ namespace WebApp.Application.ManageQuizSession.Services
 
             session.Status = SessionStatus.Active;
             await _dbContext.SaveChangesAsync();
+            await NotifySessionParticipantsAsync(
+                session,
+                title: "Session Resumed",
+                description: "Quiz session has resumed. Continue answering your current question.",
+                color: "#22C55E");
             await BroadcastSessionStateChanged(session);
             return Success("Session resumed successfully.");
         }
@@ -450,6 +460,11 @@ namespace WebApp.Application.ManageQuizSession.Services
 
             await RecalculateRanks(sessionId);
             await _dbContext.SaveChangesAsync();
+            await NotifySessionParticipantsAsync(
+                session,
+                title: "Session Finished",
+                description: "Quiz session has finished. Thank you for participating.",
+                color: "#64748B");
             await BroadcastSessionStateChanged(session);
             return Success("Session finished successfully.");
         }
@@ -999,6 +1014,36 @@ namespace WebApp.Application.ManageQuizSession.Services
                 Success = false,
                 Message = message
             };
+        }
+
+        private async Task NotifySessionParticipantsAsync(QuizSession session, string title, string description, string color)
+        {
+            var mezonUserIds = await _dbContext.SessionParticipants
+                .AsNoTracking()
+                .Where(p => p.SessionId == session.Id)
+                .Select(p => p.User.MezonUserId)
+                .ToListAsync();
+
+            var targetUserIds = mezonUserIds
+                .Where(value => long.TryParse(value, out var parsed) && parsed > 0)
+                .Select(value => long.Parse(value!))
+                .Distinct()
+                .ToList();
+
+            if (targetUserIds.Count == 0)
+            {
+                return;
+            }
+
+            var content = QuizBotMessageFormatter.BuildSessionStatusMessageContent(title, description, color);
+            var sendResult = await _mezonBotHostedService.SendDmMessageToUsersAsync(targetUserIds, content);
+
+            _logger.LogInformation(
+                "Session status notification dispatched. SessionId={SessionId}, Title={Title}, Sent={SentCount}/{RequestedCount}",
+                session.Id,
+                title,
+                sendResult.SentCount,
+                sendResult.RequestedCount);
         }
 
         private async Task BroadcastSessionStateChanged(QuizSession session)

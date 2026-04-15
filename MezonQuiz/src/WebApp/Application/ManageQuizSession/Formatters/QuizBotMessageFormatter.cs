@@ -171,6 +171,23 @@ public static class QuizBotMessageFormatter
         };
     }
 
+    public static ChannelMessageContent BuildSessionStatusMessageContent(string title, string description, string color)
+    {
+        return new ChannelMessageContent
+        {
+            Text = string.Empty,
+            Embed =
+            [
+                new InteractiveMessageProps
+                {
+                    Color = color,
+                    Title = title,
+                    Description = description
+                }
+            ]
+        };
+    }
+
     public static ChannelMessageContent BuildMultiChoiceSelectionChangedMessageContent(List<int> selectedOptionDisplays)
     {
         var selectedLabel = selectedOptionDisplays.Count == 0
