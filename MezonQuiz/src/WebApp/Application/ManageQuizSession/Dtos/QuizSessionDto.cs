@@ -46,6 +46,7 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public int SelectedOption { get; set; }
         public List<int>? SelectedOptions { get; set; }
         public int? ResponseTimeMs { get; set; }
+        public bool SkipAutoDispatchNextQuestion { get; set; }
     }
 
     public class SessionParticipantDto
@@ -56,6 +57,9 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public int AnswersCount { get; set; }
         public int CorrectCount { get; set; }
         public int? Rank { get; set; }
+        public int CurrentQuestionIndex { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public int? CompletionDurationSeconds { get; set; }
         public DateTime JoinedAt { get; set; }
     }
 

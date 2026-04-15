@@ -104,6 +104,9 @@ export interface SessionParticipantDto {
     totalScore: number;
     answersCount: number;
     correctCount: number;
+    currentQuestionIndex: number;
+    completedAt?: string;
+    completionDurationSeconds?: number;
     rank?: number;
     joinedAt: string;
 }

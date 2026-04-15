@@ -31,6 +31,8 @@ public sealed class MezonBotHostedService : BackgroundService
     private static readonly Regex QuizSubmitButtonRegex = new(
         @"^quiz:([0-9a-fA-F\-]{36}):q:(\d+):submit$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    private static readonly ConcurrentDictionary<string, DateTime> RecentAnswerSubmissions = new();
+    private static readonly TimeSpan AnswerSubmissionDedupWindow = TimeSpan.FromSeconds(3);
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -309,7 +311,7 @@ public sealed class MezonBotHostedService : BackgroundService
                 return;
             }
 
-            var currentQuestionResult = await quizSessionService.GetCurrentQuestion(sessionId);
+            var currentQuestionResult = await quizSessionService.GetCurrentQuestion(sessionId, user.Id);
             if (!currentQuestionResult.Result.Success || currentQuestionResult.Question is null)
             {
                 await SendDmFeedbackAsync(
@@ -331,6 +333,16 @@ public sealed class MezonBotHostedService : BackgroundService
             {
                 if (isSubmitAction)
                 {
+                    if (ShouldSkipDuplicateSubmission(sessionId, user.Id, questionIndex))
+                    {
+                        _logger.LogDebug(
+                            "Skip duplicate multi-choice submission for session {SessionId}, user {UserId}, question {QuestionIndex}.",
+                            sessionId,
+                            user.Id,
+                            questionIndex);
+                        return;
+                    }
+
                     var selectionKey = BuildMultiChoiceSelectionKey(sessionId, questionIndex, mezonUserId);
                     if (!_pendingMultiChoiceSelections.TryGetValue(selectionKey, out var pendingSelections)
                         || pendingSelections.Count == 0)
@@ -354,7 +366,8 @@ public sealed class MezonBotHostedService : BackgroundService
                     {
                         UserId = user.Id,
                         SelectedOption = selectedIndexes[0],
-                        SelectedOptions = selectedIndexes
+                        SelectedOptions = selectedIndexes,
+                        SkipAutoDispatchNextQuestion = true
                     });
 
                     if (multiChoiceSubmitResult.Success)
@@ -375,7 +388,13 @@ public sealed class MezonBotHostedService : BackgroundService
                             quizSessionService,
                             sessionId,
                             questionIndex,
+                            user.Id,
                             mezonUserId);
+                    }
+
+                    if (multiChoiceSubmitResult.Success)
+                    {
+                        await quizSessionService.DispatchCurrentQuestionToParticipant(sessionId, user.Id);
                     }
 
                     return;
@@ -384,6 +403,7 @@ public sealed class MezonBotHostedService : BackgroundService
                 var toggledResolvedOption = await ResolveSubmittedOptionIndexAsync(
                     quizSessionService,
                     sessionId,
+                    user.Id,
                     questionIndex,
                     selectedOption);
 
@@ -404,9 +424,20 @@ public sealed class MezonBotHostedService : BackgroundService
                 return;
             }
 
+            if (ShouldSkipDuplicateSubmission(sessionId, user.Id, questionIndex))
+            {
+                _logger.LogDebug(
+                    "Skip duplicate single-choice submission for session {SessionId}, user {UserId}, question {QuestionIndex}.",
+                    sessionId,
+                    user.Id,
+                    questionIndex);
+                return;
+            }
+
             var resolvedOption = await ResolveSubmittedOptionIndexAsync(
                 quizSessionService,
                 sessionId,
+                user.Id,
                 questionIndex,
                 selectedOption);
 
@@ -414,7 +445,8 @@ public sealed class MezonBotHostedService : BackgroundService
             {
                 UserId = user.Id,
                 SelectedOption = resolvedOption,
-                SelectedOptions = [resolvedOption]
+                SelectedOptions = [resolvedOption],
+                SkipAutoDispatchNextQuestion = true
             });
 
             var feedbackContent = QuizBotMessageFormatter.BuildAnswerFeedbackMessageContent(submitResult, questionIndex, selectedOption);
@@ -430,7 +462,13 @@ public sealed class MezonBotHostedService : BackgroundService
                     quizSessionService,
                     sessionId,
                     questionIndex,
+                    user.Id,
                     mezonUserId);
+            }
+
+            if (submitResult.Success)
+            {
+                await quizSessionService.DispatchCurrentQuestionToParticipant(sessionId, user.Id);
             }
 
             _logger.LogInformation(
@@ -655,6 +693,7 @@ public sealed class MezonBotHostedService : BackgroundService
         IQuizSessionService quizSessionService,
         Guid sessionId,
         int clickedQuestionIndex,
+        Guid userId,
         string mezonUserId)
     {
         if (_client?.SocketManager is null)
@@ -670,6 +709,7 @@ public sealed class MezonBotHostedService : BackgroundService
         var content = await BuildAnsweredQuestionMessageContentAsync(
             quizSessionService,
             sessionId,
+            userId,
             clickedQuestionIndex);
 
         var mode = Helper.ConvertChannelTypeToChannelMode((int)ChannelType.ChannelTypeDm);
@@ -771,9 +811,10 @@ public sealed class MezonBotHostedService : BackgroundService
     private static async Task<ChannelMessageContent> BuildAnsweredQuestionMessageContentAsync(
         IQuizSessionService quizSessionService,
         Guid sessionId,
+        Guid userId,
         int clickedQuestionIndex)
     {
-        var currentQuestion = await quizSessionService.GetCurrentQuestion(sessionId);
+        var currentQuestion = await quizSessionService.GetCurrentQuestion(sessionId, userId);
         if (!currentQuestion.Result.Success || currentQuestion.Question is null)
         {
             return QuizBotMessageFormatter.BuildAnsweredQuestionMessageContent(
@@ -946,6 +987,29 @@ public sealed class MezonBotHostedService : BackgroundService
         return true;
     }
 
+    private static bool ShouldSkipDuplicateSubmission(Guid sessionId, Guid userId, int questionIndex)
+    {
+        var now = DateTime.UtcNow;
+        var key = $"{sessionId:N}:{userId:N}:{questionIndex}";
+
+        foreach (var item in RecentAnswerSubmissions)
+        {
+            if (now - item.Value > AnswerSubmissionDedupWindow)
+            {
+                RecentAnswerSubmissions.TryRemove(item.Key, out _);
+            }
+        }
+
+        if (RecentAnswerSubmissions.TryGetValue(key, out var lastSubmission)
+            && now - lastSubmission <= AnswerSubmissionDedupWindow)
+        {
+            return true;
+        }
+
+        RecentAnswerSubmissions[key] = now;
+        return false;
+    }
+
     private static string BuildMultiChoiceSelectionKey(Guid sessionId, int questionIndex, string mezonUserId)
     {
         return $"{sessionId:N}:{questionIndex}:{mezonUserId}";
@@ -1034,10 +1098,11 @@ public sealed class MezonBotHostedService : BackgroundService
     private static async Task<int> ResolveSubmittedOptionIndexAsync(
         IQuizSessionService quizSessionService,
         Guid sessionId,
+        Guid userId,
         int clickedQuestionIndex,
         int selectedOption)
     {
-        var currentQuestion = await quizSessionService.GetCurrentQuestion(sessionId);
+        var currentQuestion = await quizSessionService.GetCurrentQuestion(sessionId, userId);
         if (!currentQuestion.Result.Success || currentQuestion.Question is null)
         {
             return selectedOption;

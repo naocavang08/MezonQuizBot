@@ -277,6 +277,8 @@ namespace WebApp.Application.ManageQuizSession.Services
                 AnswersCount = 0,
                 CorrectCount = 0,
                 Rank = null,
+                CurrentQuestionIndex = 0,
+                CompletedAt = null,
                 JoinedAt = DateTime.UtcNow
             });
 
@@ -375,6 +377,16 @@ namespace WebApp.Application.ManageQuizSession.Services
             session.StartedAt = DateTime.UtcNow;
             session.FinishedAt = null;
             session.CurrentQuestion = 0;
+
+            var participants = await _dbContext.SessionParticipants
+                .Where(p => p.SessionId == sessionId)
+                .ToListAsync();
+
+            foreach (var participant in participants)
+            {
+                participant.CurrentQuestionIndex = 0;
+                participant.CompletedAt = null;
+            }
 
             await _dbContext.SaveChangesAsync();
             await SendCurrentQuestionToParticipants(session);
@@ -477,43 +489,18 @@ namespace WebApp.Application.ManageQuizSession.Services
 
         public async Task<SessionOperationResult> NextQuestion(Guid sessionId, Guid hostId)
         {
-            var session = await GetSessionForHostAction(sessionId, hostId);
-            if (session is null)
-            {
-                return Fail("Session not found or host is not allowed.");
-            }
-
-            if (session.Status != SessionStatus.Active)
-            {
-                return Fail("Session must be active to move next question.");
-            }
-
-            var quiz = await _dbContext.Quizzes.AsNoTracking().FirstOrDefaultAsync(q => q.Id == session.QuizId);
-            if (quiz is null)
-            {
-                return Fail("Quiz not found for this session.");
-            }
-
-            var totalQuestions = quiz.Questions?.Count ?? 0;
-            if (totalQuestions == 0)
-            {
-                return Fail("Quiz has no question.");
-            }
-
-            if (session.CurrentQuestion >= totalQuestions - 1)
-            {
-                return Fail("Already at last question.");
-            }
-
-            session.CurrentQuestion += 1;
-            await _dbContext.SaveChangesAsync();
-            await SendCurrentQuestionToParticipants(session);
-            await BroadcastSessionStateChanged(session);
-            return Success("Moved to next question.");
+            _ = sessionId;
+            _ = hostId;
+            return Fail("NextQuestion is deprecated. Question progress is now tracked per participant.");
         }
 
-        public async Task<(SessionOperationResult Result, QuizSessionQuestionDto? Question)> GetCurrentQuestion(Guid sessionId)
+        public async Task<(SessionOperationResult Result, QuizSessionQuestionDto? Question)> GetCurrentQuestion(Guid sessionId, Guid userId)
         {
+            if (userId == Guid.Empty)
+            {
+                return (Fail("Invalid user."), null);
+            }
+
             var session = await _dbContext.QuizSessions
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == sessionId);
@@ -528,6 +515,15 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return (Fail("Session is not active."), null);
             }
 
+            var participant = await _dbContext.SessionParticipants
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.SessionId == sessionId && p.UserId == userId);
+
+            if (participant is null)
+            {
+                return (Fail("User is not in this session."), null);
+            }
+
             var quiz = await _dbContext.Quizzes
                 .AsNoTracking()
                 .FirstOrDefaultAsync(q => q.Id == session.QuizId);
@@ -537,7 +533,14 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return (Fail("Quiz not found for this session."), null);
             }
 
-            var question = ResolveQuestion(quiz, session.CurrentQuestion);
+            var questionIndex = participant.CurrentQuestionIndex;
+            var totalQuestions = quiz.Questions?.Count ?? 0;
+            if (questionIndex >= totalQuestions)
+            {
+                return (Fail("Participant has completed all questions."), null);
+            }
+
+            var question = ResolveQuestion(quiz, questionIndex);
             if (question is null)
             {
                 return (Fail("Current question is invalid."), null);
@@ -546,7 +549,7 @@ namespace WebApp.Application.ManageQuizSession.Services
             var dto = new QuizSessionQuestionDto
             {
                 SessionId = session.Id,
-                QuestionIndex = session.CurrentQuestion,
+                QuestionIndex = questionIndex,
                 Content = question.Content,
                 MediaUrl = question.MediaUrl,
                 TimeLimitSeconds = question.TimeLimitSeconds,
@@ -590,13 +593,27 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return Fail("User is not in this session.");
             }
 
+            if (participant.CompletedAt.HasValue)
+            {
+                return Fail("Participant has completed all questions.");
+            }
+
             var quiz = await _dbContext.Quizzes.AsNoTracking().FirstOrDefaultAsync(q => q.Id == session.QuizId);
             if (quiz is null)
             {
                 return Fail("Quiz not found for this session.");
             }
 
-            var question = ResolveQuestion(quiz, session.CurrentQuestion);
+            var questionIndex = participant.CurrentQuestionIndex;
+            var totalQuestions = quiz.Questions?.Count ?? 0;
+            if (questionIndex >= totalQuestions)
+            {
+                participant.CompletedAt ??= DateTime.UtcNow;
+                await _dbContext.SaveChangesAsync();
+                return Fail("Participant has completed all questions.");
+            }
+
+            var question = ResolveQuestion(quiz, questionIndex);
             if (question is null)
             {
                 return Fail("Current question is invalid.");
@@ -605,7 +622,7 @@ namespace WebApp.Application.ManageQuizSession.Services
             var duplicatedAnswer = await _dbContext.Answers.AnyAsync(a =>
                 a.SessionId == sessionId &&
                 a.UserId == request.UserId &&
-                a.QuestionIndex == session.CurrentQuestion);
+                a.QuestionIndex == questionIndex);
 
             if (duplicatedAnswer)
             {
@@ -635,7 +652,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 Id = Guid.NewGuid(),
                 SessionId = sessionId,
                 UserId = request.UserId,
-                QuestionIndex = session.CurrentQuestion,
+                QuestionIndex = questionIndex,
                 SelectedOption = selectedOptions[0],
                 IsCorrect = isCorrect,
                 PointsEarned = points,
@@ -650,8 +667,20 @@ namespace WebApp.Application.ManageQuizSession.Services
             }
 
             participant.TotalScore += points;
+            participant.CurrentQuestionIndex += 1;
+
+            if (participant.CurrentQuestionIndex >= totalQuestions)
+            {
+                participant.CompletedAt ??= DateTime.UtcNow;
+            }
 
             await _dbContext.SaveChangesAsync();
+
+            if (!request.SkipAutoDispatchNextQuestion && participant.CompletedAt is null)
+            {
+                await SendCurrentQuestionToParticipant(session, participant.UserId);
+            }
+
             await BroadcastSessionStateChanged(session);
             return new SessionOperationResult
             {
@@ -663,7 +692,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 TotalScore = participant.TotalScore,
                 AnswersCount = participant.AnswersCount,
                 CorrectCount = participant.CorrectCount,
-                QuestionIndex = session.CurrentQuestion,
+                QuestionIndex = questionIndex,
                 SelectedOptionDisplay = selectedOptionDisplay,
                 CorrectOptionDisplays = correctOptionDisplays
             };
@@ -671,25 +700,67 @@ namespace WebApp.Application.ManageQuizSession.Services
 
         public async Task<List<SessionParticipantDto>> GetLeaderboard(Guid sessionId)
         {
-            var participants = await _dbContext.SessionParticipants
+            var participantRows = await _dbContext.SessionParticipants
                 .AsNoTracking()
                 .Where(p => p.SessionId == sessionId)
                 .OrderByDescending(p => p.TotalScore)
                 .ThenByDescending(p => p.CorrectCount)
+                .ThenBy(p => p.CompletedAt.HasValue ? 0 : 1)
+                .ThenBy(p => p.CompletedAt)
                 .ThenBy(p => p.JoinedAt)
+                .Select(p => new
+                {
+                    p.UserId,
+                    DisplayName = string.IsNullOrEmpty(p.User.DisplayName) ? p.User.Username : p.User.DisplayName,
+                    p.TotalScore,
+                    p.AnswersCount,
+                    p.CorrectCount,
+                    p.Rank,
+                    p.CurrentQuestionIndex,
+                    p.CompletedAt,
+                    SessionStartedAt = p.Session.StartedAt,
+                    p.JoinedAt
+                })
+                .ToListAsync();
+
+            var participants = participantRows
                 .Select(p => new SessionParticipantDto
                 {
                     UserId = p.UserId,
-                    DisplayName = string.IsNullOrEmpty(p.User.DisplayName) ? p.User.Username : p.User.DisplayName,
+                    DisplayName = p.DisplayName,
                     TotalScore = p.TotalScore,
                     AnswersCount = p.AnswersCount,
                     CorrectCount = p.CorrectCount,
                     Rank = p.Rank,
+                    CurrentQuestionIndex = p.CurrentQuestionIndex,
+                    CompletedAt = p.CompletedAt,
+                    CompletionDurationSeconds = p.CompletedAt.HasValue && p.SessionStartedAt.HasValue
+                        ? (int?)Math.Max(0, (p.CompletedAt.Value - p.SessionStartedAt.Value).TotalSeconds)
+                        : null,
                     JoinedAt = p.JoinedAt
                 })
-                .ToListAsync();
+                .ToList();
 
             return participants;
+        }
+
+        public async Task DispatchCurrentQuestionToParticipant(Guid sessionId, Guid userId)
+        {
+            var session = await _dbContext.QuizSessions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == sessionId);
+
+            if (session is null)
+            {
+                return;
+            }
+
+            if (session.Status != SessionStatus.Active)
+            {
+                return;
+            }
+
+            await SendCurrentQuestionToParticipant(session, userId);
         }
 
         private async Task<QuizSession?> GetSessionForHostAction(Guid sessionId, Guid hostId)
@@ -719,6 +790,8 @@ namespace WebApp.Application.ManageQuizSession.Services
                 .Where(p => p.SessionId == sessionId)
                 .OrderByDescending(p => p.TotalScore)
                 .ThenByDescending(p => p.CorrectCount)
+                .ThenBy(p => p.CompletedAt.HasValue ? 0 : 1)
+                .ThenBy(p => p.CompletedAt)
                 .ThenBy(p => p.JoinedAt)
                 .ToListAsync();
 
@@ -829,12 +902,26 @@ namespace WebApp.Application.ManageQuizSession.Services
 
         private async Task SendCurrentQuestionToParticipants(QuizSession session)
         {
-            if (ShouldSkipDuplicateQuestionDispatch(session.Id, session.CurrentQuestion))
+            var participantIds = await _dbContext.SessionParticipants
+                .AsNoTracking()
+                .Where(p => p.SessionId == session.Id)
+                .Select(p => p.UserId)
+                .ToListAsync();
+
+            foreach (var participantUserId in participantIds)
             {
-                _logger.LogInformation(
-                    "Skip duplicate DM question dispatch for session {SessionId}, question index {QuestionIndex}.",
-                    session.Id,
-                    session.CurrentQuestion);
+                await SendCurrentQuestionToParticipant(session, participantUserId);
+            }
+        }
+
+        private async Task SendCurrentQuestionToParticipant(QuizSession session, Guid userId)
+        {
+            var participant = await _dbContext.SessionParticipants
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.SessionId == session.Id && p.UserId == userId);
+
+            if (participant is null || participant.CompletedAt.HasValue)
+            {
                 return;
             }
 
@@ -844,56 +931,48 @@ namespace WebApp.Application.ManageQuizSession.Services
 
             if (quiz is null)
             {
-                _logger.LogWarning(
-                    "Skip DM question dispatch for session {SessionId}: quiz not found.",
-                    session.Id);
                 return;
             }
 
-            var question = ResolveQuestion(quiz, session.CurrentQuestion);
+            var questionIndex = participant.CurrentQuestionIndex;
+            var question = ResolveQuestion(quiz, questionIndex);
             if (question is null)
             {
-                _logger.LogWarning(
-                    "Skip DM question dispatch for session {SessionId}: question index {QuestionIndex} is invalid.",
-                    session.Id,
-                    session.CurrentQuestion);
                 return;
             }
 
-            var mezonUserIds = await _dbContext.SessionParticipants
+            var mezonUserId = await _dbContext.SessionParticipants
                 .AsNoTracking()
-                .Where(p => p.SessionId == session.Id)
+                .Where(p => p.SessionId == session.Id && p.UserId == userId)
                 .Select(p => p.User.MezonUserId)
-                .ToListAsync();
+                .FirstOrDefaultAsync();
 
-            var targets = mezonUserIds
-                .Select(value => long.TryParse(value, out var parsedId) ? parsedId : 0)
-                .Where(id => id > 0)
-                .Distinct()
-                .ToList();
-
-            if (targets.Count == 0)
+            if (!long.TryParse(mezonUserId, out var targetUserId) || targetUserId <= 0)
             {
-                _logger.LogInformation(
-                    "Skip DM question dispatch for session {SessionId}: no participants with valid Mezon user id.",
-                    session.Id);
                 return;
             }
 
-            var content = QuizBotMessageFormatter.BuildQuestionMessageContent(session, quiz, question);
-            var sendResult = await _mezonBotHostedService.SendDmMessageToUsersAsync(targets, content);
+            if (ShouldSkipDuplicateQuestionDispatch(session.Id, userId, questionIndex))
+            {
+                return;
+            }
+
+            var content = QuizBotMessageFormatter.BuildQuestionMessageContent(session, quiz, question, questionIndex);
+            var sendResult = await _mezonBotHostedService.SendDmMessageToUsersAsync([targetUserId], content);
 
             _logger.LogInformation(
-                "DM question dispatch finished for session {SessionId}. Sent {SentCount}/{RequestedCount}.",
+                "DM question dispatch finished for session {SessionId}, user {UserId}, question {QuestionIndex}. Sent {SentCount}/{RequestedCount}.",
                 session.Id,
+                userId,
+                questionIndex,
                 sendResult.SentCount,
                 sendResult.RequestedCount);
         }
 
-        private static bool ShouldSkipDuplicateQuestionDispatch(Guid sessionId, int questionIndex)
+        private static bool ShouldSkipDuplicateQuestionDispatch(Guid sessionId, Guid userId, int questionIndex)
         {
             var now = DateTime.UtcNow;
-            var key = $"{sessionId:N}:{questionIndex}";
+            var key = $"{sessionId:N}:{userId:N}:{questionIndex}";
 
             foreach (var item in RecentQuestionDispatches)
             {

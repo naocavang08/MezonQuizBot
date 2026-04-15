@@ -319,6 +319,17 @@ const PlayerQuizPage = () => {
     const isQuizLive =
         session?.status === SessionStatusValue.Active || session?.status === SessionStatusValue.Paused;
 
+    const formatCompletion = (participant: SessionParticipantDto) => {
+        if (typeof participant.completionDurationSeconds === "number") {
+            const total = Math.max(participant.completionDurationSeconds, 0);
+            const minutes = Math.floor(total / 60);
+            const seconds = total % 60;
+            return `${minutes}m ${seconds}s`;
+        }
+
+        return "-";
+    };
+
     return (
         <Box sx={{ mt: 2 }}>
             <Stack spacing={2.5}>
@@ -500,6 +511,8 @@ const PlayerQuizPage = () => {
                                             <TableCell align="right">Score</TableCell>
                                             <TableCell align="right">Correct</TableCell>
                                             <TableCell align="right">Answers</TableCell>
+                                            <TableCell align="right">Progress</TableCell>
+                                            <TableCell align="right">Completed In</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -510,6 +523,8 @@ const PlayerQuizPage = () => {
                                                 <TableCell align="right">{participant.totalScore}</TableCell>
                                                 <TableCell align="right">{participant.correctCount}</TableCell>
                                                 <TableCell align="right">{participant.answersCount}</TableCell>
+                                                <TableCell align="right">{participant.currentQuestionIndex}</TableCell>
+                                                <TableCell align="right">{formatCompletion(participant)}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>

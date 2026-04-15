@@ -19,8 +19,9 @@ namespace WebApp.Application.ManageQuizSession
         Task<SessionOperationResult> CancelSession(Guid sessionId, Guid hostId);
         Task<SessionOperationResult> DeleteSession(Guid sessionId, Guid hostId);
         Task<SessionOperationResult> NextQuestion(Guid sessionId, Guid hostId);
-        Task<(SessionOperationResult Result, QuizSessionQuestionDto? Question)> GetCurrentQuestion(Guid sessionId);
+        Task<(SessionOperationResult Result, QuizSessionQuestionDto? Question)> GetCurrentQuestion(Guid sessionId, Guid userId);
         Task<SessionOperationResult> SubmitAnswer(Guid sessionId, SubmitAnswerDto request);
+        Task DispatchCurrentQuestionToParticipant(Guid sessionId, Guid userId);
         Task<List<SessionParticipantDto>> GetLeaderboard(Guid sessionId);
     }
 }

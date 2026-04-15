@@ -26,7 +26,6 @@ import {
     getCurrentSessionQuestion,
     getSessionDetails,
     getSessionLeaderboard,
-    nextSessionQuestion,
     pauseQuizSession,
     resumeQuizSession,
     startQuizSession,
@@ -201,7 +200,7 @@ const StartQuizPage = () => {
         }
     }, [isHost, navigate, session, sessionId, userId]);
 
-    const runHostAction = async (action: "start" | "pause" | "resume" | "finish" | "next") => {
+    const runHostAction = async (action: "start" | "pause" | "resume" | "finish") => {
         if (!sessionId || !userId) {
             showError("Host info is invalid.");
             return;
@@ -214,8 +213,6 @@ const StartQuizPage = () => {
 
             if (action === "start") {
                 response = await startQuizSession(sessionId);
-            } else if (action === "next") {
-                response = await nextSessionQuestion(sessionId);
             } else if (action === "pause") {
                 response = await pauseQuizSession(sessionId);
             } else if (action === "resume") {
@@ -236,10 +233,20 @@ const StartQuizPage = () => {
     const canStart = isHost && session?.status === SessionStatusValue.Waiting;
     const canPause = isHost && session?.status === SessionStatusValue.Active;
     const canResume = isHost && session?.status === SessionStatusValue.Paused;
-    const canNext = isHost && session?.status === SessionStatusValue.Active;
     const canFinish =
         isHost &&
         (session?.status === SessionStatusValue.Active || session?.status === SessionStatusValue.Paused);
+
+    const formatCompletion = (participant: SessionParticipantDto) => {
+        if (typeof participant.completionDurationSeconds === "number") {
+            const total = Math.max(participant.completionDurationSeconds, 0);
+            const minutes = Math.floor(total / 60);
+            const seconds = total % 60;
+            return `${minutes}m ${seconds}s`;
+        }
+
+        return "-";
+    };
 
     return (
         <Box sx={{ mt: 2 }}>
@@ -308,15 +315,6 @@ const StartQuizPage = () => {
                                         Start
                                     </Button>
                                     <Button
-                                        variant="contained"
-                                        disabled={!canNext || isActionLoading}
-                                        onClick={() => {
-                                            void runHostAction("next");
-                                        }}
-                                    >
-                                        Next Question
-                                    </Button>
-                                    <Button
                                         variant="outlined"
                                         disabled={!canPause || isActionLoading}
                                         onClick={() => {
@@ -351,7 +349,7 @@ const StartQuizPage = () => {
                                         Participants: {session.participantCount}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        Current Question: {session.currentQuestion + 1}
+                                        Session Progress Mode: Per participant
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
                                         Created: {new Date(session.createdAt).toLocaleString()}
@@ -390,6 +388,8 @@ const StartQuizPage = () => {
                                             <TableCell align="right">Score</TableCell>
                                             <TableCell align="right">Correct</TableCell>
                                             <TableCell align="right">Answers</TableCell>
+                                            <TableCell align="right">Progress</TableCell>
+                                            <TableCell align="right">Completed In</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -400,6 +400,8 @@ const StartQuizPage = () => {
                                                 <TableCell align="right">{participant.totalScore}</TableCell>
                                                 <TableCell align="right">{participant.correctCount}</TableCell>
                                                 <TableCell align="right">{participant.answersCount}</TableCell>
+                                                <TableCell align="right">{participant.currentQuestionIndex}</TableCell>
+                                                <TableCell align="right">{formatCompletion(participant)}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>

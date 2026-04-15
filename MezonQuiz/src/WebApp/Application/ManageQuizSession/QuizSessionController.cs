@@ -187,7 +187,12 @@ namespace WebApp.Application.ManageQuizSession
         [HttpGet("{sessionId}/current-question")]
         public async Task<IActionResult> GetCurrentQuestion(Guid sessionId)
         {
-            var (result, question) = await _sessionService.GetCurrentQuestion(sessionId);
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            var (result, question) = await _sessionService.GetCurrentQuestion(sessionId, currentUserId);
             if (!result.Success)
             {
                 return BadRequest(new { Message = result.Message });

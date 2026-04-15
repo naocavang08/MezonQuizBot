@@ -10,7 +10,7 @@ namespace WebApp.Application.ManageQuizSession.Formatters;
 
 public static class QuizBotMessageFormatter
 {
-    public static ChannelMessageContent BuildQuestionMessageContent(QuizSession session, Quiz quiz, QuizQuestion question)
+    public static ChannelMessageContent BuildQuestionMessageContent(QuizSession session, Quiz quiz, QuizQuestion question, int questionIndex)
     {
         var resolvedMediaUrl = ResolveMediaUrl(question.MediaUrl);
         var orderedOptions = (question.Options ?? new List<QuizOption>())
@@ -24,7 +24,7 @@ public static class QuizBotMessageFormatter
 
         var totalQuestionCount = quiz.Questions?.Count ?? 0;
         var questionTypeLabel = GetQuestionTypeLabel(question.QuestionType);
-        var title = $"[{questionTypeLabel}] {quiz.Title} | Question {session.CurrentQuestion + 1}/{Math.Max(totalQuestionCount, 1)}";
+        var title = $"[{questionTypeLabel}] {quiz.Title} | Question {questionIndex + 1}/{Math.Max(totalQuestionCount, 1)}";
         var optionsBlock = BuildOptionsPseudoCodeBlock(optionLines);
         var instruction = GetInstructionText(question.QuestionType);
 
@@ -60,7 +60,7 @@ public static class QuizBotMessageFormatter
                     Image = BuildEmbedImage(resolvedMediaUrl)
                 }
             ],
-            Components = BuildOptionButtons(session, question.QuestionType, orderedOptions, hasZeroBasedIndex)
+            Components = BuildOptionButtons(session, questionIndex, question.QuestionType, orderedOptions, hasZeroBasedIndex)
         };
     }
 
@@ -382,6 +382,7 @@ public static class QuizBotMessageFormatter
 
     private static List<MessageActionRow> BuildOptionButtons(
         QuizSession session,
+        int questionIndex,
         QuestionType questionType,
         List<QuizOption> options,
         bool hasZeroBasedIndex)
@@ -395,7 +396,7 @@ public static class QuizBotMessageFormatter
         foreach (var option in options)
         {
             var displayIndex = NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex);
-            var componentId = $"quiz:{session.Id}:q:{session.CurrentQuestion}:a:{displayIndex}";
+            var componentId = $"quiz:{session.Id}:q:{questionIndex}:a:{displayIndex}";
 
             buttonBuilder.AddButton(
                 componentId: componentId,
@@ -417,7 +418,7 @@ public static class QuizBotMessageFormatter
         {
             var submitButtonBuilder = new ButtonBuilder();
             submitButtonBuilder.AddButton(
-                componentId: $"quiz:{session.Id}:q:{session.CurrentQuestion}:submit",
+                componentId: $"quiz:{session.Id}:q:{questionIndex}:submit",
                 label: "Submit",
                 style: ButtonMessageStyle.Primary);
 

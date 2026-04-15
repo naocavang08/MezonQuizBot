@@ -34,6 +34,12 @@ namespace WebApp.Domain.Entites
         [Column("rank")]
         public int? Rank { get; set; }
 
+        [Column("current_question_index")]
+        public int CurrentQuestionIndex { get; set; } = 0;
+
+        [Column("completed_at")]
+        public DateTime? CompletedAt { get; set; }
+
         [Column("joined_at")]
         public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
     }
