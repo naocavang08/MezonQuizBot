@@ -385,10 +385,9 @@ public sealed class MezonBotHostedService : BackgroundService
                     {
                         await TryLockAnsweredQuestionMessageAsync(
                             clickEvent,
-                            quizSessionService,
+                            currentQuestion,
                             sessionId,
                             questionIndex,
-                            user.Id,
                             mezonUserId);
                     }
 
@@ -459,10 +458,9 @@ public sealed class MezonBotHostedService : BackgroundService
             {
                 await TryLockAnsweredQuestionMessageAsync(
                     clickEvent,
-                    quizSessionService,
+                    currentQuestion,
                     sessionId,
                     questionIndex,
-                    user.Id,
                     mezonUserId);
             }
 
@@ -690,10 +688,9 @@ public sealed class MezonBotHostedService : BackgroundService
 
     private async Task TryLockAnsweredQuestionMessageAsync(
         Rt.MessageButtonClicked clickEvent,
-        IQuizSessionService quizSessionService,
+        QuizSessionQuestionDto answeredQuestion,
         Guid sessionId,
         int clickedQuestionIndex,
-        Guid userId,
         string mezonUserId)
     {
         if (_client?.SocketManager is null)
@@ -706,11 +703,9 @@ public sealed class MezonBotHostedService : BackgroundService
             return;
         }
 
-        var content = await BuildAnsweredQuestionMessageContentAsync(
-            quizSessionService,
-            sessionId,
-            userId,
-            clickedQuestionIndex);
+        var content = QuizBotMessageFormatter.BuildAnsweredQuestionMessageContent(
+            question: answeredQuestion,
+            fallbackQuestionIndex: clickedQuestionIndex);
 
         var mode = Helper.ConvertChannelTypeToChannelMode((int)ChannelType.ChannelTypeDm);
         var clanId = 0L;
@@ -806,32 +801,6 @@ public sealed class MezonBotHostedService : BackgroundService
                 question.SessionId,
                 question.QuestionIndex);
         }
-    }
-
-    private static async Task<ChannelMessageContent> BuildAnsweredQuestionMessageContentAsync(
-        IQuizSessionService quizSessionService,
-        Guid sessionId,
-        Guid userId,
-        int clickedQuestionIndex)
-    {
-        var currentQuestion = await quizSessionService.GetCurrentQuestion(sessionId, userId);
-        if (!currentQuestion.Result.Success || currentQuestion.Question is null)
-        {
-            return QuizBotMessageFormatter.BuildAnsweredQuestionMessageContent(
-                question: null,
-                fallbackQuestionIndex: clickedQuestionIndex);
-        }
-
-        if (currentQuestion.Question.QuestionIndex != clickedQuestionIndex)
-        {
-            return QuizBotMessageFormatter.BuildAnsweredQuestionMessageContent(
-                question: null,
-                fallbackQuestionIndex: clickedQuestionIndex);
-        }
-
-        return QuizBotMessageFormatter.BuildAnsweredQuestionMessageContent(
-            question: currentQuestion.Question,
-            fallbackQuestionIndex: clickedQuestionIndex);
     }
 
     private void CacheDmRoute(PbChannelMessage message)
