@@ -45,16 +45,11 @@ public static class QuizBotMessageFormatter
         return new ChannelMessageContent
         {
             Text = string.Empty,
-            Embed =
-            [
-                new InteractiveMessageProps
-                {
-                    Color = GetPanelColor(question.QuestionType),
-                    Title = title,
-                    Description = panelDescription,
-                    Image = BuildEmbedImage(resolvedMediaUrl)
-                }
-            ],
+            Embed = BuildQuestionEmbeds(
+                color: GetPanelColor(question.QuestionType),
+                title: title,
+                description: panelDescription,
+                mediaUrl: resolvedMediaUrl),
             Components = BuildOptionButtons(session, questionIndex, question.QuestionType, orderedOptions, hasZeroBasedIndex)
         };
     }
@@ -107,16 +102,11 @@ public static class QuizBotMessageFormatter
         return new ChannelMessageContent
         {
             Text = string.Empty,
-            Embed =
-            [
-                new InteractiveMessageProps
-                {
-                    Color = "#64748B",
-                    Title = $"Question {question.QuestionIndex + 1}",
-                    Description = string.Join("\n\n", sections),
-                    Image = BuildEmbedImage(resolvedMediaUrl)
-                }
-            ],
+            Embed = BuildQuestionEmbeds(
+                color: "#64748B",
+                title: $"Question {question.QuestionIndex + 1}",
+                description: string.Join("\n\n", sections),
+                mediaUrl: resolvedMediaUrl),
             Components = []
         };
     }
@@ -270,16 +260,11 @@ public static class QuizBotMessageFormatter
         return new ChannelMessageContent
         {
             Text = string.Empty,
-            Embed =
-            [
-                new InteractiveMessageProps
-                {
-                    Color = "#F59E0B",
-                    Title = $"Question {question.QuestionIndex + 1}",
-                    Description = string.Join("\n\n", sections),
-                    Image = BuildEmbedImage(resolvedMediaUrl)
-                }
-            ],
+            Embed = BuildQuestionEmbeds(
+                color: "#F59E0B",
+                title: $"Question {question.QuestionIndex + 1}",
+                description: string.Join("\n\n", sections),
+                mediaUrl: resolvedMediaUrl),
             Components =
             [
                 new MessageActionRow
@@ -352,6 +337,42 @@ public static class QuizBotMessageFormatter
         {
             Url = mediaUrl
         };
+    }
+
+    private static List<InteractiveMessageProps> BuildQuestionEmbeds(
+        string color,
+        string title,
+        string description,
+        string? mediaUrl)
+    {
+        var image = BuildEmbedImage(mediaUrl);
+        if (image is null)
+        {
+            return
+            [
+                new InteractiveMessageProps
+                {
+                    Color = color,
+                    Title = title,
+                    Description = description
+                }
+            ];
+        }
+
+        return
+        [
+            new InteractiveMessageProps
+            {
+                Color = color,
+                Title = title,
+                Image = image
+            },
+            new InteractiveMessageProps
+            {
+                Color = color,
+                Description = description
+            }
+        ];
     }
 
     private static string? ResolveMediaUrl(string? mediaValue)
