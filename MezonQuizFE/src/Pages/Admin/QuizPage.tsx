@@ -223,129 +223,125 @@ const QuizPage = () => {
 				Quiz Management
 			</Typography>
 
-			<Stack direction={{ xs: "column", lg: "row" }} spacing={2} alignItems="stretch">
-				<Paper
-					variant="outlined"
-					sx={{
-						boxShadow: "none",
-						flex: 1,
-						minWidth: 0,
-						p: 2,
-						display: "flex",
-						flexDirection: "column",
-					}}
-				>
-					<Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={2}>
-						<TextField
-							label="Search by title"
-							value={searchInput}
-							onChange={(event) => setSearchInput(event.target.value)}
-							fullWidth
-						/>
+			<Box
+				sx={{
+					border: "1px solid",
+					borderColor: "divider",
+					borderRadius: 1,
+					p: 2,
+				}}
+			>
+				<Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={2}>
+					<TextField
+						label="Search by title"
+						value={searchInput}
+						onChange={(event) => setSearchInput(event.target.value)}
+						fullWidth
+					/>
 
-						<FormControl fullWidth sx={{ maxWidth: { xs: "100%", md: 320 } }}>
-							<InputLabel id="admin-quiz-category-filter-label">Category</InputLabel>
-							<Select
-								labelId="admin-quiz-category-filter-label"
-								label="Category"
-								value={selectedCategory}
-								onChange={(event) => {
-									setSelectedCategory(String(event.target.value));
-									setPage(1);
-								}}
-								disabled={isLoadingCategories}
-							>
-								<MenuItem value="">All Categories</MenuItem>
-								{categories.map((category) => (
-									<MenuItem key={category.id} value={category.id}>
-										{category.name}
-									</MenuItem>
-								))}
-							</Select>
-						</FormControl>
-					</Stack>
+					<FormControl fullWidth sx={{ maxWidth: { xs: "100%", md: 320 } }}>
+						<InputLabel id="admin-quiz-category-filter-label">Category</InputLabel>
+						<Select
+							labelId="admin-quiz-category-filter-label"
+							label="Category"
+							value={selectedCategory}
+							onChange={(event) => {
+								setSelectedCategory(String(event.target.value));
+								setPage(1);
+							}}
+							disabled={isLoadingCategories}
+						>
+							<MenuItem value="">All Categories</MenuItem>
+							{categories.map((category) => (
+								<MenuItem key={category.id} value={category.id}>
+									{category.name}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+				</Stack>
 
-					<Paper variant="outlined" sx={{ boxShadow: "none", minHeight: 420 }}>
-						{loading ? (
-							<Box py={6} display="flex" justifyContent="center">
-								<CircularProgress />
-							</Box>
-						) : (
-							<Table>
-								<TableHead>
-									<TableRow>
-										<TableCell>ID</TableCell>
-										<TableCell>Title</TableCell>
-										<TableCell>Status</TableCell>
-									</TableRow>
-								</TableHead>
-								<TableBody>
-									{quizzes.map((quiz) => {
-										const isSelected = selectedQuizId === quiz.id;
+				<Stack direction={{ xs: "column", lg: "row" }} spacing={2} alignItems="stretch">
+					<Stack spacing={1} sx={{ flex: 1, minWidth: 0 }}>
+						<Paper variant="outlined" sx={{ boxShadow: "none", minHeight: 420 }}>
+							{loading ? (
+								<Box py={6} display="flex" justifyContent="center">
+									<CircularProgress />
+								</Box>
+							) : (
+								<Table>
+									<TableHead>
+										<TableRow>
+											<TableCell>ID</TableCell>
+											<TableCell>Title</TableCell>
+											<TableCell>Status</TableCell>
+										</TableRow>
+									</TableHead>
+									<TableBody>
+										{quizzes.map((quiz) => {
+											const isSelected = selectedQuizId === quiz.id;
 
-										return (
-											<TableRow
-												key={quiz.id}
-												hover
-												onClick={() => handleSelectQuiz(quiz.id)}
-												sx={{
-													cursor: "pointer",
-													backgroundColor: isSelected ? "action.selected" : undefined,
-												}}
-											>
-												<TableCell>{quiz.id}</TableCell>
-												<TableCell>{quiz.title}</TableCell>
-												<TableCell>
-													<Chip
-														size="small"
-														label={statusLabel[quiz.status] ?? "Unknown"}
-														color={statusColor[quiz.status] ?? "default"}
-													/>
+											return (
+												<TableRow
+													key={quiz.id}
+													hover
+													onClick={() => handleSelectQuiz(quiz.id)}
+													sx={{
+														cursor: "pointer",
+														backgroundColor: isSelected ? "action.selected" : undefined,
+													}}
+												>
+													<TableCell>{quiz.id}</TableCell>
+													<TableCell>{quiz.title}</TableCell>
+													<TableCell>
+														<Chip
+															size="small"
+															label={statusLabel[quiz.status] ?? "Unknown"}
+															color={statusColor[quiz.status] ?? "default"}
+														/>
+													</TableCell>
+												</TableRow>
+											);
+										})}
+										{quizzes.length === 0 && (
+											<TableRow>
+												<TableCell colSpan={3} align="center">
+													No quizzes found.
 												</TableCell>
 											</TableRow>
-										);
-									})}
-									{quizzes.length === 0 && (
-										<TableRow>
-											<TableCell colSpan={3} align="center">
-												No quizzes found.
-											</TableCell>
-										</TableRow>
-									)}
-								</TableBody>
-							</Table>
-						)}
-					</Paper>
+										)}
+									</TableBody>
+								</Table>
+							)}
+						</Paper>
 
-					<Stack
-						direction={{ xs: "column", sm: "row" }}
-						justifyContent="space-between"
-						alignItems={{ xs: "flex-start", sm: "center" }}
-						spacing={1}
-						pt={1}
-					>
-						<Typography variant="body2" color="text.secondary">
-							Total quizzes: {totalCount}
-						</Typography>
-						<Pagination
-							page={page}
-							count={Math.max(totalPages, 1)}
-							onChange={(_, value) => setPage(value)}
-							color="primary"
-							shape="rounded"
-						/>
+						<Stack
+							direction={{ xs: "column", sm: "row" }}
+							justifyContent="space-between"
+							alignItems={{ xs: "flex-start", sm: "center" }}
+							spacing={1}
+						>
+							<Typography variant="body2" color="text.secondary">
+								Total quizzes: {totalCount}
+							</Typography>
+							<Pagination
+								page={page}
+								count={Math.max(totalPages, 1)}
+								onChange={(_, value) => setPage(value)}
+								color="primary"
+								shape="rounded"
+							/>
+						</Stack>
 					</Stack>
-				</Paper>
 
-				<Paper
-					variant="outlined"
-					sx={{
-						boxShadow: "none",
-						flex: 1,
-						minWidth: 0,
-						p: 2,
-					}}
-				>
+					<Stack sx={{ flex: 1, minWidth: 0 }}>
+						<Paper
+							variant="outlined"
+							sx={{
+								boxShadow: "none",
+								p: 2,
+							}}
+						>
 					<Typography variant="h6" fontWeight={700} mb={1.5}>
 						Quiz Details
 					</Typography>
@@ -562,8 +558,10 @@ const QuizPage = () => {
 							Click a quiz row to load details and sessions.
 						</Typography>
 					)}
-				</Paper>
-			</Stack>
+						</Paper>
+					</Stack>
+				</Stack>
+			</Box>
 
 			<AppSnackbar
 				open={snackbar.open}
