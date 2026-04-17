@@ -7,6 +7,7 @@ import QuizPage from "../Pages/Admin/QuizPage";
 import RolePage from "../Pages/Admin/RolePage";
 import UserPage from "../Pages/Admin/UserPage";
 import CategoryPage from "../Pages/Admin/CategoryPage";
+import LeaderboardPage from "../Pages/LeaderboardPage";
 import useAuthStore from "../Stores/login.store";
 import ProtectedRoute from "./ProtectedRoute";
 import MyQuizPage from "../Pages/MyQuizPage";
@@ -71,6 +72,7 @@ const AppRoutes = () => {
           </Route>
 
           <Route element={<ProtectedRoute requiredPermissions={ACCESS_PERMISSIONS.QUIZ_WORKSPACE} />}>
+            <Route path="leaderboard" element={<LeaderboardPage />} />
             <Route path="find-quizzes" element={<FindQuizPage />} />
             <Route path="find-quizzes/:quizId" element={<QuizDetailPage />} />
           </Route>

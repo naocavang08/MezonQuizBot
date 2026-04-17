@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using WebApp.Application.AuditLog;
 using WebApp.Application.Dashboard.Dtos;
 using WebApp.Data;
-using WebApp.Domain.Entites;
 
 namespace WebApp.Application.Dashboard.Services;
 

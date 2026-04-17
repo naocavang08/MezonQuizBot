@@ -5,6 +5,11 @@ import type {
 	DashboardKpiDto,
 	DashboardStatusCountDto,
 	DashboardSummaryDto,
+	TopUserAnalyticsItemDto,
+	TopUserAnalyticsPaginationDto,
+	TopUserAnalyticsQuery,
+	TopUserAnalyticsResponseDto,
+	TopUserAnalyticsSummaryDto,
 } from "../Interface/dashboard.dto";
 
 type AnyRecord = Record<string, unknown>;
@@ -80,8 +85,62 @@ const normalizeDashboardSummary = (raw: unknown): DashboardSummaryDto => {
 	};
 };
 
+const normalizeTopUserSummary = (raw: unknown): TopUserAnalyticsSummaryDto => {
+	const data = (raw ?? {}) as AnyRecord;
+	return {
+		totalActiveUsers: toNumber(data.totalActiveUsers ?? data.TotalActiveUsers),
+		totalParticipations: toNumber(data.totalParticipations ?? data.TotalParticipations),
+		totalSessions: toNumber(data.totalSessions ?? data.TotalSessions),
+		averageAccuracy: toNumber(data.averageAccuracy ?? data.AverageAccuracy),
+		averageScorePerUser: toNumber(data.averageScorePerUser ?? data.AverageScorePerUser),
+	};
+};
+
+const normalizeTopUserItem = (raw: unknown): TopUserAnalyticsItemDto => {
+	const data = (raw ?? {}) as AnyRecord;
+	return {
+		rank: toNumber(data.rank ?? data.Rank),
+		userId: toString(data.userId ?? data.UserId),
+		displayName: toString(data.displayName ?? data.DisplayName),
+		avatarUrl: toString(data.avatarUrl ?? data.AvatarUrl) || undefined,
+		totalScore: toNumber(data.totalScore ?? data.TotalScore),
+		totalCorrectAnswers: toNumber(data.totalCorrectAnswers ?? data.TotalCorrectAnswers),
+		totalAnswers: toNumber(data.totalAnswers ?? data.TotalAnswers),
+		accuracyRate: toNumber(data.accuracyRate ?? data.AccuracyRate),
+		totalSessions: toNumber(data.totalSessions ?? data.TotalSessions),
+		firstSeenAt: toString(data.firstSeenAt ?? data.FirstSeenAt),
+		lastSeenAt: toString(data.lastSeenAt ?? data.LastSeenAt),
+	};
+};
+
+const normalizeTopUserPagination = (raw: unknown): TopUserAnalyticsPaginationDto => {
+	const data = (raw ?? {}) as AnyRecord;
+	return {
+		page: toNumber(data.page ?? data.Page) || 1,
+		pageSize: toNumber(data.pageSize ?? data.PageSize) || 20,
+		totalCount: toNumber(data.totalCount ?? data.TotalCount),
+		totalPages: toNumber(data.totalPages ?? data.TotalPages),
+	};
+};
+
+const normalizeTopUserAnalytics = (raw: unknown): TopUserAnalyticsResponseDto => {
+	const data = (raw ?? {}) as AnyRecord;
+	return {
+		summary: normalizeTopUserSummary(data.summary ?? data.Summary),
+		items: toArray(data.items ?? data.Items, normalizeTopUserItem),
+		pagination: normalizeTopUserPagination(data.pagination ?? data.Pagination),
+		generatedAt: toString(data.generatedAt ?? data.GeneratedAt),
+	};
+};
+
 export const getDashboardSummary = (params?: { days?: number }) => {
 	return apiClient
 		.get("/api/Dashboard/summary", { params })
 		.then((res) => normalizeDashboardSummary(res.data));
+};
+
+export const getTopUserAnalytics = (params: TopUserAnalyticsQuery) => {
+	return apiClient
+		.get("/api/Leaderboard", { params })
+		.then((res) => normalizeTopUserAnalytics(res.data));
 };
