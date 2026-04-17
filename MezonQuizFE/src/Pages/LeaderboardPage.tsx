@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import {
+	Avatar,
 	Box,
 	Button,
+	Chip,
 	CircularProgress,
-	Grid,
 	MenuItem,
 	Pagination,
 	Paper,
@@ -20,6 +21,7 @@ import AppSnackbar from "../Components/AppSnackbar";
 import UserIdentityCell from "../Components/UserIdentityCell";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { getTopUserAnalytics } from "../Api/dashboard.api";
+import { MdEmojiEvents, MdMilitaryTech, MdStars, MdTrendingUp } from "react-icons/md";
 import type {
 	TopUserAnalyticsQuery,
 	TopUserAnalyticsResponseDto,
@@ -34,6 +36,64 @@ const SORT_OPTIONS = [
 ];
 
 const PAGE_SIZE = 20;
+
+type RankTier = {
+	label: string;
+	icon: ReactNode;
+	chipColor: "warning" | "error" | "secondary" | "info" | "default";
+	rowBackground: string;
+	borderColor: string;
+};
+
+const getRankTier = (rank: number): RankTier => {
+	if (rank === 1) {
+		return {
+			label: "Top 1",
+			icon: <MdEmojiEvents size={18} color="#ca8a04" />,
+			chipColor: "warning",
+			rowBackground: "linear-gradient(90deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))",
+			borderColor: "rgba(202,138,4,0.5)",
+		};
+	}
+
+	if (rank <= 3) {
+		return {
+			label: "Top 3",
+			icon: <MdMilitaryTech size={18} color="#f97316" />,
+			chipColor: "error",
+			rowBackground: "linear-gradient(90deg, rgba(249,115,22,0.16), rgba(249,115,22,0.04))",
+			borderColor: "rgba(249,115,22,0.45)",
+		};
+	}
+
+	if (rank <= 5) {
+		return {
+			label: "Top 5",
+			icon: <MdStars size={18} color="#7c3aed" />,
+			chipColor: "secondary",
+			rowBackground: "linear-gradient(90deg, rgba(124,58,237,0.14), rgba(124,58,237,0.04))",
+			borderColor: "rgba(124,58,237,0.42)",
+		};
+	}
+
+	if (rank <= 10) {
+		return {
+			label: "Top 10",
+			icon: <MdTrendingUp size={18} color="#0284c7" />,
+			chipColor: "info",
+			rowBackground: "linear-gradient(90deg, rgba(14,165,233,0.14), rgba(14,165,233,0.04))",
+			borderColor: "rgba(2,132,199,0.38)",
+		};
+	}
+
+	return {
+		label: "Ranked",
+		icon: <MdTrendingUp size={18} color="#64748b" />,
+		chipColor: "default",
+		rowBackground: "transparent",
+		borderColor: "transparent",
+	};
+};
 
 const formatDateTime = (isoDate: string) => {
 	if (!isoDate) {
@@ -107,37 +167,14 @@ const LeaderboardPage = () => {
 	const summary = data?.summary;
 	const pagination = data?.pagination;
 
-	const kpiCards = useMemo(
+	const topLegendItems = useMemo(
 		() => [
-			{
-				label: "Active Users",
-				value: summary?.totalActiveUsers ?? 0,
-				color: "#0ea5e9",
-			},
-			{
-				label: "Participations",
-				value: summary?.totalParticipations ?? 0,
-				color: "#22c55e",
-			},
-			{
-				label: "Sessions",
-				value: summary?.totalSessions ?? 0,
-				color: "#f59e0b",
-			},
-			{
-				label: "Avg Accuracy",
-				value: `${(summary?.averageAccuracy ?? 0).toFixed(2)}%`,
-				color: "#a855f7",
-			},
-			{
-				label: "Avg Score/User",
-				value: (summary?.averageScorePerUser ?? 0).toLocaleString("en-US", {
-					maximumFractionDigits: 2,
-				}),
-				color: "#ec4899",
-			},
+			getRankTier(1),
+			getRankTier(3),
+			getRankTier(5),
+			getRankTier(10),
 		],
-		[summary],
+		[],
 	);
 
 	const applyFilters = () => {
@@ -167,49 +204,64 @@ const LeaderboardPage = () => {
 
 	return (
 		<Box>
-			<Stack
-				direction={{ xs: "column", md: "row" }}
-				justifyContent="space-between"
-				alignItems={{ xs: "flex-start", md: "center" }}
-				spacing={1.5}
-				mb={2.5}
+			<Paper
+				variant="outlined"
+				sx={{
+					mb: 2.5,
+					p: 2,
+					background:
+						"radial-gradient(circle at 0% 0%, rgba(14,165,233,0.16), transparent 48%), radial-gradient(circle at 95% 0%, rgba(251,146,60,0.15), transparent 45%)",
+					boxShadow: "none",
+				}}
 			>
-				<Box>
-					<Typography variant="h5" fontWeight={800}>
-						Leaderboard
-					</Typography>
-					<Typography variant="body2" color="text.secondary" mt={0.5}>
-						Bảng xếp hạng người chơi trên toàn bộ phiên quiz.
-					</Typography>
-				</Box>
-				<Stack direction="row" spacing={1.25} alignItems="center">
-					{data?.generatedAt ? (
-						<Typography variant="caption" color="text.secondary">
-							Updated: {formatDateTime(data.generatedAt)}
+				<Stack
+					direction={{ xs: "column", md: "row" }}
+					justifyContent="space-between"
+					alignItems={{ xs: "flex-start", md: "center" }}
+					spacing={1.5}
+				>
+					<Box>
+						<Typography variant="h5" fontWeight={900}>
+							Player Leaderboard
 						</Typography>
-					) : null}
-					<Button
-						variant="contained"
-						onClick={() => void loadData(true)}
-						disabled={loading || refreshing}
-					>
-						{refreshing ? "Refreshing..." : "Refresh"}
-					</Button>
+						<Typography variant="body2" color="text.secondary" mt={0.5}>
+							Nổi bật theo thành tích người chơi với nhận diện rõ Top 10, Top 5, Top 3 và Top 1.
+						</Typography>
+					</Box>
+					<Stack direction="row" spacing={1.25} alignItems="center" flexWrap="wrap" useFlexGap>
+						<Chip
+							label={`Active: ${(summary?.totalActiveUsers ?? 0).toLocaleString("en-US")}`}
+							size="small"
+							variant="outlined"
+						/>
+						{data?.generatedAt ? (
+							<Typography variant="caption" color="text.secondary">
+								Updated: {formatDateTime(data.generatedAt)}
+							</Typography>
+						) : null}
+						<Button
+							variant="contained"
+							onClick={() => void loadData(true)}
+							disabled={loading || refreshing}
+						>
+							{refreshing ? "Refreshing..." : "Refresh"}
+						</Button>
+					</Stack>
 				</Stack>
-			</Stack>
+			</Paper>
 
 			<Paper variant="outlined" sx={{ p: 2, boxShadow: "none", mb: 2 }}>
 				<Stack spacing={1.25}>
-					<Grid container spacing={1.5}>
-						<Grid size={{ xs: 12, md: 4 }}>
+					<Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
+						<Box sx={{ flex: 1 }}>
 							<TextField
 								fullWidth
 								label="Search by display name"
 								value={searchInput}
 								onChange={(event) => setSearchInput(event.target.value)}
 							/>
-						</Grid>
-						<Grid size={{ xs: 12, md: 2 }}>
+						</Box>
+						<Box sx={{ width: { xs: "100%", md: 180 } }}>
 							<TextField
 								fullWidth
 								label="From"
@@ -224,8 +276,8 @@ const LeaderboardPage = () => {
 									}))
 								}
 							/>
-						</Grid>
-						<Grid size={{ xs: 12, md: 2 }}>
+						</Box>
+						<Box sx={{ width: { xs: "100%", md: 180 } }}>
 							<TextField
 								fullWidth
 								label="To"
@@ -240,8 +292,8 @@ const LeaderboardPage = () => {
 									}))
 								}
 							/>
-						</Grid>
-						<Grid size={{ xs: 12, md: 2 }}>
+						</Box>
+						<Box sx={{ width: { xs: "100%", md: 180 } }}>
 							<TextField
 								fullWidth
 								label="Min sessions"
@@ -256,8 +308,8 @@ const LeaderboardPage = () => {
 									}))
 								}
 							/>
-						</Grid>
-						<Grid size={{ xs: 12, md: 2 }}>
+						</Box>
+						<Box sx={{ width: { xs: "100%", md: 180 } }}>
 							<TextField
 								fullWidth
 								select
@@ -277,8 +329,8 @@ const LeaderboardPage = () => {
 									</MenuItem>
 								))}
 							</TextField>
-						</Grid>
-					</Grid>
+						</Box>
+					</Stack>
 					<Stack direction="row" spacing={1.25} justifyContent="space-between" alignItems="center">
 						<TextField
 							select
@@ -314,35 +366,27 @@ const LeaderboardPage = () => {
 				</Paper>
 			) : (
 				<Stack spacing={2}>
-					<Grid container spacing={1.5}>
-						{kpiCards.map((card) => (
-							<Grid key={card.label} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-								<Paper
+					<Paper variant="outlined" sx={{ p: 1.5, boxShadow: "none" }}>
+						<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+							{topLegendItems.map((item) => (
+								<Chip
+									key={item.label}
+									icon={<Avatar sx={{ width: 20, height: 20, bgcolor: "transparent" }}>{item.icon}</Avatar>}
+									label={item.label}
 									variant="outlined"
-									sx={{
-										p: 2,
-										borderTop: `3px solid ${card.color}`,
-										boxShadow: "none",
-									}}
-								>
-									<Typography variant="body2" color="text.secondary">
-										{card.label}
-									</Typography>
-									<Typography variant="h5" fontWeight={800} mt={0.25}>
-										{typeof card.value === "number"
-											? card.value.toLocaleString("en-US")
-											: card.value}
-									</Typography>
-								</Paper>
-							</Grid>
-						))}
-					</Grid>
+									color={item.chipColor}
+									size="small"
+								/>
+							))}
+						</Stack>
+					</Paper>
 
 					<Paper variant="outlined" sx={{ boxShadow: "none" }}>
 						<Table size="small">
 							<TableHead>
 								<TableRow>
 									<TableCell>Rank</TableCell>
+									<TableCell>Tier</TableCell>
 									<TableCell>User</TableCell>
 									<TableCell align="right">Score</TableCell>
 									<TableCell align="right">Accuracy</TableCell>
@@ -354,9 +398,32 @@ const LeaderboardPage = () => {
 								</TableRow>
 							</TableHead>
 							<TableBody>
-								{rows.map((row) => (
-									<TableRow key={row.userId} hover>
-										<TableCell>{row.rank}</TableCell>
+								{rows.map((row) => {
+									const tier = getRankTier(row.rank);
+
+									return (
+									<TableRow
+										key={row.userId}
+										hover
+										sx={{
+											background: tier.rowBackground,
+											borderLeft: `3px solid ${tier.borderColor}`,
+										}}
+									>
+										<TableCell>
+											<Stack direction="row" spacing={1} alignItems="center">
+												{tier.icon}
+												<Typography fontWeight={row.rank <= 10 ? 700 : 500}>#{row.rank}</Typography>
+											</Stack>
+										</TableCell>
+										<TableCell>
+											<Chip
+												size="small"
+												label={tier.label}
+												color={tier.chipColor}
+												variant={row.rank <= 10 ? "filled" : "outlined"}
+											/>
+										</TableCell>
 										<TableCell>
 											<UserIdentityCell
 												userId={row.userId}
@@ -372,10 +439,11 @@ const LeaderboardPage = () => {
 										<TableCell align="right">{formatDateTime(row.firstSeenAt)}</TableCell>
 										<TableCell align="right">{formatDateTime(row.lastSeenAt)}</TableCell>
 									</TableRow>
-								))}
+									);
+								})}
 								{rows.length === 0 ? (
 									<TableRow>
-										<TableCell colSpan={9} align="center">
+										<TableCell colSpan={10} align="center">
 											<Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
 												No users matched the selected filters.
 											</Typography>
