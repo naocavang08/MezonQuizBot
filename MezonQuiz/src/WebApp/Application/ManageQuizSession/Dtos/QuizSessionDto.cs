@@ -74,7 +74,9 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public int? AnswersCount { get; set; }
         public int? CorrectCount { get; set; }
         public int? QuestionIndex { get; set; }
+        public List<int> SelectedOptionDisplays { get; set; } = new();
         public int? SelectedOptionDisplay { get; set; }
+        public bool CanRevealCorrectAnswer { get; set; } = true;
         public List<int> CorrectOptionDisplays { get; set; } = new();
     }
 }

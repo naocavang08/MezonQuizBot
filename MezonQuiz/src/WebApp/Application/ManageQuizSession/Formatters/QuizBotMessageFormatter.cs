@@ -14,12 +14,10 @@ public static class QuizBotMessageFormatter
     {
         var resolvedMediaUrl = ResolveMediaUrl(question.MediaUrl);
         var orderedOptions = (question.Options ?? new List<QuizOption>())
-            .OrderBy(option => option.Index)
             .ToList();
 
-        var hasZeroBasedIndex = orderedOptions.Any(option => option.Index == 0);
         var optionLines = orderedOptions
-            .Select(option => $"{NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex)} - {option.Content}")
+            .Select((option, position) => $"{position + 1} - {option.Content}")
             .ToList();
 
         var totalQuestionCount = quiz.Questions?.Count ?? 0;
@@ -50,7 +48,7 @@ public static class QuizBotMessageFormatter
                 title: title,
                 description: panelDescription,
                 mediaUrl: resolvedMediaUrl),
-            Components = BuildOptionButtons(session, questionIndex, question.QuestionType, orderedOptions, hasZeroBasedIndex)
+            Components = BuildOptionButtons(session, questionIndex, question.QuestionType, orderedOptions)
         };
     }
 
@@ -78,12 +76,10 @@ public static class QuizBotMessageFormatter
 
         var resolvedMediaUrl = ResolveMediaUrl(question.MediaUrl);
         var orderedOptions = (question.Options ?? [])
-            .OrderBy(option => option.Index)
             .ToList();
 
-        var hasZeroBasedIndex = orderedOptions.Any(option => option.Index == 0);
         var optionLines = orderedOptions
-            .Select(option => $"{NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex)} - {option.Content}")
+            .Select((option, position) => $"{position + 1} - {option.Content}")
             .ToList();
 
         var sections = new List<string>
@@ -123,12 +119,22 @@ public static class QuizBotMessageFormatter
 
         var isCorrect = submitResult.IsCorrect ?? false;
         var selectedDisplay = submitResult.SelectedOptionDisplay ?? fallbackSelectedDisplay;
+        var selectedOptionDisplays = submitResult.SelectedOptionDisplays.Count > 0
+            ? submitResult.SelectedOptionDisplays
+            : new List<int> { selectedDisplay };
+        var selectedOptionLabel = FormatOptionList(selectedOptionDisplays);
         var totalScore = submitResult.TotalScore ?? 0;
+        var canRevealCorrectAnswer = submitResult.CanRevealCorrectAnswer;
         var correctAnswerLabel = FormatOptionList(submitResult.CorrectOptionDisplays);
+        var isMultiSelection = selectedOptionDisplays.Count > 1;
 
         var title = isCorrect
             ? $"Correct!!!, you have {totalScore} points"
-            : $"Incorrect!!!, The correct answer is {correctAnswerLabel}";
+            : canRevealCorrectAnswer
+                ? $"Incorrect!!!, The correct answer is {correctAnswerLabel}"
+                : isMultiSelection
+                    ? $"Incorrect!!!, your selected options are {selectedOptionLabel}"
+                    : $"Incorrect!!!, your selected option is {selectedOptionLabel}";
 
         return new ChannelMessageContent
         {
@@ -205,12 +211,10 @@ public static class QuizBotMessageFormatter
     {
         var resolvedMediaUrl = ResolveMediaUrl(question.MediaUrl);
         var orderedOptions = (question.Options ?? [])
-            .OrderBy(option => option.Index)
             .ToList();
 
-        var hasZeroBasedIndex = orderedOptions.Any(option => option.Index == 0);
         var optionLines = orderedOptions
-            .Select(option => $"{NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex)} - {option.Content}")
+            .Select((option, position) => $"{position + 1} - {option.Content}")
             .ToList();
 
         var sections = new List<string>
@@ -231,9 +235,9 @@ public static class QuizBotMessageFormatter
             .ToHashSet();
 
         var buttonBuilder = new ButtonBuilder();
-        foreach (var option in orderedOptions)
+        for (var position = 0; position < orderedOptions.Count; position++)
         {
-            var displayIndex = NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex);
+            var displayIndex = position + 1;
             buttonBuilder.AddButton(
                 componentId: $"quiz:{question.SessionId}:q:{question.QuestionIndex}:a:{displayIndex}",
                 label: displayIndex.ToString(),
@@ -407,8 +411,7 @@ public static class QuizBotMessageFormatter
         QuizSession session,
         int questionIndex,
         QuestionType questionType,
-        List<QuizOption> options,
-        bool hasZeroBasedIndex)
+        List<QuizOption> options)
     {
         if (options.Count == 0)
         {
@@ -416,9 +419,9 @@ public static class QuizBotMessageFormatter
         }
 
         var buttonBuilder = new ButtonBuilder();
-        foreach (var option in options)
+        for (var position = 0; position < options.Count; position++)
         {
-            var displayIndex = NormalizeOptionDisplayIndex(option.Index, hasZeroBasedIndex);
+            var displayIndex = position + 1;
             var componentId = $"quiz:{session.Id}:q:{questionIndex}:a:{displayIndex}";
 
             buttonBuilder.AddButton(

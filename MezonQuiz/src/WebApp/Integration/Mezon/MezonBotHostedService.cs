@@ -408,9 +408,9 @@ public sealed class MezonBotHostedService : BackgroundService
 
                 var selectionKeyForToggle = BuildMultiChoiceSelectionKey(sessionId, questionIndex, mezonUserId);
                 var selectedSnapshot = ToggleMultiChoiceSelection(selectionKeyForToggle, toggledResolvedOption);
-                var hasZeroBasedOption = currentQuestion.Options.Any(option => option.Index == 0);
                 var selectedDisplays = selectedSnapshot
-                    .Select(index => QuizBotMessageFormatter.NormalizeOptionDisplayIndex(index, hasZeroBasedOption))
+                    .Select(index => ResolveDisplayIndex(currentQuestion.Options, index))
+                    .Where(index => index > 0)
                     .Distinct()
                     .OrderBy(index => index)
                     .ToList();
@@ -1083,10 +1083,9 @@ public sealed class MezonBotHostedService : BackgroundService
         }
 
         var options = currentQuestion.Question.Options ?? [];
-        var hasZeroBasedOption = options.Any(option => option.Index == 0);
-        if (hasZeroBasedOption && selectedOption > 0)
+        if (selectedOption > 0 && selectedOption <= options.Count)
         {
-            return selectedOption - 1;
+            return options[selectedOption - 1].Index;
         }
 
         if (options.Any(option => option.Index == selectedOption))
@@ -1095,6 +1094,19 @@ public sealed class MezonBotHostedService : BackgroundService
         }
 
         return selectedOption;
+    }
+
+    private static int ResolveDisplayIndex(IReadOnlyList<QuizSessionQuestionOptionDto> options, int optionIndex)
+    {
+        for (var position = 0; position < options.Count; position++)
+        {
+            if (options[position].Index == optionIndex)
+            {
+                return position + 1;
+            }
+        }
+
+        return -1;
     }
 
     private static string ExtractMessageText(string rawContent)

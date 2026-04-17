@@ -11,6 +11,8 @@ using WebApp.Application.ManageQuizSession.Dtos;
 using WebApp.Application.ManageQuizSession.Formatters;
 using WebApp.Integration.Mezon;
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace WebApp.Application.ManageQuizSession.Services
 {
@@ -548,18 +550,28 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return (Fail("Quiz not found for this session."), null);
             }
 
+            var settings = GetEffectiveQuizSettings(quiz);
+            var orderedQuestions = GetOrderedQuestionsForParticipant(quiz, session.Id, userId, settings);
+
             var questionIndex = participant.CurrentQuestionIndex;
-            var totalQuestions = quiz.Questions?.Count ?? 0;
+            var totalQuestions = orderedQuestions.Count;
             if (questionIndex >= totalQuestions)
             {
                 return (Fail("Participant has completed all questions."), null);
             }
 
-            var question = ResolveQuestion(quiz, questionIndex);
+            var question = ResolveQuestionByProgress(orderedQuestions, questionIndex);
             if (question is null)
             {
                 return (Fail("Current question is invalid."), null);
             }
+
+            var presentedOptions = GetPresentedOptionsForParticipant(
+                question,
+                session.Id,
+                userId,
+                questionIndex,
+                settings);
 
             var dto = new QuizSessionQuestionDto
             {
@@ -570,7 +582,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 TimeLimitSeconds = question.TimeLimitSeconds,
                 Points = question.Points,
                 QuestionType = question.QuestionType,
-                Options = question.Options
+                Options = presentedOptions
                     .Select(option => new QuizSessionQuestionOptionDto
                     {
                         Index = option.Index,
@@ -619,8 +631,11 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return Fail("Quiz not found for this session.");
             }
 
+            var settings = GetEffectiveQuizSettings(quiz);
+            var orderedQuestions = GetOrderedQuestionsForParticipant(quiz, session.Id, request.UserId, settings);
+
             var questionIndex = participant.CurrentQuestionIndex;
-            var totalQuestions = quiz.Questions?.Count ?? 0;
+            var totalQuestions = orderedQuestions.Count;
             if (questionIndex >= totalQuestions)
             {
                 participant.CompletedAt ??= DateTime.UtcNow;
@@ -628,7 +643,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return Fail("Participant has completed all questions.");
             }
 
-            var question = ResolveQuestion(quiz, questionIndex);
+            var question = ResolveQuestionByProgress(orderedQuestions, questionIndex);
             if (question is null)
             {
                 return Fail("Current question is invalid.");
@@ -650,13 +665,34 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return Fail("Selected option is invalid.");
             }
 
-            var hasZeroBasedOption = question.Options.Any(option => option.Index == 0);
-            var selectedOptionDisplay = QuizBotMessageFormatter.NormalizeOptionDisplayIndex(selectedOptions[0], hasZeroBasedOption);
+            var presentedOptions = GetPresentedOptionsForParticipant(
+                question,
+                session.Id,
+                request.UserId,
+                questionIndex,
+                settings);
+
+            var displayIndexByOptionIndex = presentedOptions
+                .Select((option, position) => new { option.Index, DisplayIndex = position + 1 })
+                .GroupBy(item => item.Index)
+                .ToDictionary(group => group.Key, group => group.First().DisplayIndex);
+
+            var selectedOptionDisplays = selectedOptions
+                .Select(optionIndex => displayIndexByOptionIndex.TryGetValue(optionIndex, out var displayIndex)
+                    ? displayIndex
+                    : optionIndex)
+                .Distinct()
+                .OrderBy(index => index)
+                .ToList();
+            var selectedOptionDisplay = selectedOptionDisplays[0];
             var correctOptionDisplays = question.Options
                 .Where(option => option.IsCorrect)
                 .OrderBy(option => option.Index)
-                .Select(option => QuizBotMessageFormatter.NormalizeOptionDisplayIndex(option.Index, hasZeroBasedOption))
+                .Select(option => displayIndexByOptionIndex.TryGetValue(option.Index, out var displayIndex)
+                    ? displayIndex
+                    : option.Index)
                 .Distinct()
+                .OrderBy(index => index)
                 .ToList();
 
             var isCorrect = IsCorrectAnswer(question, selectedOptions);
@@ -708,8 +744,10 @@ namespace WebApp.Application.ManageQuizSession.Services
                 AnswersCount = participant.AnswersCount,
                 CorrectCount = participant.CorrectCount,
                 QuestionIndex = questionIndex,
+                SelectedOptionDisplays = selectedOptionDisplays,
                 SelectedOptionDisplay = selectedOptionDisplay,
-                CorrectOptionDisplays = correctOptionDisplays
+                CanRevealCorrectAnswer = settings.ShowCorrectAnswer,
+                CorrectOptionDisplays = settings.ShowCorrectAnswer ? correctOptionDisplays : new List<int>()
             };
         }
 
@@ -906,6 +944,107 @@ namespace WebApp.Application.ManageQuizSession.Services
             return question.Options.Any(o => o.Index == selectedIndex && o.IsCorrect);
         }
 
+        private static QuizSettings GetEffectiveQuizSettings(Quiz quiz)
+        {
+            var settings = quiz.Settings ?? new QuizSettings();
+            return new QuizSettings
+            {
+                ShuffleQuestions = settings.ShuffleQuestions,
+                ShuffleOptions = settings.ShuffleOptions,
+                ShowCorrectAnswer = settings.ShowCorrectAnswer,
+                // Kept for backward compatibility in stored settings, but not used in session flow.
+                MaxAttempts = settings.MaxAttempts
+            };
+        }
+
+        private static List<QuizQuestion> GetOrderedQuestionsForParticipant(
+            Quiz quiz,
+            Guid sessionId,
+            Guid userId,
+            QuizSettings settings)
+        {
+            var questions = (quiz.Questions ?? new List<QuizQuestion>()).ToList();
+            if (!settings.ShuffleQuestions || questions.Count <= 1)
+            {
+                return questions;
+            }
+
+            var seedPrefix = $"session:{sessionId:N}:user:{userId:N}:questions";
+            return questions
+                .Select((question, position) => new
+                {
+                    Question = question,
+                    Position = position,
+                    Key = ComputeDeterministicOrderKey(seedPrefix, BuildQuestionStableKey(question, position))
+                })
+                .OrderBy(item => item.Key)
+                .ThenBy(item => item.Position)
+                .Select(item => item.Question)
+                .ToList();
+        }
+
+        private static List<QuizOption> GetPresentedOptionsForParticipant(
+            QuizQuestion question,
+            Guid sessionId,
+            Guid userId,
+            int questionProgressIndex,
+            QuizSettings settings)
+        {
+            var options = (question.Options ?? new List<QuizOption>())
+                .Select(option => new QuizOption
+                {
+                    Id = option.Id,
+                    Index = option.Index,
+                    Content = option.Content,
+                    IsCorrect = option.IsCorrect
+                })
+                .ToList();
+
+            if (!settings.ShuffleOptions || options.Count <= 1)
+            {
+                return options;
+            }
+
+            var seedPrefix = $"session:{sessionId:N}:user:{userId:N}:q:{questionProgressIndex}:options";
+            return options
+                .Select((option, position) => new
+                {
+                    Option = option,
+                    Position = position,
+                    Key = ComputeDeterministicOrderKey(seedPrefix, BuildOptionStableKey(option, position))
+                })
+                .OrderBy(item => item.Key)
+                .ThenBy(item => item.Position)
+                .Select(item => item.Option)
+                .ToList();
+        }
+
+        private static QuizQuestion? ResolveQuestionByProgress(List<QuizQuestion> orderedQuestions, int progressIndex)
+        {
+            if (progressIndex < 0 || progressIndex >= orderedQuestions.Count)
+            {
+                return null;
+            }
+
+            return orderedQuestions[progressIndex];
+        }
+
+        private static ulong ComputeDeterministicOrderKey(string seedPrefix, string itemKey)
+        {
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes($"{seedPrefix}:{itemKey}"));
+            return BitConverter.ToUInt64(bytes, 0);
+        }
+
+        private static string BuildQuestionStableKey(QuizQuestion question, int fallbackPosition)
+        {
+            return $"qid:{question.Id};qidx:{question.Index};content:{question.Content};pos:{fallbackPosition}";
+        }
+
+        private static string BuildOptionStableKey(QuizOption option, int fallbackPosition)
+        {
+            return $"oid:{option.Id};oidx:{option.Index};content:{option.Content};pos:{fallbackPosition}";
+        }
+
         private static SessionOperationResult Success(string message)
         {
             return new SessionOperationResult
@@ -950,11 +1089,32 @@ namespace WebApp.Application.ManageQuizSession.Services
             }
 
             var questionIndex = participant.CurrentQuestionIndex;
-            var question = ResolveQuestion(quiz, questionIndex);
+            var settings = GetEffectiveQuizSettings(quiz);
+            var orderedQuestions = GetOrderedQuestionsForParticipant(quiz, session.Id, userId, settings);
+            var question = ResolveQuestionByProgress(orderedQuestions, questionIndex);
             if (question is null)
             {
                 return;
             }
+
+            var presentedOptions = GetPresentedOptionsForParticipant(
+                question,
+                session.Id,
+                userId,
+                questionIndex,
+                settings);
+
+            var presentedQuestion = new QuizQuestion
+            {
+                Id = question.Id,
+                Index = question.Index,
+                Content = question.Content,
+                MediaUrl = question.MediaUrl,
+                TimeLimitSeconds = question.TimeLimitSeconds,
+                Points = question.Points,
+                QuestionType = question.QuestionType,
+                Options = presentedOptions
+            };
 
             var mezonUserId = await _dbContext.SessionParticipants
                 .AsNoTracking()
@@ -972,7 +1132,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return;
             }
 
-            var content = QuizBotMessageFormatter.BuildQuestionMessageContent(session, quiz, question, questionIndex);
+            var content = QuizBotMessageFormatter.BuildQuestionMessageContent(session, quiz, presentedQuestion, questionIndex);
             var sendResult = await _mezonBotHostedService.SendDmMessageToUsersAsync([targetUserId], content);
 
             _logger.LogInformation(
