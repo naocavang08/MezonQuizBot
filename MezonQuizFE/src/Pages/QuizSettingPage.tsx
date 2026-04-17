@@ -122,6 +122,14 @@ const sessionStatusLabel: Record<number, string> = {
 	[SessionStatusValue.Cancelled]: "Cancelled",
 };
 
+const resolveSessionManagementPath = (session: QuizSessionDto): string => {
+	if (session.status === SessionStatusValue.Waiting) {
+		return `/app/sessions/${session.id}`;
+	}
+
+	return `/app/sessions/${session.id}/start-quiz`;
+};
+
 const QuizSettingPage = () => {
 	const navigate = useNavigate();
 	const { quizId } = useParams<{ quizId: string }>();
@@ -775,7 +783,7 @@ const QuizSettingPage = () => {
 													<Button
 														size="small"
 														variant="contained"
-														onClick={() => navigate(`/app/sessions/${session.id}`)}
+															onClick={() => navigate(resolveSessionManagementPath(session))}
 													>
 														Open Session Room
 													</Button>

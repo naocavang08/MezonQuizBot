@@ -198,6 +198,11 @@ const StartQuizPage = () => {
 
         if (!isHost) {
             navigate(`/app/sessions/${sessionId}/play`, { replace: true });
+            return;
+        }
+
+        if (session.status === SessionStatusValue.Waiting) {
+            navigate(`/app/sessions/${sessionId}`, { replace: true });
         }
     }, [isHost, navigate, session, sessionId, userId]);
 
@@ -267,14 +272,14 @@ const StartQuizPage = () => {
                         </Typography>
                     </Box>
                     <Stack direction="row" spacing={1} alignItems="center">
-                        <Button
+                        {/* <Button
                             variant="text"
                             onClick={() => {
                                 navigate(`/app/sessions/${sessionId}`);
                             }}
                         >
                             Back to Waiting Room
-                        </Button>
+                        </Button> */}
                         <Tooltip title="Refresh now">
                             <IconButton
                                 onClick={() => {
