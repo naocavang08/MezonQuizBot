@@ -4,7 +4,9 @@ import {
     Button,
     Card,
     CardContent,
+    Chip,
     CircularProgress,
+    Divider,
     Link,
     Stack,
     Typography,
@@ -24,6 +26,14 @@ const sessionStatusLabel: Record<number, string> = {
     [SessionStatusValue.Paused]: "Paused",
     [SessionStatusValue.Finished]: "Finished",
     [SessionStatusValue.Cancelled]: "Cancelled",
+};
+
+const sessionStatusColor: Record<number, "default" | "info" | "success" | "warning" | "error"> = {
+    [SessionStatusValue.Waiting]: "info",
+    [SessionStatusValue.Active]: "success",
+    [SessionStatusValue.Paused]: "warning",
+    [SessionStatusValue.Finished]: "default",
+    [SessionStatusValue.Cancelled]: "error",
 };
 
 const QuizSessionPage = () => {
@@ -247,15 +257,27 @@ const QuizSessionPage = () => {
                                     return (
                                         <Box
                                             key={session.id}
-                                            sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1.5 }}
                                         >
+                                            <Divider sx={{ my: 1.5 }} />
+                                            
                                             <Stack spacing={0.8}>
                                                 <Typography variant="subtitle2" fontWeight={700}>
                                                     Session {session.id}
                                                 </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Status: {sessionStatusLabel[session.status] ?? "Unknown"} | Participants: {session.participantCount}
-                                                </Typography>
+                                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Status:
+                                                    </Typography>
+                                                    <Chip
+                                                        label={sessionStatusLabel[session.status] ?? "Unknown"}
+                                                        color={sessionStatusColor[session.status] ?? "default"}
+                                                        size="small"
+                                                        variant="outlined"
+                                                    />
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Participants: {session.participantCount}
+                                                    </Typography>
+                                                </Stack>
                                                 <Typography variant="body2" color="text.secondary">
                                                     Code: {session.code || "N/A"}
                                                 </Typography>

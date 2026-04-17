@@ -66,7 +66,7 @@ namespace WebApp.Application.ManageQuiz
         }
 
         [HttpGet("{quizId}")]
-        [PermissionAuthorize(PermissionNames.Quizzes.Creator_View)]
+        [PermissionAuthorize(PermissionNames.Quizzes.Creator_View, PermissionNames.Quizzes.Admin_View)]
         public async Task<IActionResult> GetQuiz(Guid quizId)
         {
             var quiz = await _quizService.GetQuiz(quizId);

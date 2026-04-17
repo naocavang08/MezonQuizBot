@@ -45,7 +45,7 @@ export const PERMISSIONS = {
 
 export const ACCESS_PERMISSIONS = {
   DASHBOARD: [PERMISSIONS.REPORTS_VIEW],
-  QUIZ_MANAGEMENT_PAGE: [PERMISSIONS.QUIZZES_CREATOR_LIST],
+  QUIZ_MANAGEMENT_PAGE: [PERMISSIONS.QUIZZES_ADMIN_LIST],
   QUIZ_WORKSPACE: [
     PERMISSIONS.QUIZZES_ADMIN_LIST,
     PERMISSIONS.QUIZZES_CREATOR_LIST,
@@ -68,9 +68,7 @@ export function hasAnyPermission(
   requiredPermissions?: readonly string[],
   hasSystemRole = false,
 ): boolean {
-  if (hasSystemRole) {
-    return true
-  }
+  void hasSystemRole
 
   if (!requiredPermissions || requiredPermissions.length === 0) {
     return true

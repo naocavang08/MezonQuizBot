@@ -225,7 +225,7 @@ const LeaderboardPage = () => {
 							Player Leaderboard
 						</Typography>
 						<Typography variant="body2" color="text.secondary" mt={0.5}>
-							Nổi bật theo thành tích người chơi với nhận diện rõ Top 10, Top 5, Top 3 và Top 1.
+							See the top players based on their quiz performance and activity.
 						</Typography>
 					</Box>
 					<Stack direction="row" spacing={1.25} alignItems="center" flexWrap="wrap" useFlexGap>
