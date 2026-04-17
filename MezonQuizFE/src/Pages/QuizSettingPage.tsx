@@ -14,15 +14,12 @@ import {
 	FormControlLabel,
 	FormLabel,
 	IconButton,
-	Link,
 	MenuItem,
 	Radio,
 	RadioGroup,
 	Select,
 	Stack,
 	Switch,
-	Tab,
-	Tabs,
 	TextField,
 	Typography,
 } from "@mui/material";
@@ -32,7 +29,6 @@ import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { createCategory, getAllCategories } from "../Api/category.api";
 import { deleteQuiz, getQuiz, updateQuiz, updateQuizSettings, uploadQuizMedia } from "../Api/quiz.api";
-import { deleteQuizSession, getQuizSessions } from "../Api/session.api";
 import type { CategoryDto } from "../Interface/category.dto";
 import { CATEGORY_ICON_OPTIONS, getCategoryIconOption } from "../Lib/Utils/categoryIconOptions";
 import CategoryIconBadge from "../Lib/Utils/categoryIconBadge";
@@ -44,8 +40,6 @@ import {
 	type QuizOptionDto,
 	type QuizQuestionDto,
 } from "../Interface/quiz.dto";
-import { SessionStatusValue, type QuizSessionDto } from "../Interface/session.dto";
-import useAuthStore from "../Stores/login.store";
 
 type FormState = {
 	creatorId: string;
@@ -114,28 +108,10 @@ const questionTypeLabel: Record<QuizQuestionDto["questionType"], string> = {
 	[QuestionType.TrueFalse]: "True/False",
 };
 
-const sessionStatusLabel: Record<number, string> = {
-	[SessionStatusValue.Waiting]: "Waiting",
-	[SessionStatusValue.Active]: "Active",
-	[SessionStatusValue.Paused]: "Paused",
-	[SessionStatusValue.Finished]: "Finished",
-	[SessionStatusValue.Cancelled]: "Cancelled",
-};
-
-const resolveSessionManagementPath = (session: QuizSessionDto): string => {
-	if (session.status === SessionStatusValue.Waiting) {
-		return `/app/sessions/${session.id}`;
-	}
-
-	return `/app/sessions/${session.id}/start-quiz`;
-};
-
 const QuizSettingPage = () => {
 	const navigate = useNavigate();
 	const { quizId } = useParams<{ quizId: string }>();
-	const userId = useAuthStore((state) => state.user?.id);
 
-	const [activeTab, setActiveTab] = useState<"quiz" | "sessions">("quiz");
 	const [categories, setCategories] = useState<CategoryDto[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isLoadingCategories, setIsLoadingCategories] = useState(false);
@@ -148,9 +124,6 @@ const QuizSettingPage = () => {
 	const [createCategoryForm, setCreateCategoryForm] = useState<CategoryFormState>(defaultCategoryForm);
 	const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
-	const [sessions, setSessions] = useState<QuizSessionDto[]>([]);
-	const [isLoadingSessions, setIsLoadingSessions] = useState(false);
-	const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
 	const [form, setForm] = useState<FormState>({
 		creatorId: "",
 		title: "",
@@ -289,68 +262,6 @@ const QuizSettingPage = () => {
 		}
 	};
 
-	const loadSessions = useCallback(async () => {
-		if (!quizId) {
-			return;
-		}
-
-		try {
-			setIsLoadingSessions(true);
-			// Params theo QuizSessionQueryParams: { hostId, quizId, status, page, pageSize }
-			const data = await getQuizSessions({
-				hostId: userId || undefined,
-				quizId,
-				page: 1,
-				pageSize: 50,
-			});
-
-			setSessions(Array.isArray(data.items) ? data.items : []);
-		} catch {
-			showError("Could not load created sessions for this quiz.");
-		} finally {
-			setIsLoadingSessions(false);
-		}
-	}, [quizId, userId, showError]);
-
-	useEffect(() => {
-		void loadSessions();
-	}, [loadSessions]);
-
-	const copyValue = async (value: string, message: string) => {
-		if (!value) {
-			return;
-		}
-
-		try {
-			await navigator.clipboard.writeText(value);
-			showSuccess(message);
-		} catch {
-			showError("Can not copy value right now.");
-		}
-	};
-
-	const handleDeleteSession = async (sessionId: string) => {
-		if (!userId) {
-			showError("User is not available. Please login again.");
-			return;
-		}
-
-		const confirmed = window.confirm("Are you sure you want to delete this session?");
-		if (!confirmed) {
-			return;
-		}
-
-		try {
-			setDeletingSessionId(sessionId);
-			const result = await deleteQuizSession(sessionId);
-			showSuccess(result.message || "Session deleted.");
-			await loadSessions();
-		} catch {
-			showError("Failed to delete session.");
-		} finally {
-			setDeletingSessionId(null);
-		}
-	};
 
 	const totalPoints = useMemo(
 		() => form.questions.reduce((sum, question) => sum + Number(question.points || 0), 0),
@@ -707,144 +618,6 @@ const QuizSettingPage = () => {
 				</Button>
 			</Stack>
 
-			<Tabs
-				value={activeTab}
-				onChange={(_event, value: "quiz" | "sessions") => setActiveTab(value)}
-				sx={{ mb: 2 }}
-			>
-				<Tab value="quiz" label="Quiz Content" />
-				<Tab value="sessions" label="Sessions" />
-			</Tabs>
-
-			{activeTab === "sessions" ? (
-			<Card variant="outlined" sx={{ mb: 3, backgroundColor: "transparent" }}>
-				<CardContent>
-					<Stack spacing={1.5}>
-						<Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }}>
-							<Typography variant="h6" fontWeight={700}>
-								Created Sessions
-							</Typography>
-							<Typography variant="body2" color="text.secondary">
-								Total: {sessions.length}
-							</Typography>
-						</Stack>
-
-						{isLoadingSessions ? (
-							<Stack direction="row" justifyContent="center" sx={{ py: 2 }}>
-								<CircularProgress size={24} />
-							</Stack>
-						) : null}
-
-						{!isLoadingSessions && sessions.length === 0 ? (
-							<Typography variant="body2" color="text.secondary">
-								No sessions created for this quiz yet.
-							</Typography>
-						) : null}
-
-						{!isLoadingSessions && sessions.length > 0 ? (
-							<Stack spacing={1.2}>
-								{sessions.map((session) => {
-									const deepLink = session.deepLink ?? "";
-									const qrCodeUrl = session.qrCodeUrl ?? "";
-									return (
-										<Box
-											key={session.id}
-											sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1.5 }}
-										>
-											<Stack spacing={0.8}>
-												<Typography variant="subtitle2" fontWeight={700}>
-													Session {session.id}
-												</Typography>
-												<Typography variant="body2" color="text.secondary">
-													Status: {sessionStatusLabel[session.status] ?? "Unknown"} | Participants: {session.participantCount}
-												</Typography>
-												<Typography variant="body2" color="text.secondary">
-													Code: {session.code || "N/A"}
-												</Typography>
-												<Typography variant="body2" color="text.secondary">
-													Created: {new Date(session.createdAt).toLocaleString()}
-												</Typography>
-												{qrCodeUrl ? (
-													<Box
-														component="img"
-														src={qrCodeUrl}
-														alt={`Session ${session.id} QR code`}
-														sx={{
-															width: 96,
-															height: 96,
-															borderRadius: 1,
-															border: "1px solid",
-															borderColor: "divider",
-															backgroundColor: "background.paper",
-														}}
-													/>
-												) : null}
-												<Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-													<Button
-														size="small"
-														variant="contained"
-															onClick={() => navigate(resolveSessionManagementPath(session))}
-													>
-														Open Session Room
-													</Button>
-													<Button
-														size="small"
-														variant="outlined"
-														disabled={!session.code}
-														onClick={() => {
-															void copyValue(session.code, "Session code copied.");
-														}}
-													>
-														Copy Session Code
-													</Button>
-													<Button
-														size="small"
-														variant="outlined"
-														onClick={() => {
-															void copyValue(session.id, "Session ID copied.");
-														}}
-													>
-														Copy Session ID
-													</Button>
-													<Button
-														size="small"
-														variant="outlined"
-														color="error"
-														disabled={deletingSessionId === session.id}
-														onClick={() => {
-															void handleDeleteSession(session.id);
-														}}
-													>
-														{deletingSessionId === session.id ? "Deleting..." : "Delete Session"}
-													</Button>
-													<Button
-														size="small"
-														variant="outlined"
-														disabled={!deepLink}
-														onClick={() => {
-															void copyValue(deepLink, "Session deep link copied.");
-														}}
-													>
-														Copy Deep Link
-													</Button>
-													{qrCodeUrl ? (
-														<Link href={qrCodeUrl} target="_blank" rel="noopener noreferrer" underline="hover" sx={{ alignSelf: "center" }}>
-															Open QR
-														</Link>
-													) : null}
-												</Stack>
-											</Stack>
-										</Box>
-									);
-								})}
-							</Stack>
-						) : null}
-					</Stack>
-				</CardContent>
-			</Card>
-			) : null}
-
-			{activeTab === "quiz" ? (
 			<>
 			<Card variant="outlined" sx={{ mb: 3, backgroundColor: "transparent" }}>
 				<CardContent>
@@ -1218,7 +991,6 @@ const QuizSettingPage = () => {
 				</Button>
 			</Stack>
 			</>
-			) : null}
 
 			<AppSnackbar
 				open={snackbar.open}

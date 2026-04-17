@@ -16,7 +16,6 @@ import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
-import { createQuizSession } from "../Api/session.api";
 import { getAllQuizzes } from "../Api/quiz.api";
 import type { CategoryDto } from "../Interface/category.dto";
 import { QuizStatus, QuizVisibility, type QuizDto } from "../Interface/quiz.dto";
@@ -40,7 +39,6 @@ const MyQuizPage = () => {
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-  const [creatingSessionQuizId, setCreatingSessionQuizId] = useState<string | null>(null);
   const { snackbar, showError, closeSnackbar } = useAppSnackbar();
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -129,39 +127,6 @@ const MyQuizPage = () => {
       isMounted = false;
     };
   }, [page, pageSize, selectedCategory, searchTitle, userId, showError]);
-
-  const handleCreateSession = async (quizId: string, quizStatus: QuizDto["status"]) => {
-    if (!userId) {
-      showError("User is not available. Please login again.");
-      return;
-    }
-
-    if (quizStatus !== QuizStatus.Published) {
-      showError("Only published quiz can create a session.");
-      return;
-    }
-
-    try {
-      setCreatingSessionQuizId(quizId);
-
-      // Payload theo CreateQuizSessionDto: { quizId }
-      const response = await createQuizSession({
-        quizId,
-      });
-
-      // Response theo CreateSessionApiResponse: { message, session: QuizSessionDto }
-      const createdSessionId = response.session?.id;
-      if (createdSessionId) {
-        navigate(`/app/sessions/${createdSessionId}`);
-      } else {
-        showError(response.message || "Session created but missing session id.");
-      }
-    } catch {
-      showError("Can not create session for this quiz right now.");
-    } finally {
-      setCreatingSessionQuizId(null);
-    }
-  };
 
   const categoryNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -295,13 +260,13 @@ const MyQuizPage = () => {
                   <Button
                     size="small"
                     variant="contained"
-                    disabled={quiz.status !== QuizStatus.Published || creatingSessionQuizId === quiz.id}
+                    disabled={quiz.status !== QuizStatus.Published}
                     onClick={(event) => {
                       event.stopPropagation();
-                      void handleCreateSession(quiz.id, quiz.status);
+                      navigate(`/app/my-quizzes/${quiz.id}/sessions`);
                     }}
                   >
-                    {creatingSessionQuizId === quiz.id ? "Creating..." : "Create Session"}
+                    Open Session List
                   </Button>
                   <Button
                     size="small"

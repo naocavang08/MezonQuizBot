@@ -54,7 +54,7 @@ const resolveHubUrl = () => {
 };
 
 const StartQuizPage = () => {
-    const { sessionId = "" } = useParams();
+    const { quizId = "", sessionId = "" } = useParams();
     const navigate = useNavigate();
     const userId = useAuthStore((state) => state.user?.id);
 
@@ -197,14 +197,9 @@ const StartQuizPage = () => {
         }
 
         if (!isHost) {
-            navigate(`/app/sessions/${sessionId}/play`, { replace: true });
-            return;
+            navigate(`/app/my-quizzes/${quizId}/sessions/${sessionId}/play`, { replace: true });
         }
-
-        if (session.status === SessionStatusValue.Waiting) {
-            navigate(`/app/sessions/${sessionId}`, { replace: true });
-        }
-    }, [isHost, navigate, session, sessionId, userId]);
+    }, [isHost, navigate, quizId, session, sessionId, userId]);
 
     const runHostAction = async (action: "start" | "pause" | "resume" | "finish") => {
         if (!sessionId || !userId) {
@@ -275,7 +270,7 @@ const StartQuizPage = () => {
                         {/* <Button
                             variant="text"
                             onClick={() => {
-                                navigate(`/app/sessions/${sessionId}`);
+                                navigate(`/app/my-quizzes/${quizId}/sessions/${sessionId}`);
                             }}
                         >
                             Back to Waiting Room

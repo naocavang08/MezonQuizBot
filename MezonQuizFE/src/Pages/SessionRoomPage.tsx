@@ -46,7 +46,7 @@ const resolveHubUrl = () => {
 };
 
 const SessionRoomPage = () => {
-    const { sessionId = "" } = useParams();
+    const { quizId = "", sessionId = "" } = useParams();
     const navigate = useNavigate();
     const userId = useAuthStore((state) => state.user?.id);
 
@@ -172,14 +172,9 @@ const SessionRoomPage = () => {
         }
 
         if (!isHost) {
-            navigate(`/app/sessions/${sessionId}/play`, { replace: true });
-            return;
+            navigate(`/app/my-quizzes/${quizId}/sessions/${sessionId}/play`, { replace: true });
         }
-
-        if (session.status !== SessionStatusValue.Waiting) {
-            navigate(`/app/sessions/${sessionId}/start-quiz`, { replace: true });
-        }
-    }, [isHost, navigate, session, sessionId, userId]);
+    }, [isHost, navigate, quizId, session, sessionId, userId]);
 
     const startSession = async () => {
         if (!sessionId || !userId) {
@@ -192,7 +187,7 @@ const SessionRoomPage = () => {
             const response = await startQuizSession(sessionId);
             showSuccess(response.message || "Session started successfully.");
             await loadSession(true);
-            navigate(`/app/sessions/${sessionId}/start-quiz`);
+            navigate(`/app/my-quizzes/${quizId}/sessions/${sessionId}/start-quiz`);
         } catch {
             showError("Can not update session status right now.");
         } finally {
@@ -360,7 +355,7 @@ const SessionRoomPage = () => {
                                         variant="outlined"
                                         disabled={!canGoToStartRoom}
                                         onClick={() => {
-                                            navigate(`/app/sessions/${sessionId}/start-quiz`);
+                                            navigate(`/app/my-quizzes/${quizId}/sessions/${sessionId}/start-quiz`);
                                         }}
                                     >
                                         Go to Start Room

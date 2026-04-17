@@ -21,6 +21,7 @@ import { ACCESS_PERMISSIONS, hasAnyPermission, PERMISSIONS } from '../Lib/Utils/
 import useAuthStore from '../Stores/login.store'
 import useThemeStore from '../Stores/theme.store'
 import { MdDarkMode, MdLightMode, MdLogout, MdSettings } from 'react-icons/md'
+import AppBreadcrumb from '../Components/Navigation/AppBreadcrumb'
 
 type NavItem = {
   label: string
@@ -533,6 +534,9 @@ const Layout = () => {
           </Stack>
 
           <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, md: 3 } }}>
+            <Box sx={{ mb: 2 }}>
+              <AppBreadcrumb />
+            </Box>
             <Outlet />
           </Box>
         </Box>

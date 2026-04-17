@@ -42,7 +42,7 @@ const resolveHubUrl = () => {
 };
 
 const PlayerQuizPage = () => {
-    const { sessionId = "" } = useParams();
+    const { quizId = "", sessionId = "" } = useParams();
     const navigate = useNavigate();
     const userId = useAuthStore((state) => state.user?.id);
 
@@ -231,7 +231,7 @@ const PlayerQuizPage = () => {
         }
 
         if (isHost) {
-            navigate(`/app/sessions/${sessionId}/start-quiz`, { replace: true });
+            navigate(`/app/my-quizzes/${quizId}/sessions/${sessionId}/start-quiz`, { replace: true });
             return;
         }
 
@@ -256,7 +256,7 @@ const PlayerQuizPage = () => {
         };
 
         void autoJoin();
-    }, [isHost, loadSession, navigate, session, sessionId, showError, showSuccess, userId]);
+    }, [isHost, loadSession, navigate, quizId, session, sessionId, showError, showSuccess, userId]);
 
     useEffect(() => {
         if (!session || !userId || isHost) {
