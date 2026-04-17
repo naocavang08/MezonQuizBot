@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using WebApp.Data;
 using WebApp.Application.Auth.Users.Dtos;
@@ -118,6 +119,22 @@ namespace WebApp.Application.Auth.Users
             {
                 return NotFound(new { Message = ex.Message });
             }
+        }
+
+        [HttpPost("upload-avatar")]
+        [Authorize]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        [PermissionAuthorize(PermissionNames.Users.Update)]
+        public async Task<IActionResult> UploadAvatar([FromForm] UploadAvatarRequestDto request)
+        {
+            var result = await _userService.UploadAvatarAsync(request.File, Request);
+            if (!result.Success)
+            {
+                return BadRequest(new { Message = result.Message });
+            }
+
+            return Ok(new { Url = result.Url });
         }
 
         [HttpGet("{id}/roles")]

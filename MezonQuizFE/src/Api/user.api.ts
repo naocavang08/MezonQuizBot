@@ -56,3 +56,14 @@ export const assignRolesToUser = (params: { id: string; roleIds: string[] }) => 
 			return res.data;
 		});
 };
+
+export const uploadUserAvatar = (file: File) => {
+	const formData = new FormData();
+	formData.append("file", file);
+
+	return apiClient
+		.post<{ url?: string; Url?: string }>("/api/User/upload-avatar", formData, {
+			headers: { "Content-Type": "multipart/form-data" },
+		})
+		.then((res) => res.data?.url ?? res.data?.Url ?? "");
+};

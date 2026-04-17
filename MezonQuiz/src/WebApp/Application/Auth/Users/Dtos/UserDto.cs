@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Http;
 
 namespace WebApp.Application.Auth.Users.Dtos
 {
@@ -37,6 +38,10 @@ namespace WebApp.Application.Auth.Users.Dtos
 
         public string? AvatarUrl { get; set; }
 
+        public bool HasPassword { get; set; }
+
+        public bool IsOAuthUser { get; set; }
+
         public bool IsActive { get; set; }
 
         public DateTime? LastLoginAt { get; set; }
@@ -44,5 +49,11 @@ namespace WebApp.Application.Auth.Users.Dtos
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+    }
+
+    public class UploadAvatarRequestDto
+    {
+        [Required]
+        public IFormFile File { get; set; } = null!;
     }
 }

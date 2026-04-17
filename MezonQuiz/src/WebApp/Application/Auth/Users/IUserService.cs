@@ -8,6 +8,7 @@ namespace WebApp.Application.Auth.Users
         Task<UserDto> GetUserByIdAsync(Guid id);
         Task<UserDto> CreateUserAsync(CreateUserRequestDto request);
         Task<UserDto> UpdateUserAsync(Guid id, UpdateUserRequestDto request);
+        Task<(bool Success, string Message, string? Url)> UploadAvatarAsync(IFormFile? file, HttpRequest request);
         Task DeleteUserAsync(Guid id);
 
         // Role management

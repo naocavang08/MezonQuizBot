@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
+	Avatar,
 	Box,
 	Button,
 	Checkbox,
@@ -31,6 +32,7 @@ import {
 	deleteUser,
 	getAllUsers,
 	getUserRoles,
+	uploadUserAvatar,
 	updateUser,
 } from "../../Api/user.api";
 import { getAllRoles } from "../../Api/role.api";
@@ -54,6 +56,8 @@ const UserPage = () => {
 	const [openEditDialog, setOpenEditDialog] = useState(false);
 	const [openAssignRoleDialog, setOpenAssignRoleDialog] = useState(false);
 	const [roleDialogLoading, setRoleDialogLoading] = useState(false);
+	const [uploadingCreateAvatar, setUploadingCreateAvatar] = useState(false);
+	const [uploadingEditAvatar, setUploadingEditAvatar] = useState(false);
 
 	const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
 	const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
@@ -73,7 +77,9 @@ const UserPage = () => {
 		isActive: true,
 	});
 
-	const fetchUsers = async () => {
+	const isPasswordUser = (user: UserResponse) => Boolean(user.hasPassword) && !user.isOAuthUser;
+
+	const fetchUsers = useCallback(async () => {
 		setLoading(true);
 		try {
 			const data = await getAllUsers();
@@ -83,9 +89,9 @@ const UserPage = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [showError]);
 
-	const fetchRoles = async () => {
+	const fetchRoles = useCallback(async () => {
 		if (!canAssignRole) {
 			setRoles([]);
 			return;
@@ -97,16 +103,21 @@ const UserPage = () => {
 		} catch {
 			showError("Failed to load roles.");
 		}
-	};
+	}, [canAssignRole, showError]);
 
 	useEffect(() => {
-		fetchUsers();
-		fetchRoles();
-	}, []);
+		void fetchUsers();
+		void fetchRoles();
+	}, [fetchRoles, fetchUsers]);
 
 	const handleOpenEditDialog = (user: UserResponse) => {
 		if (!canUpdateUser) {
 			showError("You do not have permission to update users.");
+			return;
+		}
+
+		if (!isPasswordUser(user)) {
+			showError("User đăng nhập bằng OAuth2 không hỗ trợ edit trong màn hình này.");
 			return;
 		}
 
@@ -118,6 +129,42 @@ const UserPage = () => {
 			isActive: user.isActive,
 		});
 		setOpenEditDialog(true);
+	};
+
+	const handleUploadAvatar = async (file: File, target: "create" | "edit") => {
+		if (!file) {
+			return;
+		}
+
+		try {
+			if (target === "create") {
+				setUploadingCreateAvatar(true);
+			} else {
+				setUploadingEditAvatar(true);
+			}
+
+			const uploadedUrl = await uploadUserAvatar(file);
+			if (!uploadedUrl) {
+				showError("Upload thành công nhưng không nhận được avatar URL.");
+				return;
+			}
+
+			if (target === "create") {
+				setCreateForm((prev) => ({ ...prev, avatarUrl: uploadedUrl }));
+			} else {
+				setEditForm((prev) => ({ ...prev, avatarUrl: uploadedUrl }));
+			}
+
+			showSuccess("Upload avatar thành công.");
+		} catch {
+			showError("Upload avatar thất bại.");
+		} finally {
+			if (target === "create") {
+				setUploadingCreateAvatar(false);
+			} else {
+				setUploadingEditAvatar(false);
+			}
+		}
 	};
 
 	const handleCreateUser = async () => {
@@ -269,6 +316,7 @@ const UserPage = () => {
 					<Table>
 						<TableHead>
 							<TableRow>
+								<TableCell>Avatar</TableCell>
 								<TableCell>Username</TableCell>
 								<TableCell>Display Name</TableCell>
 								<TableCell>Email</TableCell>
@@ -279,6 +327,14 @@ const UserPage = () => {
 						<TableBody>
 							{users.map((user) => (
 								<TableRow key={user.id} hover>
+									<TableCell>
+										<Avatar
+											src={user.avatarUrl}
+											sx={{ width: 32, height: 32, bgcolor: "primary.main", fontSize: 12, fontWeight: 700 }}
+										>
+											{(user.displayName || user.username || "U").slice(0, 2).toUpperCase()}
+										</Avatar>
+									</TableCell>
 									<TableCell>{user.username}</TableCell>
 									<TableCell>{user.displayName || "-"}</TableCell>
 									<TableCell>{user.email || "-"}</TableCell>
@@ -293,7 +349,12 @@ const UserPage = () => {
 										<TableCell align="right">
 											<Stack direction="row" spacing={1} justifyContent="flex-end">
 												{canUpdateUser ? (
-													<Button size="small" variant="outlined" onClick={() => handleOpenEditDialog(user)}>
+													<Button
+														size="small"
+														variant="outlined"
+														disabled={!isPasswordUser(user)}
+														onClick={() => handleOpenEditDialog(user)}
+													>
 														Edit
 													</Button>
 												) : null}
@@ -323,7 +384,7 @@ const UserPage = () => {
 							))}
 							{users.length === 0 && (
 								<TableRow>
-									<TableCell colSpan={hasAnyRowAction ? 5 : 4} align="center">
+									<TableCell colSpan={hasAnyRowAction ? 6 : 5} align="center">
 										No users found.
 									</TableCell>
 								</TableRow>
@@ -362,12 +423,36 @@ const UserPage = () => {
 							onChange={(e) => setCreateForm((prev) => ({ ...prev, displayName: e.target.value }))}
 							fullWidth
 						/>
-						<TextField
-							label="Avatar Url"
-							value={createForm.avatarUrl}
-							onChange={(e) => setCreateForm((prev) => ({ ...prev, avatarUrl: e.target.value }))}
-							fullWidth
-						/>
+						<Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+							<Avatar
+								src={createForm.avatarUrl}
+								sx={{ width: 56, height: 56, bgcolor: "primary.main" }}
+							>
+								{(createForm.displayName || createForm.username || "U").slice(0, 2).toUpperCase()}
+							</Avatar>
+							<Button component="label" variant="outlined" disabled={uploadingCreateAvatar}>
+								{uploadingCreateAvatar ? "Uploading..." : "Upload Avatar"}
+								<input
+									hidden
+									type="file"
+									accept="image/*"
+									onChange={(event) => {
+										const file = event.target.files?.[0];
+										if (!file) return;
+										void handleUploadAvatar(file, "create");
+										event.currentTarget.value = "";
+									}}
+								/>
+							</Button>
+						</Stack>
+						{createForm.avatarUrl ? (
+							<TextField
+								label="Avatar URL"
+								value={createForm.avatarUrl}
+								fullWidth
+								InputProps={{ readOnly: true }}
+							/>
+						) : null}
 					</Stack>
 				</DialogContent>
 				<DialogActions>
@@ -394,12 +479,36 @@ const UserPage = () => {
 							onChange={(e) => setEditForm((prev) => ({ ...prev, displayName: e.target.value }))}
 							fullWidth
 						/>
-						<TextField
-							label="Avatar Url"
-							value={editForm.avatarUrl}
-							onChange={(e) => setEditForm((prev) => ({ ...prev, avatarUrl: e.target.value }))}
-							fullWidth
-						/>
+						<Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+							<Avatar
+								src={editForm.avatarUrl}
+								sx={{ width: 56, height: 56, bgcolor: "primary.main" }}
+							>
+								{(editForm.displayName || selectedUser?.username || "U").slice(0, 2).toUpperCase()}
+							</Avatar>
+							<Button component="label" variant="outlined" disabled={uploadingEditAvatar}>
+								{uploadingEditAvatar ? "Uploading..." : "Upload Avatar"}
+								<input
+									hidden
+									type="file"
+									accept="image/*"
+									onChange={(event) => {
+										const file = event.target.files?.[0];
+										if (!file) return;
+										void handleUploadAvatar(file, "edit");
+										event.currentTarget.value = "";
+									}}
+								/>
+							</Button>
+						</Stack>
+						{editForm.avatarUrl ? (
+							<TextField
+								label="Avatar URL"
+								value={editForm.avatarUrl}
+								fullWidth
+								InputProps={{ readOnly: true }}
+							/>
+						) : null}
 						<FormControlLabel
 							control={
 								<Switch
@@ -413,7 +522,7 @@ const UserPage = () => {
 				</DialogContent>
 				<DialogActions>
 					<Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
-					<Button variant="contained" onClick={handleUpdateUser} disabled={loading}>
+					<Button variant="contained" onClick={handleUpdateUser} disabled={loading || uploadingEditAvatar}>
 						Save
 					</Button>
 				</DialogActions>

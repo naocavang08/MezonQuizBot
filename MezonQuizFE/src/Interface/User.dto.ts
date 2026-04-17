@@ -20,6 +20,8 @@ export interface UserResponse {
   username: string;
   displayName?: string;
   avatarUrl?: string;
+  hasPassword?: boolean;
+  isOAuthUser?: boolean;
   isActive: boolean;
   lastLoginAt?: string;
   createdAt: string;

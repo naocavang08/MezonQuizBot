@@ -9,15 +9,20 @@ namespace WebApp.Application.Auth.Users.Services
     public class UserService : IUserService
     {
         private readonly AppDbContext _dbContext;
-        public UserService(AppDbContext dbContext)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IConfiguration _configuration;
+
+        public UserService(AppDbContext dbContext, IWebHostEnvironment webHostEnvironment, IConfiguration configuration)
         {
             _dbContext = dbContext;
+            _webHostEnvironment = webHostEnvironment;
+            _configuration = configuration;
         }
 
         public async Task AssignRolesToUserAsync(Guid assignedId, Guid userId, List<Guid> roleIds)
         {
             var userExist = await _dbContext.Users.AnyAsync(r => r.Id == userId);
-            if (!userExist) 
+            if (!userExist)
             {
                 throw new KeyNotFoundException("User not found.");
             }
@@ -140,7 +145,8 @@ namespace WebApp.Application.Auth.Users.Services
         public async Task DeleteUserAsync(Guid id)
         {
             var user = await _dbContext.Users.FirstOrDefaultAsync(r => r.Id == id);
-            if (user is null) {
+            if (user is null)
+            {
                 throw new KeyNotFoundException("User not found.");
             }
 
@@ -160,11 +166,11 @@ namespace WebApp.Application.Auth.Users.Services
 
         public async Task<UserDto> GetUserByIdAsync(Guid id)
         {
-            var user = await _dbContext.Users                
+            var user = await _dbContext.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == id);
             if (user == null)
-                {
+            {
                 throw new KeyNotFoundException("User not found.");
             }
             return MapUserToDto(user);
@@ -177,6 +183,11 @@ namespace WebApp.Application.Auth.Users.Services
             if (user == null)
             {
                 throw new KeyNotFoundException("User not found.");
+            }
+
+            if (string.IsNullOrWhiteSpace(user.Password))
+            {
+                throw new InvalidOperationException("OAuth2 users cannot be edited from this endpoint.");
             }
 
             if (string.IsNullOrWhiteSpace(request.Email) || !IsValidEmail(request.Email))
@@ -201,6 +212,55 @@ namespace WebApp.Application.Auth.Users.Services
             return MapUserToDto(user);
         }
 
+        public async Task<(bool Success, string Message, string? Url)> UploadAvatarAsync(IFormFile? file, HttpRequest request)
+        {
+            if (file is null || file.Length == 0)
+            {
+                return (false, "File is required.", null);
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg" };
+            var extension = Path.GetExtension(file.FileName);
+            if (string.IsNullOrWhiteSpace(extension) ||
+                !allowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            {
+                return (false, "Only image files are allowed (.jpg, .jpeg, .png, .webp, .gif, .svg).", null);
+            }
+
+            var webRootPath = _webHostEnvironment.WebRootPath;
+            if (string.IsNullOrWhiteSpace(webRootPath))
+            {
+                webRootPath = Path.Combine(_webHostEnvironment.ContentRootPath, "wwwroot");
+            }
+
+            var relativeFolder = Path.Combine("uploads", "avatars");
+            var targetFolder = Path.Combine(webRootPath, relativeFolder);
+            Directory.CreateDirectory(targetFolder);
+
+            var safeFileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+            var savePath = Path.Combine(targetFolder, safeFileName);
+
+            await using (var stream = System.IO.File.Create(savePath))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var mediaPath = $"/{relativeFolder.Replace('\\', '/')}/{safeFileName}";
+            var configuredBaseUrl = _configuration["Domain:BaseUrl"]?.TrimEnd('/');
+            var host = request.Host.HasValue ? request.Host.Value : string.Empty;
+            var requestBaseUrl = string.IsNullOrWhiteSpace(host)
+                ? string.Empty
+                : $"{request.Scheme}://{host}{request.PathBase}".TrimEnd('/');
+            var baseUrl = !string.IsNullOrWhiteSpace(configuredBaseUrl)
+                ? configuredBaseUrl
+                : requestBaseUrl;
+            var absoluteUrl = string.IsNullOrWhiteSpace(baseUrl)
+                ? mediaPath
+                : $"{baseUrl}{mediaPath}";
+
+            return (true, "Upload successful.", absoluteUrl);
+        }
+
         private UserDto MapUserToDto(User user)
         {
             return new UserDto
@@ -211,6 +271,8 @@ namespace WebApp.Application.Auth.Users.Services
                 Username = user.Username,
                 DisplayName = user.DisplayName,
                 AvatarUrl = user.AvatarUrl,
+                HasPassword = !string.IsNullOrWhiteSpace(user.Password),
+                IsOAuthUser = string.IsNullOrWhiteSpace(user.Password),
                 IsActive = user.IsActive,
                 LastLoginAt = user.LastLoginAt,
                 CreatedAt = user.CreatedAt,
