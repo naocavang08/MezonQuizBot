@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import {
-	Avatar,
 	Box,
 	Button,
 	CircularProgress,
@@ -18,10 +17,10 @@ import {
 	Typography,
 } from "@mui/material";
 import AppSnackbar from "../Components/AppSnackbar";
+import UserIdentityCell from "../Components/UserIdentityCell";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { getTopUserAnalytics } from "../Api/dashboard.api";
 import type {
-	TopUserAnalyticsItemDto,
 	TopUserAnalyticsQuery,
 	TopUserAnalyticsResponseDto,
 } from "../Interface/dashboard.dto";
@@ -165,22 +164,6 @@ const LeaderboardPage = () => {
 			page,
 		}));
 	};
-
-	const renderUserCell = (row: TopUserAnalyticsItemDto) => (
-		<Stack direction="row" spacing={1.25} alignItems="center">
-			<Avatar src={row.avatarUrl} sx={{ width: 30, height: 30 }}>
-				{row.displayName?.charAt(0)?.toUpperCase() || "U"}
-			</Avatar>
-			<Stack spacing={0.1}>
-				<Typography variant="body2" fontWeight={600}>
-					{row.displayName || row.userId}
-				</Typography>
-				<Typography variant="caption" color="text.secondary">
-					{row.userId}
-				</Typography>
-			</Stack>
-		</Stack>
-	);
 
 	return (
 		<Box>
@@ -374,7 +357,13 @@ const LeaderboardPage = () => {
 								{rows.map((row) => (
 									<TableRow key={row.userId} hover>
 										<TableCell>{row.rank}</TableCell>
-										<TableCell>{renderUserCell(row)}</TableCell>
+										<TableCell>
+											<UserIdentityCell
+												userId={row.userId}
+												displayName={row.displayName}
+												avatarUrl={row.avatarUrl}
+											/>
+										</TableCell>
 										<TableCell align="right">{row.totalScore.toLocaleString("en-US")}</TableCell>
 										<TableCell align="right">{row.accuracyRate.toFixed(2)}%</TableCell>
 										<TableCell align="right">{row.totalCorrectAnswers.toLocaleString("en-US")}</TableCell>

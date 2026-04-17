@@ -18,6 +18,7 @@ import {
     Typography,
 } from "@mui/material";
 import AppSnackbar from "../Components/AppSnackbar";
+import UserIdentityCell from "../Components/UserIdentityCell";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdContentCopy, MdRefresh } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
@@ -401,7 +402,13 @@ const SessionRoomPage = () => {
                                         {leaderboard.map((participant, index) => (
                                             <TableRow key={`${participant.userId}-${index}`}>
                                                 <TableCell>{participant.rank ?? index + 1}</TableCell>
-                                                <TableCell>{participant.displayName || participant.userId}</TableCell>
+                                                <TableCell>
+                                                    <UserIdentityCell
+                                                        userId={participant.userId}
+                                                        displayName={participant.displayName}
+                                                        avatarUrl={participant.avatarUrl}
+                                                    />
+                                                </TableCell>
                                                 <TableCell align="right">{participant.totalScore}</TableCell>
                                                 <TableCell align="right">{participant.correctCount}</TableCell>
                                                 <TableCell align="right">{participant.answersCount}</TableCell>

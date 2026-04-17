@@ -19,6 +19,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { HubConnectionBuilder, LogLevel, type HubConnection } from "@microsoft/signalr";
 import AppSnackbar from "../Components/AppSnackbar";
+import UserIdentityCell from "../Components/UserIdentityCell";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdRefresh } from "react-icons/md";
 import {
@@ -396,7 +397,13 @@ const StartQuizPage = () => {
                                         {leaderboard.map((participant, index) => (
                                             <TableRow key={`${participant.userId}-${index}`}>
                                                 <TableCell>{participant.rank ?? index + 1}</TableCell>
-                                                <TableCell>{participant.displayName || participant.userId}</TableCell>
+                                                <TableCell>
+                                                    <UserIdentityCell
+                                                        userId={participant.userId}
+                                                        displayName={participant.displayName}
+                                                        avatarUrl={participant.avatarUrl}
+                                                    />
+                                                </TableCell>
                                                 <TableCell align="right">{participant.totalScore}</TableCell>
                                                 <TableCell align="right">{participant.correctCount}</TableCell>
                                                 <TableCell align="right">{participant.answersCount}</TableCell>

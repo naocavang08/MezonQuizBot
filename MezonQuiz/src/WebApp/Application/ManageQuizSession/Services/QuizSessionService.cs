@@ -765,6 +765,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 {
                     p.UserId,
                     DisplayName = string.IsNullOrEmpty(p.User.DisplayName) ? p.User.Username : p.User.DisplayName,
+                    p.User.AvatarUrl,
                     p.TotalScore,
                     p.AnswersCount,
                     p.CorrectCount,
@@ -781,6 +782,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 {
                     UserId = p.UserId,
                     DisplayName = p.DisplayName,
+                    AvatarUrl = p.AvatarUrl,
                     TotalScore = p.TotalScore,
                     AnswersCount = p.AnswersCount,
                     CorrectCount = p.CorrectCount,

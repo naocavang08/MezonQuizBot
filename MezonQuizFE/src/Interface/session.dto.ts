@@ -101,6 +101,7 @@ export interface SessionStateChangedDto {
 export interface SessionParticipantDto {
     userId: string;
     displayName: string;
+    avatarUrl?: string;
     totalScore: number;
     answersCount: number;
     correctCount: number;

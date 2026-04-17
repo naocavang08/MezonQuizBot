@@ -53,6 +53,7 @@ namespace WebApp.Application.ManageQuizSession.Dtos
     {
         public Guid UserId { get; set; }
         public string DisplayName { get; set; } = string.Empty;
+        public string? AvatarUrl { get; set; }
         public int TotalScore { get; set; }
         public int AnswersCount { get; set; }
         public int CorrectCount { get; set; }
