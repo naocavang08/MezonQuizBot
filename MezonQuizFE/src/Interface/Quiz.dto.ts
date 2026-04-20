@@ -97,6 +97,7 @@ export interface SaveQuizDto {
 
 export interface QuizListQueryParams {
     userId?: string;
+    onlyMine?: boolean;
     category?: string;
     title?: string;
     page?: number;

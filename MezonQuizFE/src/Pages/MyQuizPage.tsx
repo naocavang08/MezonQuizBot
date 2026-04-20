@@ -96,7 +96,7 @@ const MyQuizPage = () => {
         setIsLoading(true);
         // Truyền userId để API lọc quiz của người dùng hiện tại (QuizListQueryParams.userId)
         const data = await getAllQuizzes({
-          userId: userId || undefined,
+          onlyMine: true,
           page,
           pageSize,
           category: selectedCategory || undefined,

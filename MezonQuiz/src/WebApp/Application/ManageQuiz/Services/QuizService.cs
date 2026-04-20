@@ -52,7 +52,7 @@ namespace WebApp.Application.ManageQuiz.Services
             }
             var totalCount = await quizzesQuery.CountAsync();
             var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
-            
+
             var quizzes = await quizzesQuery
                 .OrderByDescending(q => q.UpdatedAt)
                 .Skip((page - 1) * pageSize)
@@ -82,7 +82,7 @@ namespace WebApp.Application.ManageQuiz.Services
             var quiz = await _dbContext.Quizzes
                 .AsNoTracking()
                 .FirstOrDefaultAsync(q => q.Id == quizId && q.Visibility == QuizVisibility.Public);
-            
+
             if (quiz == null)
                 return null;
             return new AvailableQuizDto
@@ -105,11 +105,19 @@ namespace WebApp.Application.ManageQuiz.Services
             var normalizedTitle = input.Title?.Trim().ToLower();
 
             var quizzesQuery = _dbContext.Quizzes
-                .AsNoTracking()
-                .Where(q =>
+                .AsNoTracking();
+
+            if (input.OnlyMine)
+            {
+                quizzesQuery = quizzesQuery.Where(q => q.CreatorId == userId);
+            }
+            else
+            {
+                quizzesQuery = quizzesQuery.Where(q =>
                     q.CreatorId == userId ||
-                    (q.Status == QuizStatus.Published)
+                    q.Status == QuizStatus.Published
                 );
+            }
 
             if (input.Category.HasValue)
             {
@@ -122,7 +130,7 @@ namespace WebApp.Application.ManageQuiz.Services
 
             var totalCount = await quizzesQuery.CountAsync();
             var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
-            
+
             var quizzes = await quizzesQuery
                 .OrderByDescending(q => q.UpdatedAt)
                 .Skip((page - 1) * pageSize)
@@ -156,7 +164,7 @@ namespace WebApp.Application.ManageQuiz.Services
         {
             var quiz = await _dbContext.Quizzes
                 .FirstOrDefaultAsync(q => q.Id == quizId);
-            
+
             if (quiz == null)
                 return null;
             return quiz;

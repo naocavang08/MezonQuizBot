@@ -9,18 +9,18 @@ export default defineConfig({
     allowedHosts: ['.ngrok-free.app'],
     proxy: {
       '/api': {
-        target: 'https://10.10.31.109:7086',
+        target: 'https://0.0.0.0:7086',
         changeOrigin: true,
         secure: false,
       },
       '/hubs': {
-        target: 'https://10.10.31.109:7086',
+        target: 'https://0.0.0.0:7086',
         changeOrigin: true,
         secure: false,
         ws: true,
       },
       '/uploads': {
-        target: 'https://10.10.31.109:7086',
+        target: 'https://0.0.0.0:7086',
         changeOrigin: true,
         secure: false,
       },
