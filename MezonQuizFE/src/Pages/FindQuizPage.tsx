@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+    Button,
     Box,
     Card,
     CardContent,
@@ -26,6 +27,17 @@ import type { AvailableQuizDto } from "../Interface/quiz.dto";
 import CategoryIconBadge from "../Lib/Utils/categoryIconBadge";
 
 const PAGE_SIZE = 9;
+const ALL_GROUP_PREVIEW_SIZE = 4;
+const CARD_RADIUS = 1;
+
+
+type QuizGroup = {
+    categoryId: string;
+    categoryName: string;
+    iconKey?: string;
+    items: AvailableQuizDto[];
+    totalCount: number;
+};
 
 const FindQuizPage = () => {
     const navigate = useNavigate();
@@ -40,6 +52,38 @@ const FindQuizPage = () => {
         : "0 18px 42px rgba(15, 23, 42, 0.12)";
     const strongText = theme.palette.text.primary;
     const softText = theme.palette.text.secondary;
+    const gradientCardSx = {
+        borderRadius: CARD_RADIUS,
+        border: `1px solid ${alpha(theme.palette.text.secondary, 0.3)}`,
+        background: isDark
+            ? "linear-gradient(160deg, rgba(15,23,42,0.94) 0%, rgba(10,18,33,0.92) 100%)"
+            : "linear-gradient(160deg, rgba(255,255,255,0.96) 0%, rgba(241,245,249,0.94) 100%)",
+    };
+    const emptyCardSx = {
+        borderRadius: CARD_RADIUS,
+        border: `1px dashed ${alpha(theme.palette.text.secondary, 0.45)}`,
+        background: isDark
+            ? "rgba(15, 23, 42, 0.88)"
+            : alpha(theme.palette.background.paper, 0.96),
+    };
+    const categoryPanelSx = {
+        borderRadius: CARD_RADIUS,
+        border: `1px solid ${alpha(theme.palette.text.secondary, 0.25)}`,
+        background: isDark
+            ? "rgba(15, 23, 42, 0.9)"
+            : alpha(theme.palette.background.paper, 0.95),
+    };
+    const quizCategoryChipSx = {
+        width: "fit-content",
+        borderColor: alpha(theme.palette.text.secondary, 0.35),
+        backgroundColor: isDark
+            ? alpha(theme.palette.background.paper, 0.06)
+            : alpha(theme.palette.background.paper, 0.75),
+        "& .MuiChip-label": {
+            px: 1,
+            py: 0.25,
+        },
+    };
 
     const [categories, setCategories] = useState<CategoryDto[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -47,21 +91,14 @@ const FindQuizPage = () => {
     const [page, setPage] = useState(1);
 
     const [items, setItems] = useState<AvailableQuizDto[]>([]);
+    const [groupedItems, setGroupedItems] = useState<QuizGroup[]>([]);
     const [totalPages, setTotalPages] = useState(0);
-    const [totalCount, setTotalCount] = useState(0);
 
     const [isLoading, setIsLoading] = useState(false);
     const { snackbar, showError, closeSnackbar } = useAppSnackbar();
 
     const categoryParam = selectedCategory === "all" ? undefined : selectedCategory;
     const titleParam = searchTitle.trim() || undefined;
-
-    const activeFilterCount = useMemo(() => {
-        let count = 0;
-        if (categoryParam) count += 1;
-        if (titleParam) count += 1;
-        return count;
-    }, [categoryParam, titleParam]);
 
     const categoryById = useMemo(() => {
         const map = new Map<string, CategoryDto>();
@@ -97,6 +134,34 @@ const FindQuizPage = () => {
         setIsLoading(true);
 
         try {
+            if (selectedCategory === "all") {
+                const categoryRequests = categories.map(async (category) => {
+                    const response = await getAvailableQuizzes({
+                        category: category.id,
+                        title: titleParam,
+                        page: 1,
+                        pageSize: ALL_GROUP_PREVIEW_SIZE,
+                    });
+
+                    return {
+                        categoryId: category.id,
+                        categoryName: category.name,
+                        iconKey: category.icon,
+                        items: response.items,
+                        totalCount: response.totalCount,
+                    } satisfies QuizGroup;
+                });
+
+                const groups = (await Promise.all(categoryRequests)).filter(
+                    (group) => group.totalCount > 0
+                );
+
+                setGroupedItems(groups);
+                setItems([]);
+                setTotalPages(0);
+                return;
+            }
+
             const data = await getAvailableQuizzes({
                 category: categoryParam,
                 title: titleParam,
@@ -105,17 +170,17 @@ const FindQuizPage = () => {
             });
 
             setItems(data.items);
+            setGroupedItems([]);
             setTotalPages(data.totalPages);
-            setTotalCount(data.totalCount);
         } catch {
             showError("Can not load quiz list right now. Please try again.");
             setItems([]);
+            setGroupedItems([]);
             setTotalPages(0);
-            setTotalCount(0);
         } finally {
             setIsLoading(false);
         }
-    }, [categoryParam, page, titleParam, showError]);
+    }, [categories, categoryParam, page, selectedCategory, titleParam, showError]);
 
     useEffect(() => {
         void fetchQuizzes();
@@ -130,250 +195,384 @@ const FindQuizPage = () => {
             }}
         >
             <Container maxWidth="lg">
-                <Stack spacing={4}>
-                    <Box
-                        sx={{
-                            p: { xs: 2.5, md: 4 },
-                            borderRadius: 4,
-                            background: panelBackground,
-                            border: `1px solid ${panelBorder}`,
-                            boxShadow: panelShadow,
-                        }}
-                    >
-                        <Stack spacing={2.5}>
-                            <Stack
-                                direction={{ xs: "column", sm: "row" }}
-                                justifyContent="space-between"
-                                alignItems={{ xs: "flex-start", sm: "center" }}
-                                spacing={1}
-                            >
-                                <Box>
-                                    <Typography
-                                        sx={{
-                                            fontSize: { xs: "1.8rem", md: "2.35rem" },
-                                            lineHeight: 1.1,
-                                            fontWeight: 800,
-                                            letterSpacing: "-0.03em",
-                                            color: strongText,
-                                        }}
-                                    >
-                                        Discover Quiz
-                                    </Typography>
-                                    <Typography sx={{ mt: 1, color: softText }}>
-                                        Search by title, filter by category, and start practicing quickly.
-                                    </Typography>
-                                </Box>
-
-                                <Tooltip title="Reload list">
-                                    <IconButton
-                                        onClick={() => {
-                                            void fetchQuizzes();
-                                        }}
-                                        sx={{
-                                            color: strongText,
-                                            bgcolor: isDark
-                                                ? "rgba(15, 23, 42, 0.95)"
-                                                : alpha(theme.palette.background.paper, 0.98),
-                                            border: `1px solid ${alpha(theme.palette.text.secondary, 0.3)}`,
-                                            "&:hover": {
-                                                bgcolor: isDark
-                                                    ? "rgba(30, 41, 59, 0.95)"
-                                                    : alpha(theme.palette.background.paper, 0.9),
-                                            },
-                                        }}
-                                    >
-                                        <MdRefresh />
-                                    </IconButton>
-                                </Tooltip>
-                            </Stack>
-
-                            <TextField
-                                placeholder="Search by quiz title..."
-                                value={searchTitle}
-                                onChange={(event) => {
-                                    setSearchTitle(event.target.value);
-                                }}
-                                fullWidth
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <MdSearch color={theme.palette.text.secondary} />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        borderRadius: 3,
-                                        backgroundColor: isDark
-                                            ? "rgba(15, 23, 42, 0.95)"
-                                            : alpha(theme.palette.background.paper, 0.98),
-                                    },
-                                    "& .MuiOutlinedInput-input": {
-                                        color: theme.palette.text.primary,
-                                    },
-                                }}
-                            />
-
-                            <Box>
-                                <Typography
-                                    variant="subtitle2"
-                                    sx={{ mb: 1.2, color: softText, fontWeight: 700 }}
-                                >
-                                    Category
-                                </Typography>
-                                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                                    <Chip
-                                        label="All"
-                                        clickable
-                                        color={selectedCategory === "all" ? "primary" : "default"}
-                                        variant={selectedCategory === "all" ? "filled" : "outlined"}
-                                        sx={{ color: selectedCategory === "all" ? "#fff" : softText }}
-                                        onClick={() => {
-                                            setSelectedCategory("all");
-                                        }}
-                                    />
-                                    {categories.map((category) => {
-                                        const selected = selectedCategory === category.id;
-
-                                        return (
-                                            <Chip
-                                                key={category.id}
-                                                label={(
-                                                    <Stack direction="row" spacing={0.8} alignItems="center">
-                                                        <CategoryIconBadge iconKey={category.icon} size={20} fallback={null} />
-                                                        <Box component="span">{category.name}</Box>
-                                                    </Stack>
-                                                )}
-                                                clickable
-                                                color={selected ? "primary" : "default"}
-                                                variant={selected ? "filled" : "outlined"}
-                                                sx={{ color: selected ? "#fff" : softText }}
-                                                onClick={() => {
-                                                    setSelectedCategory(category.id);
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </Stack>
-                            </Box>
-
-                            <Typography sx={{ fontSize: "0.92rem", color: softText }}>
-                                {totalCount} quizzes found
-                                {activeFilterCount > 0 ? ` • ${activeFilterCount} active filter(s)` : ""}
-                            </Typography>
-                        </Stack>
-                    </Box>
-
-                    {isLoading ? (
-                        <Stack alignItems="center" justifyContent="center" py={8} spacing={1.5}>
-                            <CircularProgress />
-                            <Typography color="text.secondary">Loading public quizzes...</Typography>
-                        </Stack>
-                    ) : items.length === 0 ? (
-                        <Card
+                <Box
+                    sx={{
+                        display: "grid",
+                        gap: 2,
+                        gridTemplateColumns: {
+                            xs: "1fr",
+                            md: "minmax(0, 1fr) minmax(240px, 280px)",
+                        },
+                        alignItems: "start",
+                    }}
+                >
+                    <Stack spacing={2}>
+                        <Box
                             sx={{
-                                borderRadius: 3,
-                                border: `1px dashed ${alpha(theme.palette.text.secondary, 0.45)}`,
-                                background: isDark
-                                    ? "rgba(15, 23, 42, 0.88)"
-                                    : alpha(theme.palette.background.paper, 0.96),
+                                p: { xs: 2.5, md: 4 },
+                                borderRadius: 1,
+                                background: panelBackground,
+                                border: `1px solid ${panelBorder}`,
+                                boxShadow: panelShadow,
                             }}
                         >
-                            <CardContent>
-                                <Typography variant="h6" fontWeight={700} sx={{ color: strongText }}>
-                                    No quizzes matched your filter
-                                </Typography>
-                                <Typography sx={{ mt: 1, color: softText }}>
-                                    Try another category or use fewer keywords.
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <>
-                            <Box
-                                sx={{
-                                    display: "grid",
-                                    gridTemplateColumns: {
-                                        xs: "1fr",
-                                        sm: "repeat(2, minmax(0, 1fr))",
-                                        md: "repeat(3, minmax(0, 1fr))",
-                                    },
-                                    gap: 2,
-                                }}
-                            >
-                                {items.map((quiz, index) => {
-                                    const quizCategory = quiz.categoryId ? categoryById.get(quiz.categoryId) : undefined;
+                            <Stack spacing={2.2}>
+                                <Stack
+                                    direction={{ xs: "column", sm: "row" }}
+                                    justifyContent="space-between"
+                                    alignItems={{ xs: "flex-start", sm: "center" }}
+                                    spacing={1}
+                                >
+                                    <Box>
+                                        <Typography
+                                            sx={{
+                                                fontSize: { xs: "1.8rem", md: "2.35rem" },
+                                                lineHeight: 1.1,
+                                                fontWeight: 800,
+                                                letterSpacing: "-0.03em",
+                                                color: strongText,
+                                            }}
+                                        >
+                                            Discover Quiz
+                                        </Typography>
+                                        <Typography sx={{ mt: 1, color: softText }}>
+                                            Search by title, filter by category, and start practicing quickly.
+                                        </Typography>
+                                    </Box>
 
-                                    return (
-                                        <Card
-                                            key={quiz.id}
+                                    <Tooltip title="Reload list">
+                                        <IconButton
                                             onClick={() => {
-                                                navigate(`/app/find-quizzes/${quiz.id}`);
+                                                void fetchQuizzes();
                                             }}
                                             sx={{
-                                                borderRadius: 3,
+                                                color: strongText,
+                                                bgcolor: isDark
+                                                    ? "rgba(15, 23, 42, 0.95)"
+                                                    : alpha(theme.palette.background.paper, 0.98),
                                                 border: `1px solid ${alpha(theme.palette.text.secondary, 0.3)}`,
-                                                background: isDark
-                                                    ? "linear-gradient(160deg, rgba(15,23,42,0.94) 0%, rgba(10,18,33,0.92) 100%)"
-                                                    : "linear-gradient(160deg, rgba(255,255,255,0.96) 0%, rgba(241,245,249,0.94) 100%)",
-                                                transition: "transform 0.25s ease, box-shadow 0.25s ease",
-                                                cursor: "pointer",
-                                                animation: `fade-up 300ms ease ${Math.min(index * 45, 280)}ms both`,
-                                                "@keyframes fade-up": {
-                                                    from: { opacity: 0, transform: "translateY(10px)" },
-                                                    to: { opacity: 1, transform: "translateY(0)" },
-                                                },
                                                 "&:hover": {
-                                                    transform: "translateY(-3px)",
-                                                    boxShadow: isDark
-                                                        ? "0 14px 28px rgba(2, 6, 23, 0.45)"
-                                                        : "0 12px 24px rgba(15, 23, 42, 0.18)",
+                                                    bgcolor: isDark
+                                                        ? "rgba(30, 41, 59, 0.95)"
+                                                        : alpha(theme.palette.background.paper, 0.9),
                                                 },
                                             }}
                                         >
-                                            <CardContent>
-                                                <Stack spacing={1.3}>
-                                                    <Typography variant="h6" sx={{ fontWeight: 700, color: strongText }}>
-                                                        {quiz.title}
-                                                    </Typography>
-                                                    <Stack direction="row" spacing={0.8} alignItems="center">
-                                                        <CategoryIconBadge iconKey={quizCategory?.icon} size={20} fallback={null} />
-                                                        <Typography sx={{ fontSize: "0.85rem", color: softText }}>
-                                                            {quizCategory?.name || "Uncategorized"}
-                                                        </Typography>
+                                            <MdRefresh />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Stack>
+
+                                <TextField
+                                    placeholder="Search by quiz title..."
+                                    value={searchTitle}
+                                    onChange={(event) => {
+                                        setSearchTitle(event.target.value);
+                                    }}
+                                    fullWidth
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <MdSearch color={theme.palette.text.secondary} />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    sx={{
+                                        "& .MuiOutlinedInput-root": {
+                                            borderRadius: CARD_RADIUS,
+                                            backgroundColor: isDark
+                                                ? "rgba(15, 23, 42, 0.95)"
+                                                : alpha(theme.palette.background.paper, 0.98),
+                                        },
+                                        "& .MuiOutlinedInput-input": {
+                                            color: theme.palette.text.primary,
+                                        },
+                                    }}
+                                />
+                            </Stack>
+                        </Box>
+
+                        <Box>
+                            {isLoading ? (
+                                <Stack alignItems="center" justifyContent="center" py={8} spacing={1.5}>
+                                    <CircularProgress />
+                                    <Typography color="text.secondary">Loading public quizzes...</Typography>
+                                </Stack>
+                            ) : selectedCategory === "all" ? (
+                                groupedItems.length === 0 ? (
+                                    <Card sx={emptyCardSx}>
+                                        <CardContent>
+                                            <Typography variant="h6" fontWeight={700} sx={{ color: strongText }}>
+                                                No quizzes matched your filter
+                                            </Typography>
+                                            <Typography sx={{ mt: 1, color: softText }}>
+                                                Try another category or use fewer keywords.
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                ) : (
+                                    <Stack spacing={2.2}>
+                                        {groupedItems.map((group) => (
+                                            <Box
+                                                key={group.categoryId}
+                                                sx={{
+                                                    py: 0.5,
+                                                }}
+                                            >
+                                                <Stack spacing={1.5}>
+                                                    <Stack
+                                                        direction={{ xs: "column", sm: "row" }}
+                                                        alignItems={{ xs: "flex-start", sm: "center" }}
+                                                        justifyContent="space-between"
+                                                        spacing={1}
+                                                    >
+                                                        <Stack direction="row" spacing={0.9} alignItems="center">
+                                                            <CategoryIconBadge iconKey={group.iconKey} size={20} fallback={null} />
+                                                            <Typography variant="h6" sx={{ fontWeight: 700, color: strongText }}>
+                                                                {group.categoryName}
+                                                            </Typography>
+                                                        </Stack>
                                                     </Stack>
-                                                    <Typography
+
+                                                    <Box
                                                         sx={{
-                                                            fontSize: "0.8rem",
-                                                            color: softText,
-                                                            wordBreak: "break-all",
+                                                            display: "grid",
+                                                            gridTemplateColumns: {
+                                                                xs: "1fr",
+                                                                sm: "repeat(2, minmax(0, 1fr))",
+                                                            },
+                                                            gap: 2,
                                                         }}
                                                     >
-                                                        Quiz ID: {quiz.id}
-                                                    </Typography>
+                                                        {group.items.map((quiz, index) => (
+                                                            <Card
+                                                                key={quiz.id}
+                                                                onClick={() => {
+                                                                    navigate(`/app/find-quizzes/${quiz.id}`);
+                                                                }}
+                                                                sx={{
+                                                                    ...gradientCardSx,
+                                                                    transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                                                                    cursor: "pointer",
+                                                                    animation: `fade-up 300ms ease ${Math.min(index * 45, 280)}ms both`,
+                                                                    "@keyframes fade-up": {
+                                                                        from: { opacity: 0, transform: "translateY(10px)" },
+                                                                        to: { opacity: 1, transform: "translateY(0)" },
+                                                                    },
+                                                                    "&:hover": {
+                                                                        transform: "translateY(-3px)",
+                                                                        boxShadow: isDark
+                                                                            ? "0 14px 28px rgba(2, 6, 23, 0.45)"
+                                                                            : "0 12px 24px rgba(15, 23, 42, 0.18)",
+                                                                    },
+                                                                }}
+                                                            >
+                                                                <CardContent>
+                                                                    <Stack spacing={1.3}>
+                                                                        <Typography variant="h6" sx={{ fontWeight: 700, color: strongText }}>
+                                                                            {quiz.title}
+                                                                        </Typography>
+                                                                        <Chip
+                                                                            size="small"
+                                                                            variant="outlined"
+                                                                            sx={quizCategoryChipSx}
+                                                                            label={(
+                                                                                <Stack direction="row" spacing={0.6} alignItems="center">
+                                                                                    <CategoryIconBadge iconKey={group.iconKey} size={18} fallback={null} />
+                                                                                    <Typography sx={{ fontSize: "0.82rem", color: softText }}>
+                                                                                        {group.categoryName}
+                                                                                    </Typography>
+                                                                                </Stack>
+                                                                            )}
+                                                                        />
+                                                                        <Typography
+                                                                            sx={{
+                                                                                fontSize: "0.8rem",
+                                                                                color: softText,
+                                                                                wordBreak: "break-all",
+                                                                            }}
+                                                                        >
+                                                                            Quiz ID: {quiz.id}
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                </CardContent>
+                                                            </Card>
+                                                        ))}
+                                                    </Box>
+
+                                                        {group.totalCount > ALL_GROUP_PREVIEW_SIZE && (
+                                                            <Box>
+                                                                <Button
+                                                                    variant="outlined"
+                                                                    size="small"
+                                                                    onClick={() => {
+                                                                        setSelectedCategory(group.categoryId);
+                                                                        setPage(1);
+                                                                    }}
+                                                                >
+                                                                    View more ({group.totalCount - ALL_GROUP_PREVIEW_SIZE}+)
+                                                                </Button>
+                                                            </Box>
+                                                        )}
                                                 </Stack>
-                                            </CardContent>
-                                        </Card>
+                                            </Box>
+                                        ))}
+                                    </Stack>
+                                )
+                            ) : items.length === 0 ? (
+                                <Card sx={emptyCardSx}>
+                                    <CardContent>
+                                        <Typography variant="h6" fontWeight={700} sx={{ color: strongText }}>
+                                            No quizzes matched your filter
+                                        </Typography>
+                                        <Typography sx={{ mt: 1, color: softText }}>
+                                            Try another category or use fewer keywords.
+                                        </Typography>
+                                    </CardContent>
+                                </Card>
+                            ) : (
+                                <>
+                                    <Box
+                                        sx={{
+                                            display: "grid",
+                                            gridTemplateColumns: {
+                                                xs: "1fr",
+                                                sm: "repeat(2, minmax(0, 1fr))",
+                                            },
+                                            gap: 2,
+                                        }}
+                                    >
+                                        {items.map((quiz, index) => {
+                                            const quizCategory = quiz.categoryId ? categoryById.get(quiz.categoryId) : undefined;
+
+                                            return (
+                                                <Card
+                                                    key={quiz.id}
+                                                    onClick={() => {
+                                                        navigate(`/app/find-quizzes/${quiz.id}`);
+                                                    }}
+                                                    sx={{
+                                                        ...gradientCardSx,
+                                                        transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                                                        cursor: "pointer",
+                                                        animation: `fade-up 300ms ease ${Math.min(index * 45, 280)}ms both`,
+                                                        "@keyframes fade-up": {
+                                                            from: { opacity: 0, transform: "translateY(10px)" },
+                                                            to: { opacity: 1, transform: "translateY(0)" },
+                                                        },
+                                                        "&:hover": {
+                                                            transform: "translateY(-3px)",
+                                                            boxShadow: isDark
+                                                                ? "0 14px 28px rgba(2, 6, 23, 0.45)"
+                                                                : "0 12px 24px rgba(15, 23, 42, 0.18)",
+                                                        },
+                                                    }}
+                                                >
+                                                    <CardContent>
+                                                        <Stack spacing={1.3}>
+                                                            <Typography variant="h6" sx={{ fontWeight: 700, color: strongText }}>
+                                                                {quiz.title}
+                                                            </Typography>
+                                                            <Chip
+                                                                size="small"
+                                                                variant="outlined"
+                                                                sx={quizCategoryChipSx}
+                                                                label={(
+                                                                    <Stack direction="row" spacing={0.6} alignItems="center">
+                                                                        <CategoryIconBadge iconKey={quizCategory?.icon} size={18} fallback={null} />
+                                                                        <Typography sx={{ fontSize: "0.82rem", color: softText }}>
+                                                                            {quizCategory?.name || "Uncategorized"}
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                )}
+                                                            />
+                                                            <Typography
+                                                                sx={{
+                                                                    fontSize: "0.8rem",
+                                                                    color: softText,
+                                                                    wordBreak: "break-all",
+                                                                }}
+                                                            >
+                                                                Quiz ID: {quiz.id}
+                                                            </Typography>
+                                                        </Stack>
+                                                    </CardContent>
+                                                </Card>
+                                            );
+                                        })}
+                                    </Box>
+
+                                    {totalPages > 1 && (
+                                        <Stack alignItems="center" pt={1}>
+                                            <Pagination
+                                                page={page}
+                                                count={totalPages}
+                                                color="primary"
+                                                shape="rounded"
+                                                onChange={(_event, value) => {
+                                                    setPage(value);
+                                                }}
+                                            />
+                                        </Stack>
+                                    )}
+                                </>
+                            )}
+                        </Box>
+                    </Stack>
+
+                    <Card sx={categoryPanelSx}>
+                        <CardContent>
+                            <Stack spacing={1}>
+                                <Typography
+                                    variant="subtitle2"
+                                    sx={{ color: softText, fontWeight: 800, letterSpacing: "0.04em" }}
+                                >
+                                    CATEGORIES
+                                </Typography>
+                                <Chip
+                                    label="All"
+                                    clickable
+                                    color={selectedCategory === "all" ? "primary" : "default"}
+                                    variant={selectedCategory === "all" ? "filled" : "outlined"}
+                                    sx={{
+                                        justifyContent: "flex-start",
+                                        width: "100%",
+                                        color: selectedCategory === "all" ? "#fff" : softText,
+                                    }}
+                                    onClick={() => {
+                                        setSelectedCategory("all");
+                                    }}
+                                />
+                                {categories.map((category) => {
+                                    const selected = selectedCategory === category.id;
+
+                                    return (
+                                        <Chip
+                                            key={category.id}
+                                            label={(
+                                                <Stack direction="row" spacing={0.8} alignItems="center">
+                                                    <CategoryIconBadge iconKey={category.icon} size={18} fallback={null} />
+                                                    <Box component="span">{category.name}</Box>
+                                                </Stack>
+                                            )}
+                                            clickable
+                                            color={selected ? "primary" : "default"}
+                                            variant={selected ? "filled" : "outlined"}
+                                            sx={{
+                                                justifyContent: "flex-start",
+                                                width: "100%",
+                                                color: selected ? "#fff" : softText,
+                                            }}
+                                            onClick={() => {
+                                                setSelectedCategory(category.id);
+                                            }}
+                                        />
                                     );
                                 })}
-                            </Box>
-
-                            {totalPages > 1 && (
-                                <Stack alignItems="center" pt={1}>
-                                    <Pagination
-                                        page={page}
-                                        count={totalPages}
-                                        color="primary"
-                                        shape="rounded"
-                                        onChange={(_event, value) => {
-                                            setPage(value);
-                                        }}
-                                    />
-                                </Stack>
-                            )}
-                        </>
-                    )}
-                </Stack>
+                            </Stack>
+                        </CardContent>
+                    </Card>
+                </Box>
             </Container>
 
             <AppSnackbar
