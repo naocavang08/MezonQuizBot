@@ -18,11 +18,12 @@ import useAppSnackbar from "../Hooks/useAppSnackbar";
 import useSessionRealtime from "../Hooks/useSessionRealtime";
 import { getAllCategories } from "../Api/category.api";
 import { getAvailableQuiz, getQuiz } from "../Api/quiz.api";
-import { getQuizSessions } from "../Api/session.api";
+import { getQuizSessions, joinQuizSession } from "../Api/session.api";
 import type { CategoryDto } from "../Interface/category.dto";
 import type { AvailableQuizDto } from "../Interface/quiz.dto";
 import { SessionStatusValue, type QuizSessionDto } from "../Interface/session.dto";
 import CategoryIconBadge from "../Lib/Utils/categoryIconBadge";
+import useAuthStore from "../Stores/login.store";
 
 const sessionStatusLabel: Record<number, string> = {
   [SessionStatusValue.Waiting]: "Waiting",
@@ -37,6 +38,7 @@ const QuizDetailPage = () => {
   const navigate = useNavigate();
   const { quizId } = useParams<{ quizId: string }>();
   const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
+  const userId = useAuthStore((state) => state.user?.id);
 
   const [quiz, setQuiz] = useState<AvailableQuizDto | null>(null);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
@@ -111,6 +113,30 @@ const QuizDetailPage = () => {
       showError("Can not copy value right now.");
     }
   };
+
+  const handleJoinAndPlay = useCallback(async (session: QuizSessionDto) => {
+    if (!quizId || !userId) {
+      showError("User info is invalid.");
+      return;
+    }
+
+    if (!session.code) {
+      showError("Session code is invalid.");
+      return;
+    }
+
+    if (session.status === SessionStatusValue.Waiting) {
+      try {
+        const response = await joinQuizSession(session.code, { userId });
+        showSuccess(response.message || "Joined session successfully.");
+      } catch {
+        showError("Can not join this session right now.");
+        return;
+      }
+    }
+
+    navigate(`/app/find-quizzes/${quizId}/sessions/${session.id}/play`);
+  }, [navigate, quizId, showError, showSuccess, userId]);
 
   useEffect(() => {
     void loadData();
@@ -332,6 +358,17 @@ const QuizDetailPage = () => {
                               </Stack>
                             ) : null}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                              {!isFinishedSession ? (
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  onClick={() => {
+                                    void handleJoinAndPlay(session);
+                                  }}
+                                >
+                                  Join & Play
+                                </Button>
+                              ) : null}
                               <Button
                                 size="small"
                                 variant={isFinishedSession ? "contained" : "outlined"}

@@ -22,7 +22,6 @@ import {
     getCurrentSessionQuestion,
     getSessionDetails,
     getSessionLeaderboard,
-    joinQuizSession,
     submitSessionAnswer,
 } from "../Api/session.api";
 import {
@@ -53,7 +52,6 @@ const PlayerQuizPage = () => {
     const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
 
     const questionIndexRef = useRef<number | null>(null);
-    const joinAttemptedRef = useRef(false);
 
     const isHost = useMemo(() => {
         if (!session || !userId) {
@@ -183,31 +181,8 @@ const PlayerQuizPage = () => {
 
         if (isHost) {
             navigate(`/app/my-quizzes/${quizId}/sessions/${sessionId}/start-quiz`, { replace: true });
-            return;
         }
-
-        if (joinAttemptedRef.current) {
-            return;
-        }
-
-        if (session.status !== SessionStatusValue.Waiting) {
-            return;
-        }
-
-        joinAttemptedRef.current = true;
-
-        const autoJoin = async () => {
-            try {
-                const response = await joinQuizSession(session.code, { userId });
-                showSuccess(response.message || "Joined session successfully.");
-                await loadSession(true);
-            } catch {
-                showError("Can not join this session right now.");
-            }
-        };
-
-        void autoJoin();
-    }, [isHost, loadSession, navigate, quizId, session, sessionId, showError, showSuccess, userId]);
+    }, [isHost, navigate, quizId, session, sessionId, userId]);
 
     useEffect(() => {
         if (!session || !userId || isHost) {

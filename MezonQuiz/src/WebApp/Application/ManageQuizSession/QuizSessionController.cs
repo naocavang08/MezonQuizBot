@@ -31,7 +31,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpGet("{sessionId}")]
-        [PermissionAuthorize(PermissionNames.Sessions.Creator_View, PermissionNames.Sessions.Admin_View)]
+        [PermissionAuthorize(PermissionNames.Sessions.Creator_View, PermissionNames.Sessions.Admin_View, PermissionNames.Sessions.Player_View)]
         public async Task<IActionResult> GetSession(Guid sessionId)
         {
             var session = await _sessionService.GetSession(sessionId);
@@ -55,6 +55,22 @@ namespace WebApp.Application.ManageQuizSession
                 return BadRequest(new { Message = result.Message });
 
             return Ok(new { Message = result.Message, Session = session });
+        }
+
+        [HttpPost("join/{code}")]
+        [PermissionAuthorize(
+            PermissionNames.Sessions.Player_View,
+            PermissionNames.Sessions.Creator_View,
+            PermissionNames.Sessions.Admin_View)]
+        public async Task<IActionResult> JoinByCode(string code, [FromBody] JoinQuizSessionDto request)
+        {
+            var result = await _sessionService.JoinByCode(code, request);
+            if (!result.Success)
+            {
+                return BadRequest(new { Message = result.Message });
+            }
+
+            return Ok(new { Message = result.Message, SessionId = result.SessionId });
         }
 
         [HttpPost("{sessionId}/clear")]
@@ -212,7 +228,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpGet("{sessionId}/leaderboard")]
-        [PermissionAuthorize(PermissionNames.Sessions.Creator_View)]
+        [PermissionAuthorize(PermissionNames.Sessions.Creator_View, PermissionNames.Sessions.Player_View)]
         public async Task<IActionResult> GetLeaderboard(Guid sessionId)
         {
             var leaderboard = await _sessionService.GetLeaderboard(sessionId);
