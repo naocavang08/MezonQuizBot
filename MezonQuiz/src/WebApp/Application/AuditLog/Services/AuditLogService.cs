@@ -18,6 +18,7 @@ public sealed class AuditLogService : IAuditLogService
     {
         var safePage = Math.Max(1, query.Page);
         var safePageSize = Math.Clamp(query.PageSize, 5, 100);
+        var normalizedStatus = string.IsNullOrWhiteSpace(query.Status) ? null : query.Status.Trim();
 
         var logs = BuildBaseQuery();
 
@@ -47,14 +48,6 @@ public sealed class AuditLogService : IAuditLogService
             );
         }
 
-        if (!string.IsNullOrWhiteSpace(query.Status))
-        {
-            var status = query.Status.Trim();
-            logs = logs.Where(log =>
-                log.Details.Status != null &&
-                log.Details.Status.Contains(status));
-        }
-
         if (query.FromDate.HasValue)
         {
             var fromDate = ToUtcDateStart(query.FromDate.Value);
@@ -65,6 +58,37 @@ public sealed class AuditLogService : IAuditLogService
         {
             var toExclusive = ToUtcDateStart(query.ToDate.Value).AddDays(1);
             logs = logs.Where(log => log.CreatedAt < toExclusive);
+        }
+
+        if (!string.IsNullOrEmpty(normalizedStatus))
+        {
+            // Details is mapped via jsonb value-converter; status filter is applied in memory
+            // to avoid provider translation errors while preserving correct pagination totals.
+            var allItems = await logs
+                .OrderByDescending(log => log.CreatedAt)
+                .Select(MapAuditLogItem())
+                .ToListAsync();
+
+            var filteredItems = allItems
+                .Where(item =>
+                    !string.IsNullOrWhiteSpace(item.Details?.Status) &&
+                    item.Details!.Status!.Contains(normalizedStatus, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            var filteredTotalCount = filteredItems.Count;
+            var pagedItems = filteredItems
+                .Skip((safePage - 1) * safePageSize)
+                .Take(safePageSize)
+                .ToList();
+
+            return new PagedAuditLogResultDto
+            {
+                Items = pagedItems,
+                TotalCount = filteredTotalCount,
+                Page = safePage,
+                PageSize = safePageSize,
+                TotalPages = filteredTotalCount > 0 ? (int)Math.Ceiling(filteredTotalCount / (double)safePageSize) : 0,
+            };
         }
 
         var totalCount = await logs.CountAsync();
