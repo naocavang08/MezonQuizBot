@@ -15,8 +15,9 @@ import { alpha, useTheme } from "@mui/material/styles";
 import { useNavigate, useParams } from "react-router-dom";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
+import useSessionRealtime from "../Hooks/useSessionRealtime";
 import { getAllCategories } from "../Api/category.api";
-import { getAvailableQuiz } from "../Api/quiz.api";
+import { getAvailableQuiz, getQuiz } from "../Api/quiz.api";
 import { getQuizSessions } from "../Api/session.api";
 import type { CategoryDto } from "../Interface/category.dto";
 import type { AvailableQuizDto } from "../Interface/quiz.dto";
@@ -40,6 +41,7 @@ const QuizDetailPage = () => {
   const [quiz, setQuiz] = useState<AvailableQuizDto | null>(null);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [sessions, setSessions] = useState<QuizSessionDto[]>([]);
+  const [questionCount, setQuestionCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
@@ -56,7 +58,7 @@ const QuizDetailPage = () => {
 
   const quizCategory = quiz?.categoryId ? categoryById.get(quiz.categoryId) : undefined;
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (silent = false) => {
     if (!quizId) {
       showError("Quiz id is missing.");
       setIsLoading(false);
@@ -64,7 +66,9 @@ const QuizDetailPage = () => {
     }
 
     try {
-      setIsLoading(true);
+      if (!silent) {
+        setIsLoading(true);
+      }
       setIsLoadingSessions(true);
       const [quizData, categoryData, sessionData] = await Promise.all([
         getAvailableQuiz(quizId),
@@ -75,14 +79,23 @@ const QuizDetailPage = () => {
       setQuiz(quizData);
       setCategories(Array.isArray(categoryData) ? categoryData : []);
       setSessions(Array.isArray(sessionData.items) ? sessionData.items : []);
+      try {
+        const quizDetail = await getQuiz(quizId);
+        setQuestionCount(Array.isArray(quizDetail.questions) ? quizDetail.questions.length : 0);
+      } catch {
+        setQuestionCount(null);
+      }
     } catch {
       showError("Can not load quiz detail right now.");
       setQuiz(null);
       setCategories([]);
       setSessions([]);
+      setQuestionCount(null);
     } finally {
       setIsLoadingSessions(false);
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }, [quizId, showError]);
 
@@ -102,6 +115,12 @@ const QuizDetailPage = () => {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useSessionRealtime({
+    onSessionStateChanged: () => loadData(true),
+    enabled: Boolean(quizId),
+    joinGroup: false,
+  });
 
   if (isLoading) {
     return (
@@ -151,22 +170,45 @@ const QuizDetailPage = () => {
               backgroundColor: "transparent",
             }}
           >
-            <CardContent>
-              <Stack spacing={2}>
-                <Typography sx={{ color: softText }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Stack spacing={1.5}>
+                <Typography variant="body1" sx={{ color: softText, lineHeight: 1.6 }}>
                   {quiz.description?.trim() || "No description."}
                 </Typography>
 
+                <Divider sx={{ opacity: 0.5 }} />
+
+                <Stack direction="row" spacing={3}>
+                  <Stack spacing={0.25}>
+                    <Typography variant="body2" sx={{ color: softText, opacity: 0.7 }}>
+                      Total Points
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: softText, fontWeight: 500 }}>
+                      {quiz.totalPoints}
+                    </Typography>
+                  </Stack>
+
+                  <Stack spacing={0.25}>
+                    <Typography variant="body2" sx={{ color: softText, opacity: 0.7 }}>
+                      Questions
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: softText, fontWeight: 500 }}>
+                      {questionCount ?? "—"}
+                    </Typography>
+                  </Stack>
+                </Stack>
+
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <CategoryIconBadge iconKey={quizCategory?.icon} size={22} fallback={null} />
-                  <Typography variant="body2" sx={{ color: softText }}>
-                    Category: {quizCategory?.name || "Uncategorized"}
+                  <CategoryIconBadge iconKey={quizCategory?.icon} size={20} fallback={null} />
+                  <Typography variant="body2" sx={{ color: softText, opacity: 0.7 }}>
+                    {quizCategory?.name || "Uncategorized"}
                   </Typography>
                 </Stack>
               </Stack>
             </CardContent>
           </Card>
 
+          <Card variant="outlined">
             <CardContent>
               <Stack spacing={1.5}>
                 <Stack
@@ -289,19 +331,17 @@ const QuizDetailPage = () => {
                                 ) : null}
                               </Stack>
                             ) : null}
-                            {isFinishedSession ? (
-                              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                                <Button
-                                  size="small"
-                                  variant="contained"
-                                  onClick={() => {
-                                    navigate(`/app/find-quizzes/${quizId}/sessions/${session.id}/leaderboard`);
-                                  }}
-                                >
-                                  Show Result
-                                </Button>
-                              </Stack>
-                            ) : null}
+                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                              <Button
+                                size="small"
+                                variant={isFinishedSession ? "contained" : "outlined"}
+                                onClick={() => {
+                                  navigate(`/app/find-quizzes/${quizId}/sessions/${session.id}/leaderboard`);
+                                }}
+                              >
+                                Show Result
+                              </Button>
+                            </Stack>
                           </Stack>
                         </Box>
                       );
@@ -310,6 +350,7 @@ const QuizDetailPage = () => {
                 ) : null}
               </Stack>
             </CardContent>
+          </Card>
         </Stack>
       </Container>
 

@@ -7,6 +7,7 @@ import {
     CardContent,
     Chip,
     CircularProgress,
+    IconButton,
     Paper,
     Stack,
     Table,
@@ -14,6 +15,7 @@ import {
     TableCell,
     TableHead,
     TableRow,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
@@ -21,8 +23,15 @@ import AppSnackbar from "../Components/AppSnackbar";
 import UserIdentityCell from "../Components/UserIdentityCell";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { getSessionDetails, getSessionLeaderboard } from "../Api/session.api";
-import { SessionStatusValue, type QuizSessionDto, type SessionParticipantDto } from "../Interface/session.dto";
+import {
+    SessionStatusValue,
+    type QuizSessionDto,
+    type SessionParticipantDto,
+} from "../Interface/session.dto";
+import { isSameLeaderboard, isSameSession } from "../Lib/Utils/sessionRender";
 import { MdEmojiEvents, MdMilitaryTech, MdStars, MdTrendingUp } from "react-icons/md";
+import { MdRefresh } from "react-icons/md";
+import useSessionRealtime from "../Hooks/useSessionRealtime";
 
 const statusLabel: Record<number, string> = {
     [SessionStatusValue.Waiting]: "Waiting",
@@ -109,16 +118,12 @@ const LeaderboardPage = () => {
     const [leaderboard, setLeaderboard] = useState<SessionParticipantDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const canShowResult = useMemo(
-        () => session?.status === SessionStatusValue.Finished,
-        [session?.status]
-    );
     const topLegendItems = useMemo(
         () => [getRankTier(1), getRankTier(3), getRankTier(5), getRankTier(10)],
         []
     );
 
-    const loadData = useCallback(async () => {
+    const loadData = useCallback(async (silent = false) => {
         if (!sessionId) {
             showError("Session id is invalid.");
             setIsLoading(false);
@@ -126,25 +131,37 @@ const LeaderboardPage = () => {
         }
 
         try {
-            setIsLoading(true);
+            if (!silent) {
+                setIsLoading(true);
+            }
             const [sessionData, leaderboardData] = await Promise.all([
                 getSessionDetails(sessionId),
                 getSessionLeaderboard(sessionId),
             ]);
-            setSession(sessionData);
-            setLeaderboard(Array.isArray(leaderboardData) ? leaderboardData : []);
+            const normalizedLeaderboard = Array.isArray(leaderboardData) ? leaderboardData : [];
+            setSession((previous) => (isSameSession(previous, sessionData) ? previous : sessionData));
+            setLeaderboard((previous) =>
+                isSameLeaderboard(previous, normalizedLeaderboard) ? previous : normalizedLeaderboard
+            );
         } catch {
             showError("Can not load leaderboard right now.");
             setSession(null);
             setLeaderboard([]);
         } finally {
-            setIsLoading(false);
+            if (!silent) {
+                setIsLoading(false);
+            }
         }
     }, [sessionId, showError]);
 
     useEffect(() => {
         void loadData();
     }, [loadData]);
+
+    useSessionRealtime({
+        sessionId,
+        onSessionStateChanged: () => loadData(true),
+    });
 
     return (
         <Box sx={{ py: 2 }}>
@@ -169,7 +186,7 @@ const LeaderboardPage = () => {
                                 Session Leaderboard
                             </Typography>
                             <Typography variant="body2" color="text.secondary" mt={0.5}>
-                                See ranking results for this finished session.
+                                See live ranking results for this session.
                             </Typography>
                         </Box>
                         <Stack direction="row" spacing={1} alignItems="center">
@@ -180,6 +197,15 @@ const LeaderboardPage = () => {
                                     variant="outlined"
                                 />
                             ) : null}
+                            <Tooltip title="Refresh now">
+                                <IconButton
+                                    onClick={() => {
+                                        void loadData();
+                                    }}
+                                >
+                                    <MdRefresh />
+                                </IconButton>
+                            </Tooltip>
                             <Button variant="outlined" onClick={() => navigate(`/app/find-quizzes/${quizId}`)}>
                                 Back to Quiz
                             </Button>
@@ -194,45 +220,6 @@ const LeaderboardPage = () => {
                 ) : null}
 
                 {!isLoading && session ? (
-                    <Card variant="outlined" sx={{ boxShadow: "none" }}>
-                        <CardContent>
-                            <Stack spacing={1.5}>
-                                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ xs: "flex-start", sm: "center" }}>
-                                    <Typography variant="h6" fontWeight={700}>
-                                        {session.quizTitle}
-                                    </Typography>
-                                    <Chip label={statusLabel[session.status] ?? "Unknown"} color="primary" variant="outlined" />
-                                </Stack>
-                                <Typography variant="body2" color="text.secondary">
-                                    Session ID: {session.id}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Participants: {session.participantCount}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Finished at: {session.finishedAt ? new Date(session.finishedAt).toLocaleString() : "-"}
-                                </Typography>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                ) : null}
-
-                {!isLoading && session && !canShowResult ? (
-                    <Card variant="outlined" sx={{ boxShadow: "none" }}>
-                        <CardContent>
-                            <Stack spacing={1.5}>
-                                <Typography variant="h6" fontWeight={700}>
-                                    Result not available yet
-                                </Typography>
-                                <Typography color="text.secondary">
-                                    This session has not finished. You can only view ranking leaderboard after the host finishes the session.
-                                </Typography>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                ) : null}
-
-                {!isLoading && session && canShowResult ? (
                     <Stack spacing={2}>
                         <Paper variant="outlined" sx={{ p: 1.5, boxShadow: "none" }}>
                             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>

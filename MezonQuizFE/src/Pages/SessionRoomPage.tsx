@@ -22,16 +22,15 @@ import UserIdentityCell from "../Components/UserIdentityCell";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdContentCopy, MdRefresh } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
-import { HubConnectionBuilder, LogLevel, type HubConnection } from "@microsoft/signalr";
 import { getSessionDetails, getSessionLeaderboard, clearSessionParticipant, startQuizSession } from "../Api/session.api";
 import {
     SessionStatusValue,
     type QuizSessionDto,
     type SessionParticipantDto,
-    type SessionStateChangedDto,
 } from "../Interface/session.dto";
 import useAuthStore from "../Stores/login.store";
 import { isSameLeaderboard, isSameSession } from "../Lib/Utils/sessionRender";
+import useSessionRealtime from "../Hooks/useSessionRealtime";
 
 const statusLabel: Record<number, string> = {
     [SessionStatusValue.Waiting]: "Waiting",
@@ -39,10 +38,6 @@ const statusLabel: Record<number, string> = {
     [SessionStatusValue.Paused]: "Paused",
     [SessionStatusValue.Finished]: "Finished",
     [SessionStatusValue.Cancelled]: "Cancelled",
-};
-
-const resolveHubUrl = () => {
-    return "/hubs/quiz-session";
 };
 
 const SessionRoomPage = () => {
@@ -117,54 +112,10 @@ const SessionRoomPage = () => {
         void loadSession();
     }, [loadSession]);
 
-    useEffect(() => {
-        if (!sessionId) {
-            return;
-        }
-
-        let connection: HubConnection | null = null;
-        let isDisposed = false;
-
-        const connectHub = async () => {
-            try {
-                const hub = new HubConnectionBuilder()
-                    .withUrl(resolveHubUrl())
-                    .configureLogging(LogLevel.Warning)
-                    .withAutomaticReconnect()
-                    .build();
-
-                hub.on("SessionStateChanged", (payload: SessionStateChangedDto) => {
-                    if (isDisposed || payload.sessionId !== sessionId) {
-                        return;
-                    }
-
-                    void loadSession(true);
-                });
-
-                await hub.start();
-                await hub.invoke("JoinSessionGroup", sessionId);
-                connection = hub;
-            } catch {
-                // Keep fallback refresh active if realtime connection fails.
-            }
-        };
-
-        void connectHub();
-
-        const timer = window.setInterval(() => {
-            void loadSession(true);
-        }, 5000);
-
-        return () => {
-            isDisposed = true;
-            window.clearInterval(timer);
-
-            if (connection) {
-                void connection.invoke("LeaveSessionGroup", sessionId).catch(() => undefined);
-                void connection.stop().catch(() => undefined);
-            }
-        };
-    }, [loadSession, sessionId]);
+    useSessionRealtime({
+        sessionId,
+        onSessionStateChanged: () => loadSession(true),
+    });
 
     useEffect(() => {
         if (!session || !userId) {
