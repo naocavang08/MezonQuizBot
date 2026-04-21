@@ -73,9 +73,9 @@ const AppRoutes = () => {
           </Route>
 
           <Route element={<ProtectedRoute requiredPermissions={ACCESS_PERMISSIONS.QUIZ_WORKSPACE} />}>
-            <Route path="leaderboard" element={<LeaderboardPage />} />
             <Route path="find-quizzes" element={<FindQuizPage />} />
             <Route path="find-quizzes/:quizId" element={<QuizDetailPage />} />
+            <Route path="find-quizzes/:quizId/sessions/:sessionId/leaderboard" element={<LeaderboardPage />} />
           </Route>
 
           <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.QUIZZES_CREATOR_LIST]} />}>

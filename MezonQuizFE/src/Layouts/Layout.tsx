@@ -84,12 +84,6 @@ const navSections: NavSection[] = [
     title: 'Quiz Workspace',
     items: [
       {
-        label: 'Leaderboard',
-        path: '/app/leaderboard',
-        icon: 'M5 20h14M7 16h10M9 12h6M12 4l2.5 3h3L15 10l1 4-4-2.5L8 14l1-4-2.5-3h3L12 4z',
-        requiredPermissions: ACCESS_PERMISSIONS.QUIZ_WORKSPACE,
-      },
-      {
         label: 'Find Quizzes',
         path: '/app/find-quizzes',
         icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
@@ -114,7 +108,6 @@ const navSections: NavSection[] = [
 
 const pageTitleMap: Record<string, string> = {
   '/app/dashboard': 'Dashboard',
-  '/app/leaderboard': 'Leaderboard',
   '/app/users': 'User Management',
   '/app/roles': 'Role Management',
   '/app/quizzes': 'Quiz Management',

@@ -289,6 +289,19 @@ const QuizDetailPage = () => {
                                 ) : null}
                               </Stack>
                             ) : null}
+                            {isFinishedSession ? (
+                              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  onClick={() => {
+                                    navigate(`/app/find-quizzes/${quizId}/sessions/${session.id}/leaderboard`);
+                                  }}
+                                >
+                                  Show Result
+                                </Button>
+                              </Stack>
+                            ) : null}
                           </Stack>
                         </Box>
                       );

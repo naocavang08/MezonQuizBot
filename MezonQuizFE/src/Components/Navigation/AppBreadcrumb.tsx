@@ -11,7 +11,6 @@ type BreadcrumbRoute = {
 
 const breadcrumbRoutes: BreadcrumbRoute[] = [
     { path: "/app/dashboard", label: "Dashboard", root: true },
-    { path: "/app/leaderboard", label: "Leaderboard", root: true },
     { path: "/app/users", label: "User Management", root: true },
     { path: "/app/roles", label: "Role Management", root: true },
     { path: "/app/quizzes", label: "Quiz Management", root: true },
@@ -19,6 +18,7 @@ const breadcrumbRoutes: BreadcrumbRoute[] = [
     { path: "/app/audit-logs", label: "Audit Logs", root: true },
     { path: "/app/find-quizzes", label: "Find Quizzes", root: true },
     { path: "/app/find-quizzes/:quizId", label: "Quiz Detail", parentPath: "/app/find-quizzes" },
+    { path: "/app/find-quizzes/:quizId/sessions/:sessionId/leaderboard", label: "Session Leaderboard", parentPath: "/app/find-quizzes/:quizId" },
     { path: "/app/my-quizzes", label: "My Quizzes", root: true },
     { path: "/app/my-quizzes/:quizId/settings", label: "Quiz Setting", parentPath: "/app/my-quizzes" },
     { path: "/app/my-quizzes/:quizId/sessions", label: "Quiz Sessions", parentPath: "/app/my-quizzes" },
