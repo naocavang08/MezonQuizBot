@@ -125,8 +125,7 @@ const CreateQuizPage = () => {
 		settings: {
 			shuffleQuestions: false,
 			shuffleOptions: false,
-			showCorrectAnswer: true,
-			maxAttempts: 1,
+			showCorrectAnswer: true
 		},
 		questions: [makeDefaultQuestion(1)],
 	});
@@ -414,10 +413,6 @@ const CreateQuizPage = () => {
 			}
 		}
 
-		if (form.settings.maxAttempts < 1 || form.settings.maxAttempts > 5) {
-			return "Max attempts must be between 1 and 5.";
-		}
-
 		return null;
 	};
 
@@ -606,22 +601,6 @@ const CreateQuizPage = () => {
 								label="Show Correct Answer"
 							/>
 						</Stack>
-
-						<TextField
-							type="number"
-							label="Max Attempts"
-							inputProps={{ min: 1, max: 5 }}
-							value={form.settings.maxAttempts}
-							onChange={(event) =>
-								setForm((prev) => ({
-									...prev,
-									settings: {
-										...prev.settings,
-										maxAttempts: Number(event.target.value || 1),
-									},
-								}))
-							}
-						/>
 					</Stack>
 				</CardContent>
 			</Card>

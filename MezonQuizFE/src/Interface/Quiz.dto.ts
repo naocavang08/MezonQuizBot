@@ -44,7 +44,6 @@ export interface QuizSettingsDto {
     shuffleQuestions: boolean;
     shuffleOptions: boolean;
     showCorrectAnswer: boolean;
-    maxAttempts: number;
 }
 
 export interface AvailableQuizDto {

@@ -345,7 +345,7 @@ namespace WebApp.Application.ManageQuiz.Services
         public async Task<bool> UpdateQuizSettings(Guid quizId, QuizSettings settingsData)
         {
             var quiz = await GetQuiz(quizId);
-            if (quiz is null || settingsData is null || !settingsData.IsValid())
+            if (quiz is null || settingsData is null)
                 return false;
 
             quiz.Settings = MapSettings(settingsData);
@@ -412,7 +412,7 @@ namespace WebApp.Application.ManageQuiz.Services
             if (string.IsNullOrWhiteSpace(input.Title))
                 return false;
 
-            if (input.Settings is null || !input.Settings.IsValid())
+            if (input.Settings is null)
                 return false;
 
             if (input.Questions is null)
@@ -453,8 +453,7 @@ namespace WebApp.Application.ManageQuiz.Services
             {
                 ShuffleQuestions = settings.ShuffleQuestions,
                 ShuffleOptions = settings.ShuffleOptions,
-                ShowCorrectAnswer = settings.ShowCorrectAnswer,
-                MaxAttempts = settings.MaxAttempts
+                ShowCorrectAnswer = settings.ShowCorrectAnswer
             };
         }
 

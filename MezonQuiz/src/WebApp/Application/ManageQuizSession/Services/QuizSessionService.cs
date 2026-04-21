@@ -953,9 +953,7 @@ namespace WebApp.Application.ManageQuizSession.Services
             {
                 ShuffleQuestions = settings.ShuffleQuestions,
                 ShuffleOptions = settings.ShuffleOptions,
-                ShowCorrectAnswer = settings.ShowCorrectAnswer,
-                // Kept for backward compatibility in stored settings, but not used in session flow.
-                MaxAttempts = settings.MaxAttempts
+                ShowCorrectAnswer = settings.ShowCorrectAnswer
             };
         }
 
