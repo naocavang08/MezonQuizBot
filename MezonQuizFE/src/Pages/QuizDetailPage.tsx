@@ -143,9 +143,10 @@ const QuizDetailPage = () => {
   }, [loadData]);
 
   useSessionRealtime({
+    quizId: quizId,
     onSessionStateChanged: () => loadData(true),
     enabled: Boolean(quizId),
-    joinGroup: false,
+    joinGroup: true,
   });
 
   if (isLoading) {

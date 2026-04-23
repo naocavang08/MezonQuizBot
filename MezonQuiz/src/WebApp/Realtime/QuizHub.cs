@@ -23,5 +23,25 @@ namespace WebApp.Realtime
 
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, sessionId);
         }
+
+        public async Task JoinQuizGroup(string quizId)
+        {
+            if (string.IsNullOrWhiteSpace(quizId))
+            {
+                return;
+            }
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"quiz_{quizId}");
+        }
+
+        public async Task LeaveQuizGroup(string quizId)
+        {
+            if (string.IsNullOrWhiteSpace(quizId))
+            {
+                return;
+            }
+
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"quiz_{quizId}");
+        }
     }
 }

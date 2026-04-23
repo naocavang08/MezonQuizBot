@@ -1232,6 +1232,10 @@ namespace WebApp.Application.ManageQuizSession.Services
             await _hubContext.Clients
                 .Group(session.Id.ToString())
                 .SendAsync("SessionStateChanged", payload);
+
+            await _hubContext.Clients
+                .Group($"quiz_{session.QuizId}")
+                .SendAsync("SessionStateChanged", payload);
         }
     }
 }

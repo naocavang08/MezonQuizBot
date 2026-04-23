@@ -4,6 +4,7 @@ import type { SessionStateChangedDto } from "../Interface/session.dto";
 
 type UseSessionRealtimeOptions = {
     sessionId?: string;
+    quizId?: string;
     onSessionStateChanged: () => void | Promise<void>;
     pollingMs?: number;
     joinGroup?: boolean;
@@ -14,18 +15,20 @@ const resolveHubUrl = () => "/hubs/quiz-session";
 
 const useSessionRealtime = ({
     sessionId,
+    quizId,
     onSessionStateChanged,
     pollingMs = 5000,
     joinGroup = true,
     enabled = true,
 }: UseSessionRealtimeOptions) => {
     useEffect(() => {
-        if (!enabled || (joinGroup && !sessionId)) {
+        if (!enabled || (joinGroup && !sessionId && !quizId)) {
             return;
         }
 
         let connection: HubConnection | null = null;
         let isDisposed = false;
+        let timer: number | undefined;
 
         const connectHub = async () => {
             try {
@@ -53,7 +56,16 @@ const useSessionRealtime = ({
                     await hub.invoke("JoinSessionGroup", sessionId);
                 }
 
+                if (joinGroup && quizId) {
+                    await hub.invoke("JoinQuizGroup", quizId);
+                }
+
                 connection = hub;
+                
+                if (timer !== undefined) {
+                    window.clearInterval(timer);
+                    timer = undefined;
+                }
             } catch {
                 // Keep fallback refresh active if realtime connection fails.
             }
@@ -61,13 +73,15 @@ const useSessionRealtime = ({
 
         void connectHub();
 
-        const timer = window.setInterval(() => {
+        timer = window.setInterval(() => {
             void onSessionStateChanged();
         }, pollingMs);
 
         return () => {
             isDisposed = true;
-            window.clearInterval(timer);
+            if (timer !== undefined) {
+                window.clearInterval(timer);
+            }
 
             if (!connection) {
                 return;
@@ -77,9 +91,13 @@ const useSessionRealtime = ({
                 void connection.invoke("LeaveSessionGroup", sessionId).catch(() => undefined);
             }
 
+            if (joinGroup && quizId) {
+                void connection.invoke("LeaveQuizGroup", quizId).catch(() => undefined);
+            }
+
             void connection.stop().catch(() => undefined);
         };
-    }, [enabled, joinGroup, onSessionStateChanged, pollingMs, sessionId]);
+    }, [enabled, joinGroup, onSessionStateChanged, pollingMs, sessionId, quizId]);
 };
 
 export default useSessionRealtime;
