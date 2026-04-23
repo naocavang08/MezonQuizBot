@@ -412,9 +412,25 @@ const PlayerQuizPage = () => {
                     !isLoading && (
                         <Card>
                             <CardContent>
-                                <Typography color="text.secondary">
-                                    The host has not started the quiz yet.
-                                </Typography>
+                                <Stack spacing={2}>
+                                    <Typography color="text.secondary">
+                                        {session?.status === SessionStatusValue.Finished
+                                            ? "This session has finished."
+                                            : session?.status === SessionStatusValue.Cancelled
+                                                ? "This session was cancelled."
+                                                : "The host has not started the quiz yet."}
+                                    </Typography>
+                                    {session?.status === SessionStatusValue.Finished ? (
+                                        <Stack direction="row">
+                                            <Button
+                                                variant="contained"
+                                                onClick={() => navigate(`/app/find-quizzes/${quizId}/leaderboard`)}
+                                            >
+                                                Show Result
+                                            </Button>
+                                        </Stack>
+                                    ) : null}
+                                </Stack>
                             </CardContent>
                         </Card>
                     )

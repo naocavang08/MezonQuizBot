@@ -186,7 +186,7 @@ const QuizDetailPage = () => {
             </Typography>
             <Stack direction="row" spacing={1}>
               <Button variant="contained" onClick={() => navigate(`/app/find-quizzes/${quizId}/leaderboard`)}>
-                Leaderboard
+                Top players
               </Button>
               <Button variant="outlined" onClick={() => navigate("/app/find-quizzes")}>
                 Back
@@ -280,105 +280,105 @@ const QuizDetailPage = () => {
                     <Stack spacing={1.2}>
                       {openSessions.map((session) => {
                         const deepLink = session.deepLink ?? "";
-                      const qrCodeUrl = session.qrCodeUrl ?? "";
+                        const qrCodeUrl = session.qrCodeUrl ?? "";
 
-                      return (
-                        <Box
-                          key={session.id}
-                          sx={{
-                            border: "1px solid",
-                            borderColor: "divider",
-                            borderRadius: 2,
-                            p: 1.5,
-                          }}
-                        >
-                          <Stack spacing={0.8}>
-                            <Typography variant="subtitle2" fontWeight={700}>
-                              Session {session.id}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Status: {sessionStatusLabel[session.status] ?? "Unknown"} | Participants: {session.participantCount}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Code: {session.code || "N/A"}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Created: {new Date(session.createdAt).toLocaleString()}
-                            </Typography>
+                        return (
+                          <Box
+                            key={session.id}
+                            sx={{
+                              border: "1px solid",
+                              borderColor: "divider",
+                              borderRadius: 2,
+                              p: 1.5,
+                            }}
+                          >
+                            <Stack spacing={0.8}>
+                              <Typography variant="subtitle2" fontWeight={700}>
+                                Session {session.id}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                Status: {sessionStatusLabel[session.status] ?? "Unknown"} | Participants: {session.participantCount}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                Code: {session.code || "N/A"}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                Created: {new Date(session.createdAt).toLocaleString()}
+                              </Typography>
 
-                            {qrCodeUrl ? (
-                              <Box
-                                component="img"
-                                src={qrCodeUrl}
-                                alt={`Session ${session.id} QR code`}
-                                sx={{
-                                  width: 96,
-                                  height: 96,
-                                  borderRadius: 1,
-                                  border: "1px solid",
-                                  borderColor: "divider",
-                                  backgroundColor: "background.paper",
-                                }}
-                              />
-                            ) : null}
-
-                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                disabled={!session.code}
-                                onClick={() => {
-                                  void copyValue(session.code, "Session code copied.");
-                                }}
-                              >
-                                Copy Session Code
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={() => {
-                                  void copyValue(session.id, "Session ID copied.");
-                                }}
-                              >
-                                Copy Session ID
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                disabled={!deepLink}
-                                onClick={() => {
-                                  void copyValue(deepLink, "Session deep link copied.");
-                                }}
-                              >
-                                Copy Deep Link
-                              </Button>
                               {qrCodeUrl ? (
-                                <Link
-                                  href={qrCodeUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  underline="hover"
-                                  sx={{ alignSelf: "center" }}
-                                >
-                                  Open QR
-                                </Link>
+                                <Box
+                                  component="img"
+                                  src={qrCodeUrl}
+                                  alt={`Session ${session.id} QR code`}
+                                  sx={{
+                                    width: 96,
+                                    height: 96,
+                                    borderRadius: 1,
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    backgroundColor: "background.paper",
+                                  }}
+                                />
                               ) : null}
+
+                              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  disabled={!session.code}
+                                  onClick={() => {
+                                    void copyValue(session.code, "Session code copied.");
+                                  }}
+                                >
+                                  Copy Session Code
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  onClick={() => {
+                                    void copyValue(session.id, "Session ID copied.");
+                                  }}
+                                >
+                                  Copy Session ID
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  disabled={!deepLink}
+                                  onClick={() => {
+                                    void copyValue(deepLink, "Session deep link copied.");
+                                  }}
+                                >
+                                  Copy Deep Link
+                                </Button>
+                                {qrCodeUrl ? (
+                                  <Link
+                                    href={qrCodeUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    underline="hover"
+                                    sx={{ alignSelf: "center" }}
+                                  >
+                                    Open QR
+                                  </Link>
+                                ) : null}
+                              </Stack>
+                              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  onClick={() => {
+                                    void handleJoinAndPlay(session);
+                                  }}
+                                >
+                                  Join & Play
+                                </Button>
+                              </Stack>
                             </Stack>
-                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                onClick={() => {
-                                  void handleJoinAndPlay(session);
-                                }}
-                              >
-                                Join & Play
-                              </Button>
-                            </Stack>
-                          </Stack>
-                        </Box>
-                      );
-                    })}
+                          </Box>
+                        );
+                      })}
                     </Stack>
                   );
                 })()}
