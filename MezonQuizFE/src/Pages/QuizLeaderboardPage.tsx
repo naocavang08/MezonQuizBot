@@ -24,23 +24,10 @@ import UserIdentityCell from "../Components/UserIdentityCell";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { getQuizLeaderboard } from "../Api/session.api";
 import { getQuiz } from "../Api/quiz.api";
-import {
-    SessionStatusValue,
-    type QuizSessionDto,
-    type SessionParticipantDto,
-} from "../Interface/session.dto";
-import { isSameLeaderboard, isSameSession } from "../Lib/Utils/sessionRender";
+import { type SessionParticipantDto } from "../Interface/session.dto";
+import { isSameLeaderboard } from "../Lib/Utils/sessionRender";
 import { MdEmojiEvents, MdMilitaryTech, MdStars, MdTrendingUp } from "react-icons/md";
 import { MdRefresh } from "react-icons/md";
-import useSessionRealtime from "../Hooks/useSessionRealtime";
-
-const statusLabel: Record<number, string> = {
-    [SessionStatusValue.Waiting]: "Waiting",
-    [SessionStatusValue.Active]: "Active",
-    [SessionStatusValue.Paused]: "Paused",
-    [SessionStatusValue.Finished]: "Finished",
-    [SessionStatusValue.Cancelled]: "Cancelled",
-};
 
 const formatCompletion = (participant: SessionParticipantDto) => {
     if (typeof participant.completionDurationSeconds === "number") {
