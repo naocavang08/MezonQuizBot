@@ -110,4 +110,5 @@ export interface SessionParticipantDto {
     completionDurationSeconds?: number;
     rank?: number;
     joinedAt: string;
+    totalSessionsCount?: number;
 }

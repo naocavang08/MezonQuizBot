@@ -235,6 +235,14 @@ namespace WebApp.Application.ManageQuizSession
             return Ok(leaderboard);
         }
 
+        [HttpGet("quiz/{quizId}/leaderboard")]
+        [PermissionAuthorize(PermissionNames.Sessions.Creator_View, PermissionNames.Sessions.Player_View)]
+        public async Task<IActionResult> GetQuizLeaderboard(Guid quizId)
+        {
+            var leaderboard = await _sessionService.GetQuizLeaderboard(quizId);
+            return Ok(leaderboard);
+        }
+
         private bool TryGetCurrentUserId(out Guid userId)
         {
             var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);

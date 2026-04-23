@@ -165,6 +165,13 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return (Fail("MaxParticipants must be greater than 0."), null);
             }
 
+            var existSession = await _dbContext.QuizSessions
+                .FirstOrDefaultAsync(s => s.QuizId == request.QuizId && s.Status != SessionStatus.Finished && s.Status != SessionStatus.Cancelled);
+            if (existSession != null)
+            {
+                return (Fail("Quiz already has an active session."), null);
+            }
+
             var session = new QuizSession
             {
                 Id = Guid.NewGuid(),
@@ -795,6 +802,59 @@ namespace WebApp.Application.ManageQuizSession.Services
                     JoinedAt = p.JoinedAt
                 })
                 .ToList();
+
+            return participants;
+        }
+
+        public async Task<List<SessionParticipantDto>> GetQuizLeaderboard(Guid quizId)
+        {
+            var participantRows = await _dbContext.SessionParticipants
+                .AsNoTracking()
+                .Where(p => p.Session.QuizId == quizId && p.Session.Status == SessionStatus.Finished)
+                .GroupBy(p => p.UserId)
+                .Select(g => new
+                {
+                    UserId = g.Key,
+                    DisplayName = g.OrderByDescending(p => p.TotalScore).FirstOrDefault()!.User.DisplayName ?? g.OrderByDescending(p => p.TotalScore).FirstOrDefault()!.User.Username,
+                    AvatarUrl = g.OrderByDescending(p => p.TotalScore).FirstOrDefault()!.User.AvatarUrl,
+                    TotalScore = g.Max(p => p.TotalScore),
+                    AnswersCount = g.OrderByDescending(p => p.TotalScore).FirstOrDefault()!.AnswersCount,
+                    CorrectCount = g.OrderByDescending(p => p.TotalScore).FirstOrDefault()!.CorrectCount,
+                    CompletedAt = g.OrderByDescending(p => p.TotalScore).FirstOrDefault()!.CompletedAt,
+                    SessionStartedAt = g.OrderByDescending(p => p.TotalScore).FirstOrDefault()!.Session.StartedAt,
+                    JoinedAt = g.Min(p => p.JoinedAt),
+                    TotalSessionsCount = g.Count()
+                })
+                .ToListAsync();
+
+            var participants = participantRows
+                .Select(p => new SessionParticipantDto
+                {
+                    UserId = p.UserId,
+                    DisplayName = p.DisplayName,
+                    AvatarUrl = p.AvatarUrl,
+                    TotalScore = p.TotalScore,
+                    AnswersCount = p.AnswersCount,
+                    CorrectCount = p.CorrectCount,
+                    CompletedAt = p.CompletedAt,
+                    CompletionDurationSeconds = p.CompletedAt.HasValue && p.SessionStartedAt.HasValue
+                        ? (int?)Math.Max(0, (p.CompletedAt.Value - p.SessionStartedAt.Value).TotalSeconds)
+                        : null,
+                    JoinedAt = p.JoinedAt,
+                    TotalSessionsCount = p.TotalSessionsCount
+                })
+                .OrderByDescending(p => p.TotalScore)
+                .ThenBy(p => p.TotalSessionsCount)
+                .ThenBy(p => p.CompletionDurationSeconds.HasValue ? 0 : 1)
+                .ThenBy(p => p.CompletionDurationSeconds)
+                .ThenByDescending(p => p.CorrectCount)
+                .ThenBy(p => p.JoinedAt)
+                .ToList();
+
+            for (int i = 0; i < participants.Count; i++)
+            {
+                participants[i].Rank = i + 1;
+            }
 
             return participants;
         }

@@ -184,9 +184,14 @@ const QuizDetailPage = () => {
             <Typography variant="h4" fontWeight={700} sx={{ color: strongText }}>
               {quiz.title}
             </Typography>
-            <Button variant="outlined" onClick={() => navigate("/app/find-quizzes")}>
-              Back
-            </Button>
+            <Stack direction="row" spacing={1}>
+              <Button variant="contained" onClick={() => navigate(`/app/find-quizzes/${quizId}/leaderboard`)}>
+                Leaderboard
+              </Button>
+              <Button variant="outlined" onClick={() => navigate("/app/find-quizzes")}>
+                Back
+              </Button>
+            </Stack>
           </Stack>
 
           <Card
@@ -244,10 +249,7 @@ const QuizDetailPage = () => {
                   alignItems={{ xs: "flex-start", sm: "center" }}
                 >
                   <Typography variant="h6" fontWeight={700}>
-                    Sessions
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Total: {sessions.length}
+                    Open Session
                   </Typography>
                 </Stack>
 
@@ -259,17 +261,25 @@ const QuizDetailPage = () => {
                   </Stack>
                 ) : null}
 
-                {!isLoadingSessions && sessions.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    No session available for this quiz.
-                  </Typography>
-                ) : null}
+                {(() => {
+                  if (isLoadingSessions) return null;
 
-                {!isLoadingSessions && sessions.length > 0 ? (
-                  <Stack spacing={1.2}>
-                    {sessions.map((session) => {
-                      const isFinishedSession = session.status === SessionStatusValue.Finished;
-                      const deepLink = session.deepLink ?? "";
+                  const openSessions = sessions.filter(
+                    (s) => s.status !== SessionStatusValue.Finished && s.status !== SessionStatusValue.Cancelled
+                  );
+
+                  if (openSessions.length === 0) {
+                    return (
+                      <Typography variant="body2" color="text.secondary">
+                        No open session available for this quiz.
+                      </Typography>
+                    );
+                  }
+
+                  return (
+                    <Stack spacing={1.2}>
+                      {openSessions.map((session) => {
+                        const deepLink = session.deepLink ?? "";
                       const qrCodeUrl = session.qrCodeUrl ?? "";
 
                       return (
@@ -289,16 +299,14 @@ const QuizDetailPage = () => {
                             <Typography variant="body2" color="text.secondary">
                               Status: {sessionStatusLabel[session.status] ?? "Unknown"} | Participants: {session.participantCount}
                             </Typography>
-                            {!isFinishedSession ? (
-                              <Typography variant="body2" color="text.secondary">
-                                Code: {session.code || "N/A"}
-                              </Typography>
-                            ) : null}
+                            <Typography variant="body2" color="text.secondary">
+                              Code: {session.code || "N/A"}
+                            </Typography>
                             <Typography variant="body2" color="text.secondary">
                               Created: {new Date(session.createdAt).toLocaleString()}
                             </Typography>
 
-                            {!isFinishedSession && qrCodeUrl ? (
+                            {qrCodeUrl ? (
                               <Box
                                 component="img"
                                 src={qrCodeUrl}
@@ -314,78 +322,66 @@ const QuizDetailPage = () => {
                               />
                             ) : null}
 
-                            {!isFinishedSession ? (
-                              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  disabled={!session.code}
-                                  onClick={() => {
-                                    void copyValue(session.code, "Session code copied.");
-                                  }}
-                                >
-                                  Copy Session Code
-                                </Button>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  onClick={() => {
-                                    void copyValue(session.id, "Session ID copied.");
-                                  }}
-                                >
-                                  Copy Session ID
-                                </Button>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  disabled={!deepLink}
-                                  onClick={() => {
-                                    void copyValue(deepLink, "Session deep link copied.");
-                                  }}
-                                >
-                                  Copy Deep Link
-                                </Button>
-                                {qrCodeUrl ? (
-                                  <Link
-                                    href={qrCodeUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    underline="hover"
-                                    sx={{ alignSelf: "center" }}
-                                  >
-                                    Open QR
-                                  </Link>
-                                ) : null}
-                              </Stack>
-                            ) : null}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                              {!isFinishedSession ? (
-                                <Button
-                                  size="small"
-                                  variant="contained"
-                                  onClick={() => {
-                                    void handleJoinAndPlay(session);
-                                  }}
-                                >
-                                  Join & Play
-                                </Button>
-                              ) : null}
                               <Button
                                 size="small"
-                                variant={isFinishedSession ? "contained" : "outlined"}
+                                variant="outlined"
+                                disabled={!session.code}
                                 onClick={() => {
-                                  navigate(`/app/find-quizzes/${quizId}/sessions/${session.id}/leaderboard`);
+                                  void copyValue(session.code, "Session code copied.");
                                 }}
                               >
-                                Show Result
+                                Copy Session Code
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => {
+                                  void copyValue(session.id, "Session ID copied.");
+                                }}
+                              >
+                                Copy Session ID
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                disabled={!deepLink}
+                                onClick={() => {
+                                  void copyValue(deepLink, "Session deep link copied.");
+                                }}
+                              >
+                                Copy Deep Link
+                              </Button>
+                              {qrCodeUrl ? (
+                                <Link
+                                  href={qrCodeUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  underline="hover"
+                                  sx={{ alignSelf: "center" }}
+                                >
+                                  Open QR
+                                </Link>
+                              ) : null}
+                            </Stack>
+                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                onClick={() => {
+                                  void handleJoinAndPlay(session);
+                                }}
+                              >
+                                Join & Play
                               </Button>
                             </Stack>
                           </Stack>
                         </Box>
                       );
                     })}
-                  </Stack>
-                ) : null}
+                    </Stack>
+                  );
+                })()}
               </Stack>
             </CardContent>
           </Card>

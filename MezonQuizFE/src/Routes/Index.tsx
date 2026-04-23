@@ -7,7 +7,6 @@ import QuizPage from "../Pages/Admin/QuizPage";
 import RolePage from "../Pages/Admin/RolePage";
 import UserPage from "../Pages/Admin/UserPage";
 import CategoryPage from "../Pages/Admin/CategoryPage";
-import LeaderboardPage from "../Pages/LeaderboardPage";
 import useAuthStore from "../Stores/login.store";
 import ProtectedRoute from "./ProtectedRoute";
 import MyQuizPage from "../Pages/MyQuizPage";
@@ -18,10 +17,10 @@ import FindQuizPage from "../Pages/FindQuizPage";
 import QuizDetailPage from "../Pages/QuizDetailPage";
 import SessionRoomPage from "../Pages/SessionRoomPage";
 import Layout from "../Layouts/Layout";
-// import QuizSessionLayout from "../Layouts/QuizSessionLayout";
 import { ACCESS_PERMISSIONS, PERMISSIONS, resolveDefaultAppPath } from "../Lib/Utils/permissions";
 import StartQuizPage from "../Pages/StartQuizPage";
 import PlayerQuizPage from "../Pages/PlayerQuizPage";
+import QuizLeaderboardPage from "../Pages/QuizLeaderboardPage";
 
 
 const AppRoutes = () => {
@@ -75,7 +74,7 @@ const AppRoutes = () => {
           <Route element={<ProtectedRoute requiredPermissions={ACCESS_PERMISSIONS.QUIZ_WORKSPACE} />}>
             <Route path="find-quizzes" element={<FindQuizPage />} />
             <Route path="find-quizzes/:quizId" element={<QuizDetailPage />} />
-            <Route path="find-quizzes/:quizId/sessions/:sessionId/leaderboard" element={<LeaderboardPage />} />
+            <Route path="find-quizzes/:quizId/leaderboard" element={<QuizLeaderboardPage />} />
             <Route path="find-quizzes/:quizId/sessions/:sessionId/play" element={<PlayerQuizPage />} />
           </Route>
 

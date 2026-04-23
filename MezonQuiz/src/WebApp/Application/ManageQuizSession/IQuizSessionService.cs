@@ -23,5 +23,6 @@ namespace WebApp.Application.ManageQuizSession
         Task<SessionOperationResult> SubmitAnswer(Guid sessionId, SubmitAnswerDto request);
         Task DispatchCurrentQuestionToParticipant(Guid sessionId, Guid userId);
         Task<List<SessionParticipantDto>> GetLeaderboard(Guid sessionId);
+        Task<List<SessionParticipantDto>> GetQuizLeaderboard(Guid quizId);
     }
 }

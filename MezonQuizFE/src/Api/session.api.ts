@@ -95,6 +95,10 @@ export const getSessionLeaderboard = (sessionId: string) => {
     return apiClient.get<SessionParticipantDto[]>(`/api/QuizSession/${sessionId}/leaderboard`).then((res) => res.data);
 };
 
+export const getQuizLeaderboard = (quizId: string) => {
+    return apiClient.get<SessionParticipantDto[]>(`/api/QuizSession/quiz/${quizId}/leaderboard`).then((res) => res.data);
+};
+
 export const getCurrentSessionQuestion = (sessionId: string) => {
     return apiClient.get<QuizSessionQuestionDto>(`/api/QuizSession/${sessionId}/current-question`).then((res) => res.data);
 };

@@ -62,6 +62,7 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public DateTime? CompletedAt { get; set; }
         public int? CompletionDurationSeconds { get; set; }
         public DateTime JoinedAt { get; set; }
+        public int TotalSessionsCount { get; set; }
     }
 
     public class SessionOperationResult
