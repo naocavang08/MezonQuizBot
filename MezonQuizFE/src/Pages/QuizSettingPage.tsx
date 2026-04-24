@@ -14,6 +14,7 @@ import {
 	FormControlLabel,
 	FormLabel,
 	IconButton,
+	InputLabel,
 	MenuItem,
 	Radio,
 	RadioGroup,
@@ -834,6 +835,7 @@ const QuizSettingPage = () => {
 									<Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
 										<TextField
 											type="number"
+											size="small"
 											label="Time Limit (10-30s)"
 											inputProps={{ min: 10, max: 30 }}
 											value={question.timeLimitSeconds}
@@ -841,14 +843,17 @@ const QuizSettingPage = () => {
 										/>
 										<TextField
 											type="number"
+											size="small"
 											label="Points (1-20)"
 											inputProps={{ min: 1, max: 20 }}
 											value={question.points}
 											onChange={(event) => setQuestionField(questionIndex, "points", Number(event.target.value || 1))}
 										/>
-										<FormControl fullWidth>
-											<FormLabel>Question Type</FormLabel>
+										<FormControl fullWidth size="small">
+											<InputLabel id={`question-type-label-${questionIndex}`}>Question Type</InputLabel>
 											<Select
+												labelId={`question-type-label-${questionIndex}`}
+												label="Question Type"
 												value={question.questionType}
 												onChange={(event) =>
 													handleQuestionTypeChange(
