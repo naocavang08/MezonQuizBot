@@ -19,7 +19,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdRefresh, MdSearch } from "react-icons/md";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
 import { getAvailableQuizzes } from "../Api/quiz.api";
 import type { CategoryDto } from "../Interface/category.dto";
@@ -130,6 +130,7 @@ const QuizCard = memo((props: QuizCardProps) => {
 
 const FindQuizPage = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const theme = useTheme();
     const isDark = theme.palette.mode === "dark";
     const panelBackground = isDark
@@ -156,7 +157,7 @@ const FindQuizPage = () => {
             : alpha(theme.palette.background.paper, 0.95),
     };
     const [categories, setCategories] = useState<CategoryDto[]>([]);
-    const [selectedCategory, setSelectedCategory] = useState<string>("all");
+    const [selectedCategory, setSelectedCategory] = useState<string>(() => searchParams.get("category") || "all");
     const [searchTitle, setSearchTitle] = useState("");
     const [page, setPage] = useState(1);
 
@@ -192,6 +193,13 @@ const FindQuizPage = () => {
 
         void loadCategories();
     }, []);
+
+    useEffect(() => {
+        const categoryParam = searchParams.get("category");
+        if (categoryParam) {
+            setSelectedCategory(categoryParam);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         setPage(1);

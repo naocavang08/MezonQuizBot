@@ -4,14 +4,9 @@ import {
   Box,
   Button,
   Chip,
-  Divider,
   GlobalStyles,
   IconButton,
-  InputAdornment,
-  Menu,
-  MenuItem,
   Stack,
-  TextField,
   Typography,
   useMediaQuery,
 } from '@mui/material'
@@ -20,9 +15,9 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { ACCESS_PERMISSIONS, hasAnyPermission, PERMISSIONS } from '../Lib/Utils/permissions'
 import useAuthStore from '../Stores/login.store'
 import useThemeStore from '../Stores/theme.store'
-import { MdDarkMode, MdLightMode, MdLogout, MdSettings } from 'react-icons/md'
+import { MdDarkMode, MdLightMode } from 'react-icons/md'
 import AppBreadcrumb from '../Components/Navigation/AppBreadcrumb'
-
+import GlobalSearchBox from '../Components/Navigation/GlobalSearchBox'
 type NavItem = {
   label: string
   path: string
@@ -143,34 +138,32 @@ const Layout = () => {
   const isResponsive = useMediaQuery('(max-width:900px)')
   const themeMode = useThemeStore((state) => state.themeMode)
   const toggleTheme = useThemeStore((state) => state.toggleTheme)
-  const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null)
 
-  // Get colors from current theme - use palette from theme provider if available
   const colors = useMemo(
     () =>
       themeMode === 'dark'
         ? {
-            defaultBg: '#08111f',
-            paperBg: '#0e1a2b',
-            sideBg: '#0a1626',
-            textPrimary: '#e2e8f0',
-            textSecondary: '#94a3b8',
-            border: 'rgba(148,163,184,0.18)',
-            fieldBg: 'rgba(15, 23, 42, 0.8)',
-            bodyBg:
-              'radial-gradient(circle at 10% 0%, rgba(14,165,233,0.22), transparent 36%), radial-gradient(circle at 95% 0%, rgba(251,146,60,0.16), transparent 40%), #08111f',
-          }
+          defaultBg: '#08111f',
+          paperBg: '#0e1a2b',
+          sideBg: '#0a1626',
+          textPrimary: '#e2e8f0',
+          textSecondary: '#94a3b8',
+          border: 'rgba(148,163,184,0.18)',
+          fieldBg: 'rgba(15, 23, 42, 0.8)',
+          bodyBg:
+            'radial-gradient(circle at 10% 0%, rgba(14,165,233,0.22), transparent 36%), radial-gradient(circle at 95% 0%, rgba(251,146,60,0.16), transparent 40%), #08111f',
+        }
         : {
-            defaultBg: '#eef4fb',
-            paperBg: '#ffffff',
-            sideBg: '#f8fbff',
-            textPrimary: '#0f172a',
-            textSecondary: '#475569',
-            border: 'rgba(71,85,105,0.22)',
-            fieldBg: 'rgba(255, 255, 255, 0.95)',
-            bodyBg:
-              'radial-gradient(circle at 10% 0%, rgba(14,165,233,0.16), transparent 38%), radial-gradient(circle at 95% 0%, rgba(251,146,60,0.12), transparent 40%), #eef4fb',
-          },
+          defaultBg: '#eef4fb',
+          paperBg: '#ffffff',
+          sideBg: '#f8fbff',
+          textPrimary: '#0f172a',
+          textSecondary: '#475569',
+          border: 'rgba(71,85,105,0.22)',
+          fieldBg: 'rgba(255, 255, 255, 0.95)',
+          bodyBg:
+            'radial-gradient(circle at 10% 0%, rgba(14,165,233,0.16), transparent 38%), radial-gradient(circle at 95% 0%, rgba(251,146,60,0.12), transparent 40%), #eef4fb',
+        },
     [themeMode],
   )
 
@@ -349,21 +342,26 @@ const Layout = () => {
                 src={user?.avatarUrl}
                 alt={user?.username}
                 sx={{
-                    bgcolor: "#0ea5e9",
-                    width: 36,
-                    height: 36,
-                    fontWeight: 700,
-                    fontSize: 13
+                  bgcolor: "#0ea5e9",
+                  width: 36,
+                  height: 36,
+                  fontWeight: 700,
+                  fontSize: 13
                 }}
-                >
+              >
                 {!user?.avatarUrl &&
-                    (user?.username?.slice(0, 2) || "U").toUpperCase()}
+                  (user?.username?.slice(0, 2) || "U").toUpperCase()}
               </Avatar>
               <Box>
                 <Typography sx={{ fontSize: 14, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.2 }}>
                   {user?.displayName || user?.username || 'Quiz User'}
                 </Typography>
-                <Typography sx={{ color: colors.textSecondary, fontSize: 11, lineHeight: 1.1 }}>Signed in</Typography>
+                <Typography
+                  variant="caption"
+                  color={colors.textSecondary}
+                >
+                  {user?.email}
+                </Typography>
               </Box>
             </Stack>
             <Button
@@ -405,18 +403,7 @@ const Layout = () => {
                 </IconButton>
               ) : null}
 
-              <TextField
-                size="small"
-                placeholder={`Search in ${currentTitle}`}
-                sx={{ maxWidth: 420, width: '100%' }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SvgIconPath path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" size={16} color={colors.textSecondary} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+              <GlobalSearchBox colors={colors} currentTitle={currentTitle} />
             </Stack>
 
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexShrink: 0 }}>
@@ -434,95 +421,44 @@ const Layout = () => {
               <IconButton
                 onClick={toggleTheme}
                 sx={{
-                    border: `1px solid ${colors.border}`,
-                    color: colors.textPrimary,
-                    width: 34,
-                    height: 34,
+                  border: `1px solid ${colors.border}`,
+                  color: colors.textPrimary,
+                  width: 34,
+                  height: 34,
                 }}
-                >
+              >
                 {currentThemeIcon}
               </IconButton>
 
               <IconButton
-                onClick={(event) => setUserMenuAnchor(event.currentTarget)}
                 sx={{
-                    p: 0,
-                    width: 34,
-                    height: 34,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: "50%",
+                  p: 0,
+                  width: 34,
+                  height: 34,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: "50%",
                 }}
-                >
+              >
                 <Avatar
-                    sx={{
+                  sx={{
                     bgcolor: "#0ea5e9",
                     width: "100%",
                     height: "100%",
                     fontWeight: 700,
                     fontSize: 12,
-                    }}
+                  }}
                 >
-                    {user?.avatarUrl ? (
+                  {user?.avatarUrl ? (
                     <img
-                        src={user.avatarUrl}
-                        alt={user.username}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      src={user.avatarUrl}
+                      alt={user.username}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
-                    ) : (
+                  ) : (
                     (user?.username?.slice(0, 2) || "U").toUpperCase()
-                    )}
+                  )}
                 </Avatar>
               </IconButton>
-              <Menu
-                anchorEl={userMenuAnchor}
-                open={Boolean(userMenuAnchor)}
-                onClose={() => setUserMenuAnchor(null)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              >
-                <MenuItem disabled sx={{ flexDirection: "column", alignItems: "flex-start" }}>
-                    <Typography
-                        variant="body2"
-                        fontWeight={600}
-                        color={colors.textPrimary}
-                    >
-                        {user?.displayName || user?.username || "Quiz User"}
-                    </Typography>
-
-                    <Typography
-                        variant="caption"
-                        color={colors.textSecondary}
-                    >
-                        {user?.email}
-                    </Typography>
-                </MenuItem>
-                <Divider sx={{ my: 0.5 }} />
-                <MenuItem
-                  onClick={() => {
-                    setUserMenuAnchor(null)
-                    navigate('/app/my-quizzes')
-                  }}
-                >
-                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <MdSettings size={16} color={colors.textSecondary} />
-                    <Typography variant="body2">Setting</Typography>
-                  </Stack>
-                </MenuItem>
-
-                <Divider sx={{ my: 0.5 }} />
-                <MenuItem
-                  onClick={() => {
-                    setUserMenuAnchor(null)
-                    clearAuth()
-                    navigate('/login', { replace: true })
-                  }}
-                >
-                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <MdLogout size={16} color={colors.textSecondary} />
-                    <Typography variant="body2">Logout</Typography>
-                  </Stack>
-                </MenuItem>
-              </Menu>
             </Stack>
           </Stack>
 

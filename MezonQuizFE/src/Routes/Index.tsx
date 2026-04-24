@@ -21,6 +21,7 @@ import { ACCESS_PERMISSIONS, PERMISSIONS, resolveDefaultAppPath } from "../Lib/U
 import StartQuizPage from "../Pages/StartQuizPage";
 import PlayerQuizPage from "../Pages/PlayerQuizPage";
 import QuizLeaderboardPage from "../Pages/QuizLeaderboardPage";
+import GlobalSearchPage from "../Pages/Search/GlobalSearchPage";
 
 
 const AppRoutes = () => {
@@ -44,6 +45,7 @@ const AppRoutes = () => {
 
         <Route path="/app" element={<Layout />}>
           <Route index element={<Navigate to={defaultAppPath} replace />} />
+          <Route path="search" element={<GlobalSearchPage />} />
 
           <Route element={<ProtectedRoute requireSystemRole />}>
             <Route element={<ProtectedRoute requiredPermissions={ACCESS_PERMISSIONS.DASHBOARD} />}>
