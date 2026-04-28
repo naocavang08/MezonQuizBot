@@ -14,6 +14,8 @@ namespace WebApp.Application.ManageQuiz.Dtos
 
         public Guid? CategoryId { get; set; }
 
+        public int QuestionCount { get; set; } = 0;
+
         public int TotalPoints { get; set; } = 0;
     }
 }

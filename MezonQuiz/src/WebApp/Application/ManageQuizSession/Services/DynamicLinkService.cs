@@ -19,7 +19,7 @@ namespace WebApp.Application.ManageQuizSession.Services
             _configuration = configuration;
         }
 
-        public SessionLinksDto BuildSessionLinks(Guid sessionId)
+        public string BuildLinkForQr()
         {
             var input = new DataJsonDto
             {
@@ -35,14 +35,25 @@ namespace WebApp.Application.ManageQuizSession.Services
             string baseUrl = _configuration["MezonBot:BaseLink"] ?? "https://mezon.ai/chat";
             string linkForQr = $"{baseUrl}/{input.Name}?data={base64Encoded}";
 
-            string qrCodeDataUri = GenerateQrCodeDataUri(linkForQr);
+            return linkForQr;
+        }
+
+        public SessionLinksDto BuildSessionLinks(Guid sessionId)
+        {
+            var linkForQr = BuildLinkForQr();
 
             return new SessionLinksDto
             {
                 DeepLink = linkForQr,
-                QrCodeUrl = qrCodeDataUri,
+                QrCodeUrl = GenerateQrCodeDataUri(linkForQr),
                 Code = EncodeSessionCode(sessionId)
             };
+        }
+
+        public string BuildQrCodeUri()
+        {
+            var linkForQr = BuildLinkForQr();
+            return GenerateQrCodeDataUri(linkForQr);
         }
 
         /// <summary>

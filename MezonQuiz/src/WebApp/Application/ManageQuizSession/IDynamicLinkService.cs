@@ -5,5 +5,6 @@ namespace WebApp.Application.ManageQuizSession
     public interface IDynamicLinkService
     {
         SessionLinksDto BuildSessionLinks(Guid sessionId);
+        public string BuildQrCodeUri();
     }
 }

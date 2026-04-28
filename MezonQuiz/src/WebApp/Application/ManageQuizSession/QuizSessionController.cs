@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WebApp.Application.Auth.Authorization;
@@ -10,11 +11,13 @@ namespace WebApp.Application.ManageQuizSession
     public class QuizSessionController : ControllerBase
     {
         private readonly IQuizSessionService _sessionService;
+        private readonly IDynamicLinkService _dynamicLinkService;
         private readonly ILogger<QuizSessionController> _logger;
 
-        public QuizSessionController(IQuizSessionService sessionService, ILogger<QuizSessionController> logger)
+        public QuizSessionController(IQuizSessionService sessionService, IDynamicLinkService dynamicLinkService, ILogger<QuizSessionController> logger)
         {
             _sessionService = sessionService;
+            _dynamicLinkService = dynamicLinkService;
             _logger = logger;
         }
 
@@ -241,6 +244,14 @@ namespace WebApp.Application.ManageQuizSession
         {
             var leaderboard = await _sessionService.GetQuizLeaderboard(quizId);
             return Ok(leaderboard);
+        }
+
+        [HttpGet("quiz/bot-link")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetBotLink()
+        {
+            var links = _dynamicLinkService.BuildQrCodeUri();
+            return Ok(links);
         }
 
         private bool TryGetCurrentUserId(out Guid userId)

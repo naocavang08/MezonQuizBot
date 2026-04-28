@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>QuizMaster - Master Your Knowledge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#ffffff",
+                    "background": "#f8f9ff",
+                    "tertiary": "#571ac0",
+                    "error-container": "#ffdad6",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#e6eeff",
+                    "on-primary-container": "#dad7ff",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#4cd7f6",
+                    "on-tertiary-fixed-variant": "#5516be",
+                    "surface-container-low": "#eff4ff",
+                    "tertiary-fixed-dim": "#d0bcff",
+                    "secondary-container": "#57dffe",
+                    "on-surface": "#121c2a",
+                    "outline": "#777587",
+                    "surface-container-high": "#dee9fc",
+                    "on-tertiary-fixed": "#23005c",
+                    "on-primary-fixed": "#0f0069",
+                    "surface-container-highest": "#d9e3f6",
+                    "surface-variant": "#d9e3f6",
+                    "on-error-container": "#93000a",
+                    "secondary": "#00687a",
+                    "secondary-fixed": "#acedff",
+                    "on-tertiary-container": "#e3d5ff",
+                    "primary-container": "#4f46e5",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#e2dfff",
+                    "surface-tint": "#4d44e3",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary-container": "#6f3dd9",
+                    "on-primary": "#ffffff",
+                    "primary": "#3525cd",
+                    "tertiary-fixed": "#e9ddff",
+                    "on-secondary-fixed": "#001f26",
+                    "surface": "#f8f9ff",
+                    "on-secondary-fixed-variant": "#004e5c",
+                    "outline-variant": "#c7c4d8",
+                    "surface-dim": "#d0dbed",
+                    "surface-bright": "#f8f9ff",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "inverse-primary": "#c3c0ff",
+                    "on-background": "#121c2a",
+                    "inverse-surface": "#27313f",
+                    "on-error": "#ffffff",
+                    "on-secondary-container": "#006172",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-surface-variant": "#464555"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "stack-lg": "32px",
+                    "margin": "32px",
+                    "stack-sm": "8px",
+                    "section-padding": "64px",
+                    "unit": "8px",
+                    "stack-md": "16px",
+                    "container-max": "1120px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "button": ["Inter"],
+                    "display": ["Inter"],
+                    "h3": ["Inter"],
+                    "h1": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "h2": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "button": ["16px", {"lineHeight": "1", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "h3": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "h1": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.015em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-sm": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "h2": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background: #ffffff;
+            color: #121c2a;
+        }
+        .soft-shadow {
+            box-shadow: 0 20px 30px -10px rgba(79, 70, 229, 0.08);
+        }
+        .hero-gradient {
+            background: radial-gradient(circle at top left, #dcfce7 0%, #eff6ff 40%, #ffffff 100%);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .card-shadow {
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="font-body-md antialiased selection:bg-primary-fixed selection:text-on-primary-fixed-variant">
+<!-- Header (TopNavBar) -->
+<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm">
+<div class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+<div class="text-xl font-bold tracking-tight text-indigo-600">QuizMaster</div>
+<nav class="hidden md:flex items-center space-x-8 font-sans antialiased text-sm font-medium">
+<a class="text-indigo-600 border-b-2 border-indigo-600 pb-1" href="#explore">Explore</a>
+<a class="text-slate-600 hover:text-indigo-500 transition-all duration-200" href="#categories">Categories</a>
+<a class="text-slate-600 hover:text-indigo-500 transition-all duration-200" href="#leaderboard">Leaderboard</a>
+</nav>
+<button class="bg-primary-container text-on-primary px-5 py-2.5 rounded-lg font-button text-button hover:bg-primary transition-all duration-200 active:scale-95 shadow-sm">
+            Get Started
+        </button>
+</div>
+</header>
+<main>
+<!-- Hero Section -->
+<section class="pt-24 pb-12 px-6">
+<div class="max-w-7xl mx-auto hero-gradient rounded-[3rem] p-8 md:p-16 border border-white/50">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+<!-- Left Side -->
+<div class="space-y-8">
+<div class="inline-flex items-center px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-white text-on-surface-variant font-label-sm text-[13px] shadow-sm">
+<span class="material-symbols-outlined text-[18px] text-green-500 mr-2" data-icon="auto_awesome">auto_awesome</span>
+                        Your daily language boost starts here
+                    </div>
+<h1 class="font-display text-[44px] md:text-[56px] leading-[1.1] font-bold text-slate-900">
+                        Learn smarter with <span class="text-green-500">practice</span> that adapts to you
+                    </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg">
+                        Build vocabulary, sharpen grammar, and conquer weak spots — all in one place. Get instant feedback and clear explanations.
+                    </p>
+<!-- Tags -->
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 rounded-lg bg-blue-500 text-white text-[12px] font-bold">EN TOEIC</span>
+<span class="px-3 py-1 rounded-lg bg-rose-500 text-white text-[12px] font-bold">日 JLPT</span>
+<span class="px-3 py-1 rounded-lg bg-orange-500 text-white text-[12px] font-bold">中 HSK</span>
+<span class="px-3 py-1 rounded-lg bg-purple-500 text-white text-[12px] font-bold">한 TOPIK</span>
+</div>
+<!-- CTAs -->
+<div class="flex flex-col sm:flex-row items-center gap-6">
+<button class="bg-[#10b981] text-white px-8 py-4 rounded-2xl font-button text-button flex items-center shadow-lg hover:shadow-xl transition-all active:scale-95">
+<span class="material-symbols-outlined mr-2" data-icon="bolt">bolt</span>
+                            Continue practicing
+                            <span class="material-symbols-outlined ml-2" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<button class="flex items-center text-slate-700 font-bold hover:text-slate-900 transition-colors">
+                            Take a quiz
+                            <span class="material-symbols-outlined ml-2 text-slate-400" data-icon="radio_button_checked">radio_button_checked</span>
+</button>
+</div>
+<!-- Social Proof -->
+<div class="flex flex-wrap items-center gap-6 pt-4">
+<div class="flex items-center gap-2">
+<div class="flex text-orange-400">
+<span class="material-symbols-outlined text-sm fill-1" data-icon="star">star</span>
+<span class="material-symbols-outlined text-sm fill-1" data-icon="star">star</span>
+<span class="material-symbols-outlined text-sm fill-1" data-icon="star">star</span>
+<span class="material-symbols-outlined text-sm fill-1" data-icon="star">star</span>
+<span class="material-symbols-outlined text-sm fill-1" data-icon="star">star</span>
+</div>
+<span class="text-sm font-medium text-slate-600">4.8 average rating</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-500 text-sm" data-icon="check_circle">check_circle</span>
+<span class="text-sm text-slate-600">Free forever, upgrade anytime</span>
+</div>
+</div>
+</div>
+<!-- Right Side (Floating UI) -->
+<div class="relative flex justify-center lg:justify-end">
+<!-- Dark Themed Quiz Card Mockup -->
+<div class="relative w-full max-w-[500px] group">
+<!-- Main Card -->
+<div class="bg-[#1e1e1e] rounded-xl overflow-hidden shadow-2xl border border-white/5 relative z-10">
+<div class="flex">
+<!-- Left Accent Border -->
+<div class="w-1.5 bg-[#10b981]"></div>
+<div class="p-6 md:p-8 flex-1">
+<!-- Header -->
+<div class="mb-6">
+<h4 class="text-white font-bold text-lg md:text-xl">
+                                            [SINGLE CHOICE] Toán học cơ bản | Question 1/15
+                                        </h4>
+<p class="text-slate-400 mt-2 text-base">Số nào là số nguyên tố?</p>
+</div>
+<!-- Content Area (Code/List box) -->
+<div class="bg-[#2a2a2a] rounded-lg p-6 relative border border-white/5 mb-8">
+<span class="material-symbols-outlined absolute top-3 right-3 text-slate-500 text-sm" data-icon="content_copy">content_copy</span>
+<div class="space-y-1 font-mono text-slate-200">
+<p>1 - 13</p>
+<p>2 - 12</p>
+<p>3 - 9</p>
+<p>4 - 15</p>
+</div>
+</div>
+<!-- Instructions -->
+<p class="text-slate-500 text-sm italic">(Chọn đáp án đúng tương ứng phía bên dưới!)</p>
+</div>
+</div>
+</div>
+<!-- Bottom Action Buttons -->
+<div class="flex gap-3 mt-4 relative z-10">
+<button class="flex-1 bg-[#5c67f2] hover:bg-[#4f5bd5] text-white font-bold py-3 rounded-lg transition-all active:scale-95">1</button>
+<button class="flex-1 bg-[#5c67f2] hover:bg-[#4f5bd5] text-white font-bold py-3 rounded-lg transition-all active:scale-95">2</button>
+<button class="flex-1 bg-[#5c67f2] hover:bg-[#4f5bd5] text-white font-bold py-3 rounded-lg transition-all active:scale-95">3</button>
+<button class="flex-1 bg-[#5c67f2] hover:bg-[#4f5bd5] text-white font-bold py-3 rounded-lg transition-all active:scale-95">4</button>
+</div>
+<!-- Decorative floating effect (subtle background glow) -->
+<div class="absolute inset-0 bg-indigo-500/10 blur-[100px] -z-10 rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Bottom Stat Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-16">
+<div class="bg-white/40 backdrop-blur-sm border border-white/50 p-6 rounded-2xl flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+</div>
+<div>
+<p class="text-xl font-bold text-slate-800">22+</p>
+<p class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Active Learners</p>
+</div>
+</div>
+<div class="bg-white/40 backdrop-blur-sm border border-white/50 p-6 rounded-2xl flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+</div>
+<div>
+<p class="text-xl font-bold text-slate-800">11,047+</p>
+<p class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Vocabularies</p>
+</div>
+</div>
+<div class="bg-white/40 backdrop-blur-sm border border-white/50 p-6 rounded-2xl flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600">
+<span class="material-symbols-outlined" data-icon="article">article</span>
+</div>
+<div>
+<p class="text-xl font-bold text-slate-800">74+</p>
+<p class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Practice Tests</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Practice on the Go Section -->
+<section class="py-12 px-6">
+<div class="max-w-[1120px] mx-auto bg-slate-50 border border-slate-100 rounded-[2rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 soft-shadow">
+<div class="max-w-xl text-center md:text-left space-y-4">
+<div class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[12px] font-bold uppercase tracking-wider mb-2">
+                    New Experience
+                </div>
+<h2 class="font-h2 text-h2 text-on-surface">Practice on the go</h2>
+<p class="font-body-md text-body-lg text-on-surface-variant">
+                    Take your learning everywhere. Scan the code to start a quick session with our AI-powered <span class="font-bold text-indigo-600">Mezon Bot</span> directly on your mobile device.
+                </p>
+<div class="pt-4 flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start">
+<div class="flex items-center gap-2 text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-green-500" data-icon="check_circle">check_circle</span>
+                        No app install required
+                    </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-green-500" data-icon="check_circle">check_circle</span>
+                        Instant sync with desktop
+                    </div>
+</div>
+</div>
+<div class="flex flex-col items-center gap-4">
+<div class="bg-white p-6 rounded-3xl shadow-[0_15px_50px_-12px_rgba(0,0,0,0.1)] border border-white transform hover:rotate-2 transition-transform duration-300">
+<img alt="QR Code" class="w-40 h-40 md:w-48 md:h-48" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoRWQGeYzLtgUp2Ss1a8oEwGaNWUXF4R3Kz6MMbreVn_R2r3iF6-mwi6Vh_wPgutCNx_uULzmdWlrgcVP36qWggSK9HN8xnlV5_MnH3E8brpy7DygM4W1D93B7p83ff5itk-GYqH_e315y1MXglxQOemlpeN3vSe2Zjnek0-yAWPbo1rU4_6GzjGA2839Zfni4thFIP3taMoJuaawg-mtP0M1jN7Bjof1ACFHYdySwoytuL_lsqAuZ3c88c4m_LrWoyeDI_mI--EY"/>
+</div>
+<div class="flex items-center gap-3 bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
+<div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="smart_toy">smart_toy</span>
+</div>
+<span class="font-bold text-slate-800">Practice with Mezon Bot</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Features -->
+<section class="py-section-padding px-6 bg-white/40" id="explore">
+<div class="max-w-[1120px] mx-auto">
+<div class="mb-stack-lg text-center md:text-left">
+<h2 class="font-h2 text-h2 text-on-surface">Precision-engineered for focus</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-stack-sm">Built for serious learners who value clarity.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Feature 1 -->
+<div class="p-8 bg-surface-container-lowest rounded-xl border border-gray-100 soft-shadow hover:-translate-y-1 transition-transform duration-300">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center text-primary-fixed-variant mb-6">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<h3 class="font-h3 text-h3 text-on-surface mb-3">Adaptive Learning</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Our algorithms adjust difficulty in real-time based on your response patterns, ensuring optimal challenge.</p>
+</div>
+<!-- Feature 2 -->
+<div class="p-8 bg-surface-container-lowest rounded-xl border border-gray-100 soft-shadow hover:-translate-y-1 transition-transform duration-300">
+<div class="w-12 h-12 rounded-lg bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed-variant mb-6">
+<span class="material-symbols-outlined" data-icon="timer">timer</span>
+</div>
+<h3 class="font-h3 text-h3 text-on-surface mb-3">Timed Assessments</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Develop speed and accuracy under pressure with our calibrated countdown system designed for calm focus.</p>
+</div>
+<!-- Feature 3 -->
+<div class="p-8 bg-surface-container-lowest rounded-xl border border-gray-100 soft-shadow hover:-translate-y-1 transition-transform duration-300">
+<div class="w-12 h-12 rounded-lg bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed-variant mb-6">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+</div>
+<h3 class="font-h3 text-h3 text-on-surface mb-3">Detailed Insights</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Deep-dive into your performance with granular data on knowledge gaps and retention milestones.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Categories Preview -->
+<section class="py-section-padding px-6" id="categories">
+<div class="max-w-[1120px] mx-auto">
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-stack-lg space-y-4">
+<div>
+<h2 class="font-h2 text-h2 text-on-surface">Curated Categories</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">Explore professionally authored question banks.</p>
+</div>
+<a class="text-primary font-button text-button flex items-center hover:gap-2 transition-all" href="#">
+                    View All Categories <span class="material-symbols-outlined ml-1">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-stack-md">
+<!-- Category Card 1 -->
+<div class="group relative bg-white border border-outline-variant p-6 rounded-xl hover:border-primary hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden">
+<div class="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-8xl" data-icon="code">code</span>
+</div>
+<div class="flex items-center space-x-2 mb-4">
+<span class="px-2 py-1 bg-primary-fixed/30 text-primary-fixed-variant font-label-sm text-[10px] rounded uppercase tracking-wider">Tech</span>
+</div>
+<h4 class="font-h3 text-h3 mb-2">Computer Science</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Algorithms, data structures, and architecture.</p>
+<div class="mt-6 flex items-center text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm mr-1">quiz</span> 1.2k Quizzes
+                    </div>
+</div>
+<!-- Category Card 2 -->
+<div class="group relative bg-white border border-outline-variant p-6 rounded-xl hover:border-primary hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden">
+<div class="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-8xl" data-icon="science">science</span>
+</div>
+<div class="flex items-center space-x-2 mb-4">
+<span class="px-2 py-1 bg-secondary-fixed/30 text-on-secondary-fixed-variant font-label-sm text-[10px] rounded uppercase tracking-wider">Natural</span>
+</div>
+<h4 class="font-h3 text-h3 mb-2">Molecular Biology</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Genetics, cellular structures, and chemistry.</p>
+<div class="mt-6 flex items-center text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm mr-1">quiz</span> 840 Quizzes
+                    </div>
+</div>
+<!-- Category Card 3 -->
+<div class="group relative bg-white border border-outline-variant p-6 rounded-xl hover:border-primary hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden">
+<div class="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-8xl" data-icon="account_balance">account_balance</span>
+</div>
+<div class="flex items-center space-x-2 mb-4">
+<span class="px-2 py-1 bg-tertiary-fixed/30 text-on-tertiary-fixed-variant font-label-sm text-[10px] rounded uppercase tracking-wider">Society</span>
+</div>
+<h4 class="font-h3 text-h3 mb-2">Macro Economics</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Global markets, fiscal policy, and trade.</p>
+<div class="mt-6 flex items-center text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm mr-1">quiz</span> 2.1k Quizzes
+                    </div>
+</div>
+<!-- Category Card 4 -->
+<div class="group relative bg-white border border-outline-variant p-6 rounded-xl hover:border-primary hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden">
+<div class="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-8xl" data-icon="palette">palette</span>
+</div>
+<div class="flex items-center space-x-2 mb-4">
+<span class="px-2 py-1 bg-primary-fixed/30 text-primary-fixed-variant font-label-sm text-[10px] rounded uppercase tracking-wider">Arts</span>
+</div>
+<h4 class="font-h3 text-h3 mb-2">Art History</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Renaissance to modern digital movements.</p>
+<div class="mt-6 flex items-center text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm mr-1">quiz</span> 450 Quizzes
+                    </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Call To Action -->
+<section class="py-section-padding px-6">
+<div class="max-w-[1120px] mx-auto">
+<div class="bg-indigo-600 rounded-3xl p-12 md:p-20 text-center relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500 to-indigo-700 -z-10"></div>
+<!-- Decorative Background elements -->
+<div class="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+<h2 class="font-display text-display text-white mb-6">Ready to test your mastery?</h2>
+<p class="font-body-lg text-body-lg text-indigo-100 max-w-xl mx-auto mb-10">
+                    Join over 50,000 students and professionals already improving their expertise through QuizMaster.
+                </p>
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+<button class="bg-white text-indigo-600 px-8 py-4 rounded-lg font-button text-button hover:bg-indigo-50 transition-all hover:scale-105 active:scale-95 shadow-xl">
+                        Get Started Free
+                    </button>
+<button class="bg-transparent text-white border border-white/30 px-8 py-4 rounded-lg font-button text-button hover:bg-white/10 transition-all">
+                        Talk to Learning Advisor
+                    </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 bg-white border-t border-gray-100">
+<div class="flex flex-col md:flex-row justify-between items-center px-6 max-w-7xl mx-auto space-y-4 md:space-y-0">
+<div class="text-lg font-bold text-indigo-600">QuizMaster</div>
+<div class="flex items-center space-x-8">
+<a class="font-sans text-sm text-slate-500 hover:text-indigo-600 transition-colors" href="#">Privacy</a>
+<a class="font-sans text-sm text-slate-500 hover:text-indigo-600 transition-colors" href="#">Terms</a>
+<a class="font-sans text-sm text-slate-500 hover:text-indigo-600 transition-colors" href="#">Contact</a>
+</div>
+<div class="font-sans text-sm text-slate-500">
+            © 2024 QuizMaster. All rights reserved.
+        </div>
+</div>
+</footer>
+</body></html>

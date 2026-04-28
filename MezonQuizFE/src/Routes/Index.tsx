@@ -22,6 +22,10 @@ import StartQuizPage from "../Pages/StartQuizPage";
 import PlayerQuizPage from "../Pages/PlayerQuizPage";
 import QuizLeaderboardPage from "../Pages/QuizLeaderboardPage";
 import GlobalSearchPage from "../Pages/Search/GlobalSearchPage";
+import LandingLayout from "../Layouts/LandingLayout";
+import Explore from "../Pages/PublicPage/ExplorePage";
+import PublicCategoryPage from "../Pages/PublicPage/CategoryPage";
+import PublicQuizPage from "../Pages/PublicPage/QuizPage";
 
 
 const AppRoutes = () => {
@@ -40,8 +44,15 @@ const AppRoutes = () => {
 
       <Route path="/oauth/mezon/callback" element={<OAuthCallback />} />
 
+      {/* Public landing */}
+      <Route element={<LandingLayout />}>
+        <Route path="/" element={<Navigate to="/explore" replace />} />
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/categories" element={<PublicCategoryPage />} />
+        <Route path="/quizzes" element={<PublicQuizPage />} />
+      </Route>
+
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Navigate to={defaultAppPath} replace />} />
 
         <Route path="/app" element={<Layout />}>
           <Route index element={<Navigate to={defaultAppPath} replace />} />

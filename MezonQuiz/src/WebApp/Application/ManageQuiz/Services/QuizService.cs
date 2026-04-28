@@ -64,7 +64,8 @@ namespace WebApp.Application.ManageQuiz.Services
                     Title = q.Title,
                     Description = q.Description,
                     CategoryId = q.CategoryId,
-                    TotalPoints = q.TotalPoints
+                    TotalPoints = q.TotalPoints,
+                    QuestionCount = q.Questions.Count
                 })
                 .ToListAsync();
             return new PagingDto<AvailableQuizDto>
@@ -92,7 +93,8 @@ namespace WebApp.Application.ManageQuiz.Services
                 Title = quiz.Title,
                 Description = quiz.Description,
                 CategoryId = quiz.CategoryId,
-                TotalPoints = quiz.TotalPoints
+                TotalPoints = quiz.TotalPoints,
+                QuestionCount = quiz.Questions.Count
             };
         }
 

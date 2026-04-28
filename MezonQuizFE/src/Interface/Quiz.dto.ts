@@ -53,6 +53,7 @@ export interface AvailableQuizDto {
     description?: string;
     categoryId?: string;
     totalPoints: number;
+    questionCount: number;
 }
 
 export interface QuizDto {

@@ -106,3 +106,7 @@ export const getCurrentSessionQuestion = (sessionId: string) => {
 export const submitSessionAnswer = (sessionId: string, body: SubmitAnswerDto) => {
     return apiClient.post<SessionApiResponse>(`/api/QuizSession/${sessionId}/answers`, body).then((res) => res.data);
 };
+
+export const getBotLink = () => {
+    return apiClient.get<string>(`/api/QuizSession/quiz/bot-link`).then((res) => res.data);
+}

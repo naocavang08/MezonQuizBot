@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Explore Quizzes - QuizMaster</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#acedff",
+                        "secondary-fixed-dim": "#4cd7f6",
+                        "background": "#f8f9ff",
+                        "surface": "#f8f9ff",
+                        "inverse-primary": "#c3c0ff",
+                        "surface-container-high": "#dee9fc",
+                        "on-secondary-fixed-variant": "#004e5c",
+                        "on-error-container": "#93000a",
+                        "outline": "#777587",
+                        "error": "#ba1a1a",
+                        "on-background": "#121c2a",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#4d44e3",
+                        "surface-container": "#e6eeff",
+                        "tertiary": "#571ac0",
+                        "outline-variant": "#c7c4d8",
+                        "on-surface-variant": "#464555",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "surface-dim": "#d0dbed",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-variant": "#d9e3f6",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#d9e3f6",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-secondary-fixed": "#001f26",
+                        "on-primary-fixed": "#0f0069",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-primary-container": "#dad7ff",
+                        "on-secondary-container": "#006172",
+                        "primary-container": "#4f46e5",
+                        "on-tertiary-fixed": "#23005c",
+                        "secondary": "#00687a",
+                        "inverse-surface": "#27313f",
+                        "secondary-container": "#57dffe",
+                        "primary": "#3525cd",
+                        "on-surface": "#121c2a",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#e9ddff",
+                        "tertiary-fixed-dim": "#d0bcff",
+                        "tertiary-container": "#6f3dd9",
+                        "primary-fixed": "#e2dfff",
+                        "on-tertiary-fixed-variant": "#5516be",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "margin": "32px",
+                        "gutter": "24px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "section-padding": "64px",
+                        "container-max": "1120px",
+                        "stack-sm": "8px"
+                    },
+                    "fontFamily": {
+                        "button": ["Inter"],
+                        "h1": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "h3": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "h2": ["Inter"],
+                        "display": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "button": ["16px", {"lineHeight": "1", "fontWeight": "600"}],
+                        "h1": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.015em", "fontWeight": "700"}],
+                        "label-sm": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "h3": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "h2": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .quiz-card-shadow {
+            box-shadow: 0 15px 30px -5px rgba(79, 70, 229, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased">
+<!-- TopNavBar -->
+<header class="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shadow-xl shadow-indigo-500/5 sticky top-0 z-50">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto w-full">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400">QuizMaster</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 pb-1 font-semibold transition-all duration-200 hover:-translate-y-0.5" href="#">Explore</a>
+<a class="text-gray-500 dark:text-gray-400 font-medium hover:text-indigo-500 transition-all duration-200 hover:-translate-y-0.5" href="#">Categories</a>
+<a class="text-gray-500 dark:text-gray-400 font-medium hover:text-indigo-500 transition-all duration-200 hover:-translate-y-0.5" href="#">Leaderboard</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-4 py-2 text-gray-500 dark:text-gray-400 font-medium hover:text-indigo-500 transition-all active:scale-95">Sign In</button>
+<button class="px-6 py-2 bg-indigo-600 text-white font-button rounded-lg shadow-lg shadow-indigo-500/20 hover:-translate-y-0.5 hover:bg-indigo-700 active:scale-95 transition-all">Join</button>
+</div>
+</div>
+</header>
+<main class="max-w-[1120px] mx-auto px-margin pt-section-padding pb-section-padding">
+<!-- Page Header -->
+<div class="mb-stack-lg">
+<h1 class="font-display text-display text-on-surface mb-unit">Explore Quizzes</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+                Expand your knowledge across specialized domains. Choose a category and begin your professional assessment.
+            </p>
+</div>
+<!-- Category Filter -->
+<div class="flex flex-wrap gap-stack-sm mb-stack-lg items-center">
+<span class="font-label-sm text-label-sm text-outline uppercase mr-unit">Filter by:</span>
+<button class="px-6 py-2 bg-primary text-on-primary rounded-full font-button text-button shadow-md transition-all active:scale-95">All</button>
+<button class="px-6 py-2 bg-surface-container-low text-on-surface hover:bg-surface-container-high rounded-full font-button text-button transition-all hover:-translate-y-0.5 active:scale-95">Technology</button>
+<button class="px-6 py-2 bg-surface-container-low text-on-surface hover:bg-surface-container-high rounded-full font-button text-button transition-all hover:-translate-y-0.5 active:scale-95">Science</button>
+<button class="px-6 py-2 bg-surface-container-low text-on-surface hover:bg-surface-container-high rounded-full font-button text-button transition-all hover:-translate-y-0.5 active:scale-95">History</button>
+<button class="px-6 py-2 bg-surface-container-low text-on-surface hover:bg-surface-container-high rounded-full font-button text-button transition-all hover:-translate-y-0.5 active:scale-95">Arts</button>
+<button class="px-6 py-2 bg-surface-container-low text-on-surface hover:bg-surface-container-high rounded-full font-button text-button transition-all hover:-translate-y-0.5 active:scale-95">Business</button>
+</div>
+<!-- Quiz Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Quiz Card 1 -->
+<div class="group bg-surface-container-lowest rounded-xl p-stack-lg border border-outline-variant quiz-card-shadow transition-all duration-300 hover:-translate-y-1 hover:border-primary flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-stack-md">
+<span class="inline-flex items-center px-3 py-1 bg-secondary-container/20 text-on-secondary-container text-[12px] font-bold rounded-full uppercase tracking-wider">Technology</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="computer">computer</span>
+</div>
+<h3 class="font-h2 text-h2 text-on-surface mb-stack-sm leading-tight">Advanced Cloud Infrastructure</h3>
+<p class="font-body-md text-on-surface-variant mb-stack-md line-clamp-2">Test your knowledge on scalable architecture, microservices, and serverless computing models.</p>
+</div>
+<div>
+<div class="flex items-center gap-stack-md mb-stack-lg border-t border-outline-variant pt-stack-md">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="list_alt">list_alt</span>
+<span class="font-label-sm text-label-sm">25 Qs</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-label-sm text-label-sm">20 min</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant ml-auto">
+<span class="font-label-sm text-label-sm text-primary font-bold">Hard</span>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-primary text-primary font-button rounded-lg transition-all group-hover:bg-primary group-hover:text-white active:scale-95">
+                        Start Quiz
+                        <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Quiz Card 2 -->
+<div class="group bg-surface-container-lowest rounded-xl p-stack-lg border border-outline-variant quiz-card-shadow transition-all duration-300 hover:-translate-y-1 hover:border-primary flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-stack-md">
+<span class="inline-flex items-center px-3 py-1 bg-secondary-container/20 text-on-secondary-container text-[12px] font-bold rounded-full uppercase tracking-wider">Science</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="biotech">biotech</span>
+</div>
+<h3 class="font-h2 text-h2 text-on-surface mb-stack-sm leading-tight">Genetics and Biotechnology</h3>
+<p class="font-body-md text-on-surface-variant mb-stack-md line-clamp-2">A comprehensive assessment of CRISPR technology, DNA sequencing, and inherited traits.</p>
+</div>
+<div>
+<div class="flex items-center gap-stack-md mb-stack-lg border-t border-outline-variant pt-stack-md">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="list_alt">list_alt</span>
+<span class="font-label-sm text-label-sm">15 Qs</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-label-sm text-label-sm">12 min</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant ml-auto">
+<span class="font-label-sm text-label-sm text-secondary font-bold">Medium</span>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-primary text-primary font-button rounded-lg transition-all group-hover:bg-primary group-hover:text-white active:scale-95">
+                        Start Quiz
+                        <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Quiz Card 3 -->
+<div class="group bg-surface-container-lowest rounded-xl p-stack-lg border border-outline-variant quiz-card-shadow transition-all duration-300 hover:-translate-y-1 hover:border-primary flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-stack-md">
+<span class="inline-flex items-center px-3 py-1 bg-secondary-container/20 text-on-secondary-container text-[12px] font-bold rounded-full uppercase tracking-wider">Business</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="monitoring">monitoring</span>
+</div>
+<h3 class="font-h2 text-h2 text-on-surface mb-stack-sm leading-tight">Strategic Market Dynamics</h3>
+<p class="font-body-md text-on-surface-variant mb-stack-md line-clamp-2">Understand the competitive landscape through macro-economic indicators and growth strategies.</p>
+</div>
+<div>
+<div class="flex items-center gap-stack-md mb-stack-lg border-t border-outline-variant pt-stack-md">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="list_alt">list_alt</span>
+<span class="font-label-sm text-label-sm">30 Qs</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-label-sm text-label-sm">25 min</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant ml-auto">
+<span class="font-label-sm text-label-sm text-primary font-bold">Hard</span>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-primary text-primary font-button rounded-lg transition-all group-hover:bg-primary group-hover:text-white active:scale-95">
+                        Start Quiz
+                        <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Quiz Card 4 -->
+<div class="group bg-surface-container-lowest rounded-xl p-stack-lg border border-outline-variant quiz-card-shadow transition-all duration-300 hover:-translate-y-1 hover:border-primary flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-stack-md">
+<span class="inline-flex items-center px-3 py-1 bg-secondary-container/20 text-on-secondary-container text-[12px] font-bold rounded-full uppercase tracking-wider">Arts</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="palette">palette</span>
+</div>
+<h3 class="font-h2 text-h2 text-on-surface mb-stack-sm leading-tight">Modern Art History</h3>
+<p class="font-body-md text-on-surface-variant mb-stack-md line-clamp-2">Explore the movements from Impressionism to contemporary digital installations.</p>
+</div>
+<div>
+<div class="flex items-center gap-stack-md mb-stack-lg border-t border-outline-variant pt-stack-md">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="list_alt">list_alt</span>
+<span class="font-label-sm text-label-sm">12 Qs</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-label-sm text-label-sm">10 min</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant ml-auto">
+<span class="font-label-sm text-label-sm text-green-600 font-bold">Easy</span>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-primary text-primary font-button rounded-lg transition-all group-hover:bg-primary group-hover:text-white active:scale-95">
+                        Start Quiz
+                        <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Quiz Card 5 -->
+<div class="group bg-surface-container-lowest rounded-xl p-stack-lg border border-outline-variant quiz-card-shadow transition-all duration-300 hover:-translate-y-1 hover:border-primary flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-stack-md">
+<span class="inline-flex items-center px-3 py-1 bg-secondary-container/20 text-on-secondary-container text-[12px] font-bold rounded-full uppercase tracking-wider">History</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="account_balance">account_balance</span>
+</div>
+<h3 class="font-h2 text-h2 text-on-surface mb-stack-sm leading-tight">The Industrial Revolution</h3>
+<p class="font-body-md text-on-surface-variant mb-stack-md line-clamp-2">Analyze the social and economic shifts of the 18th and 19th centuries.</p>
+</div>
+<div>
+<div class="flex items-center gap-stack-md mb-stack-lg border-t border-outline-variant pt-stack-md">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="list_alt">list_alt</span>
+<span class="font-label-sm text-label-sm">20 Qs</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-label-sm text-label-sm">15 min</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant ml-auto">
+<span class="font-label-sm text-label-sm text-secondary font-bold">Medium</span>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-primary text-primary font-button rounded-lg transition-all group-hover:bg-primary group-hover:text-white active:scale-95">
+                        Start Quiz
+                        <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Quiz Card 6 -->
+<div class="group bg-surface-container-lowest rounded-xl p-stack-lg border border-outline-variant quiz-card-shadow transition-all duration-300 hover:-translate-y-1 hover:border-primary flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-stack-md">
+<span class="inline-flex items-center px-3 py-1 bg-secondary-container/20 text-on-secondary-container text-[12px] font-bold rounded-full uppercase tracking-wider">Technology</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="psychology">psychology</span>
+</div>
+<h3 class="font-h2 text-h2 text-on-surface mb-stack-sm leading-tight">Fundamentals of AI</h3>
+<p class="font-body-md text-on-surface-variant mb-stack-md line-clamp-2">Introduction to neural networks, machine learning algorithms, and ethical AI development.</p>
+</div>
+<div>
+<div class="flex items-center gap-stack-md mb-stack-lg border-t border-outline-variant pt-stack-md">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="list_alt">list_alt</span>
+<span class="font-label-sm text-label-sm">18 Qs</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-label-sm text-label-sm">15 min</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant ml-auto">
+<span class="font-label-sm text-label-sm text-green-600 font-bold">Easy</span>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-primary text-primary font-button rounded-lg transition-all group-hover:bg-primary group-hover:text-white active:scale-95">
+                        Start Quiz
+                        <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Pagination (Implicit for "Modern UI") -->
+<div class="mt-section-padding flex justify-center">
+<button class="px-8 py-3 bg-surface-container-low text-on-surface font-button rounded-lg border border-outline-variant hover:border-primary transition-all active:scale-95">
+                Load More Quizzes
+            </button>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-gray-50 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 py-12">
+<div class="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+<div>
+<span class="text-lg font-bold text-indigo-600 block mb-2">QuizMaster</span>
+<p class="font-['Inter'] text-sm text-gray-600 dark:text-gray-400">© 2024 QuizMaster. Professional Learning Systems.</p>
+</div>
+<div class="flex flex-wrap gap-6 md:justify-end">
+<a class="font-['Inter'] text-sm text-gray-500 hover:text-indigo-600 transition-all duration-200 hover:underline" href="#">Privacy Policy</a>
+<a class="font-['Inter'] text-sm text-gray-500 hover:text-indigo-600 transition-all duration-200 hover:underline" href="#">Terms of Service</a>
+<a class="font-['Inter'] text-sm text-gray-500 hover:text-indigo-600 transition-all duration-200 hover:underline" href="#">Help Center</a>
+<a class="font-['Inter'] text-sm text-gray-500 hover:text-indigo-600 transition-all duration-200 hover:underline" href="#">Contact Us</a>
+</div>
+</div>
+</footer>
+</body></html>
