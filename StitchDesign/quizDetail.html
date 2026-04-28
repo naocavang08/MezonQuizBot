@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "on-background": "#121c2a",
+                  "secondary": "#00687a",
+                  "on-tertiary": "#ffffff",
+                  "tertiary-fixed-dim": "#d0bcff",
+                  "error": "#ba1a1a",
+                  "on-secondary-fixed-variant": "#004e5c",
+                  "tertiary-container": "#6f3dd9",
+                  "on-surface": "#121c2a",
+                  "surface-container-high": "#dee9fc",
+                  "on-surface-variant": "#464555",
+                  "on-error-container": "#93000a",
+                  "on-primary-container": "#dad7ff",
+                  "on-error": "#ffffff",
+                  "surface-tint": "#4d44e3",
+                  "primary-fixed": "#e2dfff",
+                  "inverse-surface": "#27313f",
+                  "surface-dim": "#d0dbed",
+                  "on-tertiary-container": "#e3d5ff",
+                  "outline": "#777587",
+                  "secondary-container": "#57dffe",
+                  "on-surface": "#121c2a",
+                  "surface-container": "#e6eeff",
+                  "primary": "#3525cd",
+                  "on-secondary": "#ffffff",
+                  "surface-variant": "#d9e3f6",
+                  "secondary-fixed-dim": "#4cd7f6",
+                  "on-primary-fixed": "#0f0069",
+                  "inverse-primary": "#c3c0ff",
+                  "on-secondary-container": "#006172",
+                  "on-primary-fixed-variant": "#3323cc",
+                  "tertiary": "#571ac0",
+                  "on-secondary-fixed": "#001f26",
+                  "on-tertiary-fixed-variant": "#5516be",
+                  "surface-container-lowest": "#ffffff",
+                  "primary-container": "#4f46e5",
+                  "outline-variant": "#c7c4d8",
+                  "surface-container-low": "#eff4ff",
+                  "background": "#f8f9ff",
+                  "secondary-fixed": "#acedff",
+                  "error-container": "#ffdad6",
+                  "inverse-on-surface": "#eaf1ff",
+                  "surface-bright": "#f8f9ff",
+                  "tertiary-fixed": "#e9ddff",
+                  "on-primary": "#ffffff",
+                  "on-tertiary-fixed": "#23005c",
+                  "primary-fixed-dim": "#c3c0ff",
+                  "surface-container-highest": "#d9e3f6",
+                  "surface": "#f8f9ff"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "gutter": "24px",
+                  "stack-lg": "32px",
+                  "stack-md": "16px",
+                  "unit": "8px",
+                  "stack-sm": "8px",
+                  "section-padding": "64px",
+                  "margin": "32px",
+                  "container-max": "1120px"
+          },
+          "fontFamily": {
+                  "h1": ["Inter"],
+                  "display": ["Inter"],
+                  "h3": ["Inter"],
+                  "body-md": ["Inter"],
+                  "button": ["Inter"],
+                  "h2": ["Inter"],
+                  "label-sm": ["Inter"],
+                  "body-lg": ["Inter"]
+          },
+          "fontSize": {
+                  "h1": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.015em", "fontWeight": "700"}],
+                  "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "h3": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                  "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                  "button": ["16px", {"lineHeight": "1", "fontWeight": "600"}],
+                  "h2": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                  "label-sm": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                  "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .quiz-card-shadow {
+      box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.08);
+    }
+    .topic-list-item:hover {
+      border-color: #4f46e5;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen">
+<!-- TopNavBar Section -->
+<header class="bg-white/90 backdrop-blur-md dark:bg-slate-900/90 docked full-width top-0 z-50 border-b border-slate-100 dark:border-slate-800 shadow-sm sticky">
+<div class="flex items-center justify-between w-full px-6 h-16 max-w-[1120px] mx-auto">
+<div class="flex items-center gap-stack-lg">
+<span class="text-xl font-black tracking-tight text-indigo-600 dark:text-indigo-400">QuizMaster</span>
+<nav class="hidden md:flex gap-stack-md font-inter antialiased text-sm font-medium">
+<a class="text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 pb-1" href="#">Discover</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition-all duration-200" href="#">My Library</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition-all duration-200" href="#">Leaderboards</a>
+</nav>
+</div>
+<div class="flex items-center gap-stack-md">
+<button class="material-symbols-outlined text-slate-600 hover:bg-slate-50 p-2 rounded-lg transition-all active:scale-95 duration-150" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-slate-600 hover:bg-slate-50 p-2 rounded-lg transition-all active:scale-95 duration-150" data-icon="account_circle">account_circle</button>
+</div>
+</div>
+</header>
+<main class="max-w-[1120px] mx-auto px-6 pt-stack-lg pb-section-padding">
+<!-- Breadcrumb -->
+<nav class="flex items-center gap-unit text-label-sm font-label-sm text-outline mb-stack-md">
+<span class="hover:text-primary cursor-pointer transition-colors">Explore</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+<span class="hover:text-primary cursor-pointer transition-colors">Technology</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface-variant font-semibold">Advanced Cloud Infrastructure</span>
+</nav>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
+<!-- Main Content Column -->
+<div class="lg:col-span-8 space-y-stack-lg">
+<!-- Header Section -->
+<section class="space-y-stack-sm">
+<span class="inline-flex items-center px-stack-sm py-1 rounded-full bg-secondary-container text-on-secondary-container text-label-sm font-label-sm">
+            Technology
+          </span>
+<h1 class="font-h1 text-h1 text-on-background">Advanced Cloud Infrastructure</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+            Master the principles of cloud-native architecture, microservices, and scalable infrastructure design. This quiz covers AWS, GCP, and Azure patterns.
+          </p>
+</section>
+<!-- What you'll learn Section -->
+<section class="p-stack-lg bg-surface-container-low rounded-xl border border-outline-variant/30 space-y-stack-md">
+<h2 class="font-h2 text-h2 text-on-surface">What you'll learn</h2>
+<ul class="grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+<li class="flex items-start gap-unit">
+<span class="material-symbols-outlined text-primary" data-icon="check_circle">check_circle</span>
+<span class="text-body-md font-body-md text-on-surface-variant">Serverless architecture patterns</span>
+</li>
+<li class="flex items-start gap-unit">
+<span class="material-symbols-outlined text-primary" data-icon="check_circle">check_circle</span>
+<span class="text-body-md font-body-md text-on-surface-variant">Container orchestration with K8s</span>
+</li>
+<li class="flex items-start gap-unit">
+<span class="material-symbols-outlined text-primary" data-icon="check_circle">check_circle</span>
+<span class="text-body-md font-body-md text-on-surface-variant">Cloud security best practices</span>
+</li>
+<li class="flex items-start gap-unit">
+<span class="material-symbols-outlined text-primary" data-icon="check_circle">check_circle</span>
+<span class="text-body-md font-body-md text-on-surface-variant">Cost optimization strategies</span>
+</li>
+</ul>
+</section>
+<!-- Curriculum Section -->
+<section class="space-y-stack-md">
+<div class="flex items-center justify-between">
+<h2 class="font-h2 text-h2 text-on-surface">Quiz Curriculum</h2>
+<span class="text-label-sm font-label-sm text-outline">5 TOPICS • 25 QUESTIONS</span>
+</div>
+<div class="space-y-stack-sm">
+<!-- Topic Item -->
+<div class="topic-list-item flex items-center justify-between p-stack-md bg-surface-container-lowest border border-outline-variant/40 rounded-lg transition-all">
+<div class="flex items-center gap-stack-md">
+<span class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-primary font-semibold text-label-sm">01</span>
+<div>
+<h3 class="font-h3 text-h3 text-[16px] leading-none mb-1">Compute &amp; Scaling Patterns</h3>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">6 Questions</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Topic Item -->
+<div class="topic-list-item flex items-center justify-between p-stack-md bg-surface-container-lowest border border-outline-variant/40 rounded-lg transition-all">
+<div class="flex items-center gap-stack-md">
+<span class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-primary font-semibold text-label-sm">02</span>
+<div>
+<h3 class="font-h3 text-h3 text-[16px] leading-none mb-1">Serverless &amp; Event-Driven</h3>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">5 Questions</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Topic Item -->
+<div class="topic-list-item flex items-center justify-between p-stack-md bg-surface-container-lowest border border-outline-variant/40 rounded-lg transition-all">
+<div class="flex items-center gap-stack-md">
+<span class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-primary font-semibold text-label-sm">03</span>
+<div>
+<h3 class="font-h3 text-h3 text-[16px] leading-none mb-1">Containerization &amp; K8s</h3>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">5 Questions</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Topic Item -->
+<div class="topic-list-item flex items-center justify-between p-stack-md bg-surface-container-lowest border border-outline-variant/40 rounded-lg transition-all">
+<div class="flex items-center gap-stack-md">
+<span class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-primary font-semibold text-label-sm">04</span>
+<div>
+<h3 class="font-h3 text-h3 text-[16px] leading-none mb-1">Storage &amp; Database Strategy</h3>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">4 Questions</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Topic Item -->
+<div class="topic-list-item flex items-center justify-between p-stack-md bg-surface-container-lowest border border-outline-variant/40 rounded-lg transition-all">
+<div class="flex items-center gap-stack-md">
+<span class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-primary font-semibold text-label-sm">05</span>
+<div>
+<h3 class="font-h3 text-h3 text-[16px] leading-none mb-1">Global Security Compliance</h3>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">5 Questions</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Action Card Sidebar -->
+<aside class="lg:col-span-4 sticky top-24">
+<div class="bg-white rounded-xl quiz-card-shadow border border-slate-100 overflow-hidden">
+<!-- Price Header -->
+<div class="bg-primary text-on-primary p-stack-lg flex items-center justify-between">
+<span class="font-h2 text-h2 uppercase tracking-widest text-[14px]">Course Access</span>
+<span class="font-h1 text-h1">Free</span>
+</div>
+<div class="p-stack-lg space-y-stack-lg">
+<!-- Details List -->
+<div class="space-y-stack-md">
+<div class="flex items-center justify-between py-1 border-b border-slate-50">
+<div class="flex items-center gap-stack-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="quiz">quiz</span>
+<span class="font-body-md">Questions</span>
+</div>
+<span class="font-semibold text-on-surface">25</span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-slate-50">
+<div class="flex items-center gap-stack-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="schedule">schedule</span>
+<span class="font-body-md">Duration</span>
+</div>
+<span class="font-semibold text-on-surface">20 Mins</span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-slate-50">
+<div class="flex items-center gap-stack-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+<span class="font-body-md">Difficulty</span>
+</div>
+<span class="font-semibold text-on-surface">Hard</span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-slate-50">
+<div class="flex items-center gap-stack-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="military_tech">military_tech</span>
+<span class="font-body-md">Reward</span>
+</div>
+<span class="font-semibold text-primary">500 XP</span>
+</div>
+</div>
+<!-- CTA Buttons -->
+<div class="flex flex-col gap-stack-sm">
+<button class="w-full bg-primary text-on-primary font-button text-button py-4 rounded-lg shadow-md hover:-translate-y-[2px] transition-all active:scale-95 flex items-center justify-center gap-unit">
+                Start Quiz Now
+                <span class="material-symbols-outlined text-[18px]" data-icon="play_arrow">play_arrow</span>
+</button>
+<button class="w-full bg-surface-container-lowest text-on-surface font-button text-button py-4 rounded-lg border border-outline-variant hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-unit">
+<span class="material-symbols-outlined text-[18px]" data-icon="bookmark">bookmark</span>
+                Save for Later
+              </button>
+</div>
+<p class="text-label-sm font-label-sm text-outline text-center">
+              Enrollment includes a certificate of completion
+            </p>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<footer class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 md:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-indigo-500 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-inter text-[10px] font-semibold uppercase tracking-wider mt-1">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-xl px-3 py-1 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-inter text-[10px] font-semibold uppercase tracking-wider mt-1">Explore</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-indigo-500 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-inter text-[10px] font-semibold uppercase tracking-wider mt-1">Library</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-indigo-500 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-inter text-[10px] font-semibold uppercase tracking-wider mt-1">Profile</span>
+</div>
+</footer>
+</body></html>

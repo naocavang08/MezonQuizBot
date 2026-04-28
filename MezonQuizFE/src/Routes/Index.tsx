@@ -19,13 +19,14 @@ import SessionRoomPage from "../Pages/SessionRoomPage";
 import Layout from "../Layouts/Layout";
 import { ACCESS_PERMISSIONS, PERMISSIONS, resolveDefaultAppPath } from "../Lib/Utils/permissions";
 import StartQuizPage from "../Pages/StartQuizPage";
-import PlayerQuizPage from "../Pages/PlayerQuizPage";
 import QuizLeaderboardPage from "../Pages/QuizLeaderboardPage";
 import GlobalSearchPage from "../Pages/Search/GlobalSearchPage";
 import LandingLayout from "../Layouts/LandingLayout";
 import Explore from "../Pages/PublicPage/ExplorePage";
 import PublicCategoryPage from "../Pages/PublicPage/CategoryPage";
 import PublicQuizPage from "../Pages/PublicPage/QuizPage";
+import PublicQuizDetailPage from "../Pages/PublicPage/QuizDetailPage";
+import PublicLeaderboardPage from "../Pages/PublicPage/LeaderboardPage";
 
 
 const AppRoutes = () => {
@@ -50,6 +51,8 @@ const AppRoutes = () => {
         <Route path="/explore" element={<Explore />} />
         <Route path="/categories" element={<PublicCategoryPage />} />
         <Route path="/quizzes" element={<PublicQuizPage />} />
+        <Route path="/quizzes/:quizId" element={<PublicQuizDetailPage />} />
+        <Route path="/quizzes/:quizId/sessions/:sessionId/leaderboard" element={<PublicLeaderboardPage />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>
@@ -88,7 +91,6 @@ const AppRoutes = () => {
             <Route path="find-quizzes" element={<FindQuizPage />} />
             <Route path="find-quizzes/:quizId" element={<QuizDetailPage />} />
             <Route path="find-quizzes/:quizId/leaderboard" element={<QuizLeaderboardPage />} />
-            <Route path="find-quizzes/:quizId/sessions/:sessionId/play" element={<PlayerQuizPage />} />
           </Route>
 
           <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.QUIZZES_CREATOR_LIST]} />}>
@@ -102,7 +104,6 @@ const AppRoutes = () => {
 
           <Route element={<ProtectedRoute requiredPermissions={ACCESS_PERMISSIONS.SESSION_ROOM} />}>
             <Route path="my-quizzes/:quizId/sessions/:sessionId" element={<SessionRoomPage />} />
-            <Route path="my-quizzes/:quizId/sessions/:sessionId/play" element={<PlayerQuizPage />} />
             <Route path="my-quizzes/:quizId/sessions/:sessionId/start-quiz" element={<StartQuizPage />} />
           </Route>
 

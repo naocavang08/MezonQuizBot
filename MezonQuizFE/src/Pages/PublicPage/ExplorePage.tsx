@@ -545,7 +545,7 @@ const Explore = () => {
                   </Button>
 
                   <Button
-                    onClick={() => navigate('/quizzes')}
+                    onClick={() => navigate('/categories')}
                     sx={{
                       px: 0,
                       color: dt.colors.onSurface,
@@ -1009,7 +1009,7 @@ const Explore = () => {
                     }}
                   >
                     <CardActionArea
-                      onClick={() => navigate('/app/find-quizzes')}
+                      onClick={() => navigate(`/quizzes?category=${encodeURIComponent(category.id)}`)}
                       sx={{
                         p: 3,
                         minHeight: 220,

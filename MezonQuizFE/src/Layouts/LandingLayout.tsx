@@ -20,7 +20,6 @@ import { dt } from '../Lib/designTokens';
 const NAV_LINKS = [
   { label: 'Explore', to: '/explore' },
   { label: 'Categories', to: '/categories' },
-  { label: 'Leaderboard', to: '/leaderboard' },
   { label: 'Quizzes', to: '/quizzes' },
 ];
 

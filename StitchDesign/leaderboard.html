@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>QuizMaster | Global Leaderboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#d0bcff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-surface-variant": "#464555",
+                        "outline-variant": "#c7c4d8",
+                        "tertiary": "#571ac0",
+                        "surface-container": "#e6eeff",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#d9e3f6",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-dim": "#d0dbed",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#4f46e5",
+                        "on-background": "#121c2a",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#4cd7f6",
+                        "on-tertiary-fixed": "#23005c",
+                        "surface-container-high": "#dee9fc",
+                        "on-primary-container": "#dad7ff",
+                        "surface-container-highest": "#d9e3f6",
+                        "on-primary-fixed": "#0f0069",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#57dffe",
+                        "on-secondary-fixed": "#001f26",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#004e5c",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#e9ddff",
+                        "background": "#f8f9ff",
+                        "on-surface": "#121c2a",
+                        "inverse-surface": "#27313f",
+                        "outline": "#777587",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-primary": "#c3c0ff",
+                        "on-tertiary-fixed-variant": "#5516be",
+                        "secondary-fixed": "#acedff",
+                        "primary-fixed": "#e2dfff",
+                        "tertiary-container": "#6f3dd9",
+                        "on-tertiary-container": "#e3d5ff",
+                        "on-error": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "secondary": "#00687a",
+                        "primary": "#3525cd",
+                        "on-secondary-container": "#006172",
+                        "surface-tint": "#4d44e3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "gutter": "24px",
+                        "unit": "8px",
+                        "margin": "32px",
+                        "container-max": "1120px",
+                        "stack-sm": "8px",
+                        "section-padding": "64px"
+                    },
+                    "fontFamily": {
+                        "h3": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "h1": ["Inter"],
+                        "display": ["Inter"],
+                        "button": ["Inter"],
+                        "body-md": ["Inter"],
+                        "h2": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h3": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "h1": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.015em", "fontWeight": "700"}],
+                        "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "button": ["16px", {"lineHeight": "1", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "h2": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .shadow-soft {
+            box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 shadow-sm shadow-indigo-500/5">
+<div class="flex justify-between items-center max-w-7xl mx-auto px-6 h-16">
+<div class="text-xl font-extrabold text-indigo-600 tracking-tighter">QuizMaster</div>
+<nav class="hidden md:flex h-full space-x-8">
+<a class="text-slate-500 hover:text-indigo-500 transition-colors h-full flex items-center font-body-md text-body-md" href="#">Quizzes</a>
+<a class="text-indigo-600 border-b-2 border-indigo-600 font-semibold h-full flex items-center font-body-md text-body-md" href="#">Leaderboard</a>
+<a class="text-slate-500 hover:text-indigo-500 transition-colors h-full flex items-center font-body-md text-body-md" href="#">Categories</a>
+<a class="text-slate-500 hover:text-indigo-500 transition-colors h-full flex items-center font-body-md text-body-md" href="#">History</a>
+</nav>
+<div class="flex items-center space-x-4">
+<button class="p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<main class="max-w-[1120px] mx-auto px-6 pt-section-padding">
+<!-- Hero Header -->
+<section class="text-center mb-stack-lg">
+<h1 class="font-display text-display text-on-surface mb-stack-sm">Global Leaderboard</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Rise through the ranks and prove your mastery across all domains.</p>
+</section>
+<!-- Filter Tabs -->
+<div class="flex justify-center mb-stack-lg">
+<div class="bg-surface-container-low p-1 rounded-xl flex space-x-1">
+<button class="px-6 py-2 rounded-lg font-button text-button bg-surface-container-lowest text-primary shadow-sm">Weekly</button>
+<button class="px-6 py-2 rounded-lg font-button text-button text-on-surface-variant hover:bg-white/50 transition-colors">Monthly</button>
+<button class="px-6 py-2 rounded-lg font-button text-button text-on-surface-variant hover:bg-white/50 transition-colors">All Time</button>
+</div>
+</div>
+<!-- Podium Section -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter items-end mb-stack-lg pt-12">
+<!-- Rank 2 -->
+<div class="order-2 md:order-1 bg-surface-container-lowest p-stack-md rounded-xl shadow-soft border border-slate-100 flex flex-col items-center relative transition-transform hover:-translate-y-1">
+<div class="absolute -top-10 flex flex-col items-center">
+<div class="w-20 h-20 rounded-full border-4 border-slate-200 overflow-hidden bg-slate-100">
+<img class="w-full h-full object-cover" data-alt="portrait of a focused young man with glasses professional lighting minimal style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXjosgouaDY9OnpmX65uZEkACsjWZrYMjN-AK-5pFYbi6OJ_bmFlk3LjZb0CoLU2Ulsoce55RXxPWwvUtIQ4rHFRPXv0qWHL5c9zNCrhKafJxYJ4gQj3-NVQOpxF9JJ09X8B7hxbypTV6hTVGnpL6iSDMiIHCNPYdYc8bjJAClgYWfsWgbA2SkkluA4MD5sXAG01NclI5InzigokEXhmwye0GgYP9WUeuNTff88yEXzuxzX_9j-EUAxU0b4hUJ2iRHVQwUQOoV90c"/>
+</div>
+<div class="bg-slate-400 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs mt-[-12px] z-10">2</div>
+</div>
+<div class="mt-12 text-center">
+<h3 class="font-h3 text-h3 text-on-surface">Alex Rivera</h3>
+<p class="font-label-sm text-label-sm text-tertiary-container mt-1 uppercase">12,450 XP</p>
+<div class="mt-stack-sm flex items-center justify-center text-secondary text-sm font-medium">
+<span class="material-symbols-outlined text-sm mr-1" data-icon="local_fire_department">local_fire_department</span>
+                        14 Day Streak
+                    </div>
+</div>
+</div>
+<!-- Rank 1 -->
+<div class="order-1 md:order-2 bg-white p-stack-md rounded-2xl shadow-soft border-2 border-indigo-100 flex flex-col items-center relative scale-110 z-10 transition-transform hover:-translate-y-2">
+<div class="absolute -top-14 flex flex-col items-center">
+<div class="relative">
+<div class="w-24 h-24 rounded-full border-4 border-primary-container overflow-hidden bg-indigo-50">
+<img class="w-full h-full object-cover" data-alt="smiling young woman with confident expression warm natural lighting minimalist educational aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5pByO7rtV0UNTg5dR6CouLaWh1LEd2yAGytOVATnYnMT4uVRlTZHq8kom4MGRK6zmTrv2HdbDYIvxoBM83MdZTa6xoDsPMjA3p4h9HQXr2gnMkNi5Jo5QppwqzQHUHYsM84uAmlj9NjzN0i9lTG-nj6Q1Akj3_sYWAGXmvqgJtFW6iAmCgb-0Q0a5SdLpqjcGSD6nXX3GdCdWZOvStpRtTjgugSj2wvsyKLY3y736TXBc8IgWEMhiyKIjRj5s0TsiLTn2g6GoaPw"/>
+</div>
+<span class="material-symbols-outlined absolute -right-2 -top-2 text-yellow-500 drop-shadow-md text-3xl" data-icon="workspace_premium" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div class="bg-primary-container text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mt-[-16px] z-10 ring-4 ring-white">1</div>
+</div>
+<div class="mt-16 text-center">
+<h3 class="font-h3 text-h3 text-on-surface text-xl">Sarah Jenkins</h3>
+<p class="font-label-sm text-label-sm text-primary font-bold mt-1 uppercase tracking-widest">15,820 XP</p>
+<div class="mt-stack-sm flex items-center justify-center text-secondary font-semibold">
+<span class="material-symbols-outlined text-base mr-1" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+                        32 Day Streak
+                    </div>
+</div>
+<div class="mt-4 bg-primary-fixed text-on-primary-fixed-variant px-4 py-1 rounded-full font-label-sm text-[12px]">👑 Top Scholar</div>
+</div>
+<!-- Rank 3 -->
+<div class="order-3 md:order-3 bg-surface-container-lowest p-stack-md rounded-xl shadow-soft border border-slate-100 flex flex-col items-center relative transition-transform hover:-translate-y-1">
+<div class="absolute -top-10 flex flex-col items-center">
+<div class="w-20 h-20 rounded-full border-4 border-orange-200 overflow-hidden bg-slate-100">
+<img class="w-full h-full object-cover" data-alt="professional portrait of a man with short hair neutral background soft modern studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPwjq9bWvydXc2ORmlPbXj9DVGxhVHrdSpO_YLvbTrlcs8_NLdv51qOCCn-nEytkIOg3gzUWm-1f9IGzgbE2IYSG6PVQypBk4FQSvGTi3crZk6KgzDkWPpfaUS4JR9ObSo0gNva3dmkzMkXUynKUbjcG_IqHHv2fz1vIlObWtksM23IPwRy4tlLDlFZDy36FM0_Sdi-l0zEiuo3Y4kCxl0Z2Duiw2IjSj7zzPZXLdO_jM911G1CW9eeYFpkANni80jw9W_utqPHwY"/>
+</div>
+<div class="bg-orange-400 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs mt-[-12px] z-10">3</div>
+</div>
+<div class="mt-12 text-center">
+<h3 class="font-h3 text-h3 text-on-surface">Chen Wei</h3>
+<p class="font-label-sm text-label-sm text-tertiary-container mt-1 uppercase">11,900 XP</p>
+<div class="mt-stack-sm flex items-center justify-center text-secondary text-sm font-medium">
+<span class="material-symbols-outlined text-sm mr-1" data-icon="local_fire_department">local_fire_department</span>
+                        8 Day Streak
+                    </div>
+</div>
+</div>
+</div>
+<!-- Detailed List -->
+<div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden mb-stack-lg">
+<div class="grid grid-cols-12 gap-4 px-6 py-4 bg-slate-50/50 border-b border-slate-100 font-label-sm text-label-sm text-slate-500 uppercase tracking-wider">
+<div class="col-span-1 text-center">Rank</div>
+<div class="col-span-6 md:col-span-7">User</div>
+<div class="col-span-3 md:col-span-2 text-center">Streak</div>
+<div class="col-span-2 text-right">XP</div>
+</div>
+<!-- List Item 4 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-slate-50 transition-colors border-b border-slate-50">
+<div class="col-span-1 text-center font-bold text-slate-400">4</div>
+<div class="col-span-6 md:col-span-7 flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="minimalist user avatar illustration soft pastel colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2T4bq1xEwfQslTLg1s9vLuOUqhwO_Rn5UjqZn_iK0SpQrTDnSfPGtp2wWsuylPn3GAnc-HAL6wU9OOkQaQQMBSLSrETR8W9pJ6k_m5UPy-aM0p6Cz0PtxdNC6Ly1dB4oT6uWN0E4MMTrTC1A6-prSgHf7et3WvwGL-N4tkQpp4k22ayM3ZojaE-IPR05Gcqca_z2MVjmgRbNUBRFl18A4aIioTCgbovW1IMVG_8cQ3uIPGJzbFOAd23Tv_I9KSW011h3DODowdEM"/>
+</div>
+<span class="font-h3 text-body-md text-on-surface font-semibold">Amara Okafor</span>
+</div>
+<div class="col-span-3 md:col-span-2 text-center flex justify-center items-center text-secondary font-medium">
+<span class="material-symbols-outlined text-base mr-1" data-icon="local_fire_department">local_fire_department</span>
+                    21
+                </div>
+<div class="col-span-2 text-right font-h3 text-body-md text-primary">10,420</div>
+</div>
+<!-- List Item 5 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-slate-50 transition-colors border-b border-slate-50">
+<div class="col-span-1 text-center font-bold text-slate-400">5</div>
+<div class="col-span-6 md:col-span-7 flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-cyan-50 border border-cyan-100 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="minimalist user avatar illustration soft pastel colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD70V1ovM4Xd6IH5d4Ui51oCpPRiIWKzymWXVxkXtBHyy0rYohvHwk8-NHH8qoMfSIGu4JTcEWze4zxSh7vyU7EY1gRHga_47ziBkV8Wo3lfTn6LXwWHRgK0wKHoFogXnwFiU8_Z16kYGE_-h_Lwd7HeZViYHGb_BVTjJCsGWuxjA6IM5c4EmrBfrLm3Bn_e81LFarx5cqQaiP1q0U6hZ5wmItw_d6WVMmbJnOHHMz91KXJ1es40jHux7Gp8RC7R4AHPM41zBZ4Z5M"/>
+</div>
+<span class="font-h3 text-body-md text-on-surface font-semibold">David Miller</span>
+</div>
+<div class="col-span-3 md:col-span-2 text-center flex justify-center items-center text-secondary font-medium">
+<span class="material-symbols-outlined text-base mr-1" data-icon="local_fire_department">local_fire_department</span>
+                    15
+                </div>
+<div class="col-span-2 text-right font-h3 text-body-md text-primary">9,850</div>
+</div>
+<!-- List Item 6 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-slate-50 transition-colors border-b border-slate-50">
+<div class="col-span-1 text-center font-bold text-slate-400">6</div>
+<div class="col-span-6 md:col-span-7 flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-purple-50 border border-purple-100 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="minimalist user avatar illustration soft pastel colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB58aclklACUG_NvDFWS-VOxvRp6vPFEkU7dKTwMxb68v1R3KptSYwtZkp465lV8k4kZkt1nMCsGlqBV5p-GWpcchXyRPB0U28rZlLAUjwPOyIswPiPYAlNVfrM997Ced4gCqobDRxHtgtsBD0Sw4kCSK6HWXKnuT7yzSkLSjizYCBexKJd1TS14JVTHkZKqR6URXUOE6bNz_YcbvCD067v3A7huioYm8Tj5fZE5c3z9HzBKd1adKvtzyMYgWfHwMbug10Qx60J7Xk"/>
+</div>
+<span class="font-h3 text-body-md text-on-surface font-semibold">Elena Rossi</span>
+</div>
+<div class="col-span-3 md:col-span-2 text-center flex justify-center items-center text-secondary font-medium">
+<span class="material-symbols-outlined text-base mr-1" data-icon="local_fire_department">local_fire_department</span>
+                    5
+                </div>
+<div class="col-span-2 text-right font-h3 text-body-md text-primary">9,100</div>
+</div>
+<!-- List Item 7 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-slate-50 transition-colors">
+<div class="col-span-1 text-center font-bold text-slate-400">7</div>
+<div class="col-span-6 md:col-span-7 flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="minimalist user avatar illustration soft pastel colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARQvllPx84qtETZEFP-fYN-cWRlD7E195qo9z1QIgDqC6DvffbtTN7uuIXp0swi3D59QdduwUd2w9G_g_nHQpqMhbR-sVYXA3EyLiwYYEJjDkvECRI3Agxw4h7nJfrTGn1skhmHrFVhAwJvh8fMjz2GrQwubtnL5dtmsbL6VFenPQg-wy56Ss0eoqyNIZo0gYDU6hG1InHOJbJavnaqS-Qpt93Efvn6iXb9GTKqhbQUD5iTJQ0bMJHH7iF3RqU_UfX6dbmt-Y9XjM"/>
+</div>
+<span class="font-h3 text-body-md text-on-surface font-semibold">Jordan Smith</span>
+</div>
+<div class="col-span-3 md:col-span-2 text-center flex justify-center items-center text-secondary font-medium">
+<span class="material-symbols-outlined text-base mr-1" data-icon="local_fire_department">local_fire_department</span>
+                    12
+                </div>
+<div class="col-span-2 text-right font-h3 text-body-md text-primary">8,670</div>
+</div>
+</div>
+</main>
+<!-- My Rank Sticky Bar -->
+<div class="fixed bottom-16 md:bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[1120px] px-6 pb-6 z-40">
+<div class="bg-primary-container text-white rounded-2xl shadow-xl shadow-indigo-500/20 px-8 py-4 flex items-center justify-between border border-primary">
+<div class="flex items-center space-x-6">
+<div class="flex flex-col items-center">
+<span class="font-label-sm text-[10px] uppercase opacity-80">Your Rank</span>
+<span class="text-h2 font-display">128</span>
+</div>
+<div class="w-px h-8 bg-white/20"></div>
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-white/10 border border-white/20 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="simple minimal portrait of a young adult looking at camera bright clean backdrop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5gibn5shPTr6NNJrTtekBUcjme_endiOcIAVT6fV368SF4B4pEsUFk3xWqqfhVSdnvVE9ctJ6gYwxZLqSNJXUUdFa30agbOpVwy7Nsm9EHXqI8O5jpGJL9nlA8F32GH7BuCclhRxwKsjOVllZtoSNSMKNL2lkj1orprzIe7hmbI3U2GE9Q_LCs6aj89QVtQs3lkhuCazQiHAcvnNJbw4w287PnGbDvH4M6MmJde_wdsjRLG3hC-Zktq-dnrX2n9X4qim_CQO15O8"/>
+</div>
+<div>
+<p class="font-button text-button">You (Alex Johnson)</p>
+<p class="text-xs opacity-80 flex items-center">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="history">history</span>
+                            Active since Jan 2024
+                        </p>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-8">
+<div class="text-right hidden sm:block">
+<p class="font-label-sm text-[10px] uppercase opacity-80">Next Rank in</p>
+<p class="font-button">450 XP</p>
+</div>
+<div class="text-right">
+<p class="font-label-sm text-[10px] uppercase opacity-80">Total XP</p>
+<p class="text-h2 font-display">4,280</p>
+</div>
+<button class="bg-white text-primary px-4 py-2 rounded-lg font-button text-sm hover:scale-105 active:scale-95 transition-transform shadow-sm">
+                    View Progress
+                </button>
+</div>
+</div>
+</div>
+<!-- BottomNavBar (Visible on Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-4 bg-white border-t border-slate-100 shadow-[0_-4px_12px_rgba(79,70,229,0.05)]">
+<button class="flex flex-col items-center justify-center text-slate-400 hover:text-indigo-500 transition-colors active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[10px] font-medium font-['Inter']">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-indigo-600 transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="leaderboard" style="font-variation-settings: 'FILL' 1;">leaderboard</span>
+<span class="text-[10px] font-medium font-['Inter']">Rankings</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 hover:text-indigo-500 transition-colors active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-[10px] font-medium font-['Inter']">Stats</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 hover:text-indigo-500 transition-colors active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-medium font-['Inter']">Profile</span>
+</button>
+</nav>
+</body></html>

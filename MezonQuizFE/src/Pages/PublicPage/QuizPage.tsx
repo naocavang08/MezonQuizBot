@@ -417,7 +417,7 @@ const QuizPage = () => {
                 color: dt.colors.onSurface,
               }}
             >
-              Public Quizzes
+              Quizzes
             </Typography>
             <Typography
               sx={{
@@ -620,7 +620,7 @@ const QuizPage = () => {
                                 key={quiz.id}
                                 quiz={quiz}
                                 categoryById={categoryById}
-                                onOpen={(quizId) => navigate(`/app/find-quizzes/${quizId}`)}
+                                onOpen={(quizId) => navigate(`/quizzes/${quizId}`)}
                               />
                             );
                           })}
@@ -660,7 +660,7 @@ const QuizPage = () => {
                           key={quiz.id}
                           quiz={quiz}
                           categoryById={categoryById}
-                          onOpen={(quizId) => navigate(`/app/find-quizzes/${quizId}`)}
+                          onOpen={(quizId) => navigate(`/quizzes/${quizId}`)}
                         />
                       );
                     })}
