@@ -184,12 +184,12 @@ public static class QuizBotMessageFormatter
         };
     }
 
-    public static ChannelMessageContent BuildMultiChoiceSelectionChangedMessageContent(List<int> selectedOptionDisplays)
+    public static ChannelMessageContent BuildParticipantFinishedQuizMessageContent(
+        string quizTitle,
+        int totalScore,
+        int correctCount,
+        int answersCount)
     {
-        var selectedLabel = selectedOptionDisplays.Count == 0
-            ? "None"
-            : string.Join(", ", selectedOptionDisplays.OrderBy(index => index));
-
         return new ChannelMessageContent
         {
             Text = string.Empty,
@@ -197,11 +197,74 @@ public static class QuizBotMessageFormatter
             [
                 new InteractiveMessageProps
                 {
-                    Color = "#3B82F6",
-                    Title = "Selection updated",
-                    Description = $"Selected options: {selectedLabel}\nPress Submit to send your final answer."
+                    Color = "#0F766E",
+                    Title = "Finish quiz",
+                    Description = $"You completed **{quizTitle}**.\nScore: **{totalScore}**\nCorrect answers: **{correctCount}/{answersCount}**\nUse `/leaderboard` to view the current session ranking."
                 }
             ]
+        };
+    }
+
+    public static ChannelMessageContent BuildSessionUnavailableMessageContent(string title, string description)
+    {
+        return new ChannelMessageContent
+        {
+            Text = string.Empty,
+            Embed =
+            [
+                new InteractiveMessageProps
+                {
+                    Color = "#64748B",
+                    Title = title,
+                    Description = description
+                }
+            ]
+        };
+    }
+
+    public static ChannelMessageContent BuildLeaderboardMessageContent(
+        QuizSessionDto session,
+        IReadOnlyList<SessionParticipantDto> participants)
+    {
+        var lines = new List<string>
+        {
+            $"Session code: {session.Code}",
+            $"Status: {session.Status}"
+        };
+
+        if (participants.Count == 0)
+        {
+            lines.Add(string.Empty);
+            lines.Add("No participants found.");
+
+            return new ChannelMessageContent
+            {
+                Text = string.Empty,
+                Embed = BuildQuestionEmbeds(
+                    color: "#3B82F6",
+                    title: $"Leaderboard - {session.QuizTitle}",
+                    description: string.Join("\n", lines),
+                    mediaUrl: null),
+                Components = []
+            };
+        }
+
+        var rankingLines = participants
+            .Select(participant => $"{participant.Rank ?? 0} - {participant.DisplayName} - {participant.TotalScore}")
+            .ToList();
+
+        lines.Add(string.Empty);
+        lines.Add(BuildOptionsPseudoCodeBlock(rankingLines));
+
+        return new ChannelMessageContent
+        {
+            Text = string.Empty,
+            Embed = BuildQuestionEmbeds(
+                color: "#3B82F6",
+                title: $"Leaderboard - {session.QuizTitle}",
+                description: string.Join("\n", lines),
+                mediaUrl: null),
+            Components = []
         };
     }
 
@@ -277,16 +340,6 @@ public static class QuizBotMessageFormatter
                 }
             ]
         };
-    }
-
-    public static int NormalizeOptionDisplayIndex(int optionIndex, bool hasZeroBasedIndex)
-    {
-        if (hasZeroBasedIndex)
-        {
-            return optionIndex + 1;
-        }
-
-        return optionIndex;
     }
 
     private static string GetQuestionTypeLabel(QuestionType questionType)
@@ -486,4 +539,5 @@ public static class QuizBotMessageFormatter
 
         return string.Join(", ", options.OrderBy(index => index));
     }
+
 }

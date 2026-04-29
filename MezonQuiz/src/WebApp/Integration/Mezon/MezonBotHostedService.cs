@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Mezon_sdk;
@@ -25,6 +24,9 @@ public sealed class MezonBotHostedService : BackgroundService
     private static readonly Regex ExitCommandRegex = new(
         @"^/exit$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    private static readonly Regex LeaderboardCommandRegex = new(
+        @"^/leaderboard$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
     private static readonly Regex QuizButtonRegex = new(
         @"^quiz:([0-9a-fA-F\-]{36}):q:(\d+):a:(\d+)$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
@@ -33,9 +35,10 @@ public sealed class MezonBotHostedService : BackgroundService
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
     private static readonly ConcurrentDictionary<string, DateTime> RecentAnswerSubmissions = new();
     private static readonly TimeSpan AnswerSubmissionDedupWindow = TimeSpan.FromSeconds(3);
+    private static readonly ConcurrentDictionary<string, DateTime> RecentOutboundMessages = new();
+    private static readonly TimeSpan OutboundMessageDedupWindow = TimeSpan.FromSeconds(3);
 
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
     private readonly ILogger<MezonBotHostedService> _logger;
 
@@ -43,22 +46,15 @@ public sealed class MezonBotHostedService : BackgroundService
     private readonly ConcurrentDictionary<long, DmRoute> _dmRoutes = new();
     private readonly ConcurrentDictionary<string, HashSet<int>> _pendingMultiChoiceSelections = new();
     private string _botId = string.Empty;
-    private string _clanWebhookToken = string.Empty;
-    private bool _webhookEnabled;
 
     public MezonBotHostedService(
         IServiceScopeFactory scopeFactory,
-        IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ILogger<MezonBotHostedService> logger)
     {
         _scopeFactory = scopeFactory;
-        _httpClientFactory = httpClientFactory;
         _configuration = configuration;
         _logger = logger;
-
-        _clanWebhookToken = (_configuration["MezonWebhook:ClanWebhookToken"] ?? string.Empty).Trim();
-        _webhookEnabled = bool.TryParse(_configuration["MezonWebhook:Enabled"], out var enabled) && enabled;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -68,9 +64,6 @@ public sealed class MezonBotHostedService : BackgroundService
         var apiHost = (_configuration["MezonBot:ApiHost"] ?? "gw.mezon.ai").Trim();
         var apiPort = (_configuration["MezonBot:ApiPort"] ?? "443").Trim();
         var useSsl = !bool.TryParse(_configuration["MezonBot:UseSsl"], out var configuredUseSsl) || configuredUseSsl;
-
-        _clanWebhookToken = (_configuration["MezonWebhook:ClanWebhookToken"] ?? string.Empty).Trim();
-        _webhookEnabled = bool.TryParse(_configuration["MezonWebhook:Enabled"], out var enabled) && enabled;
 
         if (string.IsNullOrWhiteSpace(_botId) || string.IsNullOrWhiteSpace(botToken))
         {
@@ -182,9 +175,10 @@ public sealed class MezonBotHostedService : BackgroundService
 
         var messageText = ExtractMessageText(message.Content);
         var isExitCommand = IsExitCommand(messageText);
+        var isLeaderboardCommand = IsLeaderboardCommand(messageText);
         var hasJoinCode = TryParseJoinCode(messageText, out var code);
 
-        if (!isExitCommand && !hasJoinCode)
+        if (!isExitCommand && !isLeaderboardCommand && !hasJoinCode)
         {
             _logger.LogDebug(
                 "Ignored message from sender {SenderId}. RawContent={RawContent}",
@@ -197,12 +191,14 @@ public sealed class MezonBotHostedService : BackgroundService
         {
             _logger.LogInformation("Received exit command from sender {SenderId}.", senderId);
         }
+        else if (isLeaderboardCommand)
+        {
+            _logger.LogInformation("Received leaderboard command from sender {SenderId}.", senderId);
+        }
         else
         {
             _logger.LogInformation("Received join command from sender {SenderId} with code {SessionCode}.", senderId, code);
         }
-
-        SessionOperationResult operationResult;
 
         try
         {
@@ -214,15 +210,41 @@ public sealed class MezonBotHostedService : BackgroundService
 
             if (isExitCommand)
             {
-                operationResult = await quizSessionService.LeaveSessions(user.Id);
+                var operationResult = await quizSessionService.LeaveSessions(user.Id);
+                var replyMessage = operationResult.Success
+                    ? $"Leave successful. {operationResult.Message}"
+                    : $"Leave failed. {operationResult.Message}";
+
+                await SendReplyAsync(message, replyMessage);
+                return;
             }
-            else
+
+            if (isLeaderboardCommand)
             {
-                operationResult = await quizSessionService.JoinByCode(code, new JoinQuizSessionDto
+                var session = await quizSessionService.GetCurrentSessionForUser(user.Id);
+                if (session is null)
                 {
-                    UserId = user.Id
-                });
+                    await SendReplyAsync(message, "Leaderboard unavailable. You are not in any current session.");
+                    return;
+                }
+
+                var leaderboard = await quizSessionService.GetLeaderboard(session.Id);
+                var leaderboardContent = QuizBotMessageFormatter.BuildLeaderboardMessageContent(session, leaderboard);
+                await SendReplyAsync(message, leaderboardContent);
+                return;
             }
+
+            var joinResult = await quizSessionService.JoinByCode(code, new JoinQuizSessionDto
+            {
+                UserId = user.Id
+            });
+
+            var joinReplyMessage = joinResult.Success
+                ? $"Join successful for session {code}. {joinResult.Message}"
+                : $"Join failed for session {code}. {joinResult.Message}";
+
+            await SendReplyAsync(message, joinReplyMessage);
+            return;
         }
         catch (Exception ex)
         {
@@ -230,16 +252,6 @@ public sealed class MezonBotHostedService : BackgroundService
             await SendReplyAsync(message, "System is currently unavailable. Please try again later.");
             return;
         }
-
-        var replyMessage = isExitCommand
-            ? (operationResult.Success
-                ? $"Leave successful. {operationResult.Message}"
-                : $"Leave failed. {operationResult.Message}")
-            : (operationResult.Success
-                ? $"Join successful for session {code}. {operationResult.Message}"
-                : $"Join failed for session {code}. {operationResult.Message}");
-
-        await SendReplyAsync(message, replyMessage);
     }
 
     private async Task HandleButtonClickedAsync(Rt.MessageButtonClicked clickEvent)
@@ -393,7 +405,14 @@ public sealed class MezonBotHostedService : BackgroundService
 
                     if (multiChoiceSubmitResult.Success)
                     {
-                        await quizSessionService.DispatchCurrentQuestionToParticipant(sessionId, user.Id);
+                        if (multiChoiceSubmitResult.ParticipantCompletedQuiz)
+                        {
+                            await SendParticipantFinishedQuizMessageAsync(mezonUserId, sessionId, user.Id, multiChoiceSubmitResult);
+                        }
+                        else
+                        {
+                            await quizSessionService.DispatchCurrentQuestionToParticipant(sessionId, user.Id);
+                        }
                     }
 
                     return;
@@ -466,7 +485,14 @@ public sealed class MezonBotHostedService : BackgroundService
 
             if (submitResult.Success)
             {
-                await quizSessionService.DispatchCurrentQuestionToParticipant(sessionId, user.Id);
+                if (submitResult.ParticipantCompletedQuiz)
+                {
+                    await SendParticipantFinishedQuizMessageAsync(mezonUserId, sessionId, user.Id, submitResult);
+                }
+                else
+                {
+                    await quizSessionService.DispatchCurrentQuestionToParticipant(sessionId, user.Id);
+                }
             }
 
             _logger.LogInformation(
@@ -494,14 +520,28 @@ public sealed class MezonBotHostedService : BackgroundService
 
     private async Task SendReplyAsync(PbChannelMessage incomingMessage, string message)
     {
-        var sdkSent = await SendMessageViaSdkAsync(incomingMessage, message);
+        var sdkSent = await SendMessageViaSdkAsync(
+            incomingMessage,
+            new ChannelMessageContent
+            {
+                Text = message
+            });
         if (sdkSent)
         {
             return;
         }
     }
 
-    private async Task<bool> SendMessageViaSdkAsync(PbChannelMessage incomingMessage, string message)
+    private async Task SendReplyAsync(PbChannelMessage incomingMessage, ChannelMessageContent content)
+    {
+        var sdkSent = await SendMessageViaSdkAsync(incomingMessage, content);
+        if (sdkSent)
+        {
+            return;
+        }
+    }
+
+    private async Task<bool> SendMessageViaSdkAsync(PbChannelMessage incomingMessage, ChannelMessageContent content)
     {
         if (_client?.SocketManager is null)
         {
@@ -523,10 +563,7 @@ public sealed class MezonBotHostedService : BackgroundService
                 channelId: incomingMessage.ChannelId,
                 mode: mode,
                 isPublic: incomingMessage.IsPublic,
-                content: new ChannelMessageContent
-                {
-                    Text = message
-                });
+                content: content);
 
             _logger.LogInformation(
                 "SDK reply sent to channel {ChannelId} for sender {SenderId}.",
@@ -656,6 +693,14 @@ public sealed class MezonBotHostedService : BackgroundService
             return false;
         }
 
+        if (ShouldSkipDuplicateOutboundMessage(userId, content))
+        {
+            _logger.LogDebug(
+                "Skipped duplicate outbound DM for user {UserId}.",
+                userId);
+            return true;
+        }
+
         try
         {
             if (await TrySendByKnownDmRouteAsync(userId, content))
@@ -684,6 +729,79 @@ public sealed class MezonBotHostedService : BackgroundService
         }
 
         await SendDmMessageToUserAsync(userId, content);
+    }
+
+    private async Task SendParticipantFinishedQuizMessageAsync(
+        string mezonUserId,
+        Guid sessionId,
+        Guid userId,
+        SessionOperationResult? submitResult = null)
+    {
+        var summary = BuildParticipantCompletionSummary(submitResult)
+            ?? await GetParticipantCompletionSummaryAsync(sessionId, userId);
+
+        if (summary is null)
+        {
+            await SendDmFeedbackAsync(
+                mezonUserId,
+                QuizBotMessageFormatter.BuildParticipantFinishedQuizMessageContent(
+                    "Quiz",
+                    0,
+                    0,
+                    0));
+            return;
+        }
+
+        await SendDmFeedbackAsync(
+            mezonUserId,
+            QuizBotMessageFormatter.BuildParticipantFinishedQuizMessageContent(
+                summary.QuizTitle,
+                summary.TotalScore,
+                summary.CorrectCount,
+                summary.AnswersCount));
+    }
+
+    private static ParticipantCompletionSummary? BuildParticipantCompletionSummary(SessionOperationResult? submitResult)
+    {
+        if (submitResult is null || !submitResult.Success)
+        {
+            return null;
+        }
+
+        var quizTitle = submitResult.QuizTitle?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(quizTitle)
+            && submitResult.TotalScore is null
+            && submitResult.CorrectCount is null
+            && submitResult.AnswersCount is null)
+        {
+            return null;
+        }
+
+        return new ParticipantCompletionSummary
+        {
+            QuizTitle = string.IsNullOrWhiteSpace(quizTitle) ? "Quiz" : quizTitle,
+            TotalScore = submitResult.TotalScore ?? 0,
+            CorrectCount = submitResult.CorrectCount ?? 0,
+            AnswersCount = submitResult.AnswersCount ?? 0
+        };
+    }
+
+    private async Task<ParticipantCompletionSummary?> GetParticipantCompletionSummaryAsync(Guid sessionId, Guid userId)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        return await dbContext.SessionParticipants
+            .AsNoTracking()
+            .Where(participant => participant.SessionId == sessionId && participant.UserId == userId)
+            .Select(participant => new ParticipantCompletionSummary
+            {
+                QuizTitle = participant.Session.Quiz.Title,
+                TotalScore = participant.TotalScore,
+                CorrectCount = participant.CorrectCount,
+                AnswersCount = participant.AnswersCount
+            })
+            .FirstOrDefaultAsync();
     }
 
     private async Task TryLockAnsweredQuestionMessageAsync(
@@ -892,6 +1010,16 @@ public sealed class MezonBotHostedService : BackgroundService
         return ExitCommandRegex.IsMatch(input.Trim());
     }
 
+    private static bool IsLeaderboardCommand(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return false;
+        }
+
+        return LeaderboardCommandRegex.IsMatch(input.Trim());
+    }
+
     private static bool TryParseQuizButtonId(string input, out Guid sessionId, out int questionIndex, out int selectedOption)
     {
         sessionId = Guid.Empty;
@@ -976,6 +1104,31 @@ public sealed class MezonBotHostedService : BackgroundService
         }
 
         RecentAnswerSubmissions[key] = now;
+        return false;
+    }
+
+    private static bool ShouldSkipDuplicateOutboundMessage(long userId, ChannelMessageContent content)
+    {
+        var now = DateTime.UtcNow;
+
+        foreach (var item in RecentOutboundMessages)
+        {
+            if (now - item.Value > OutboundMessageDedupWindow)
+            {
+                RecentOutboundMessages.TryRemove(item.Key, out _);
+            }
+        }
+
+        var payload = JsonSerializer.Serialize(content);
+        var key = $"{userId}:{payload}";
+
+        if (RecentOutboundMessages.TryGetValue(key, out var lastSent)
+            && now - lastSent <= OutboundMessageDedupWindow)
+        {
+            return true;
+        }
+
+        RecentOutboundMessages[key] = now;
         return false;
     }
 
@@ -1160,5 +1313,13 @@ public sealed class MezonBotHostedService : BackgroundService
         public long ChannelId { get; init; }
         public bool IsPublic { get; init; }
         public int Mode { get; init; }
+    }
+
+    private sealed class ParticipantCompletionSummary
+    {
+        public string QuizTitle { get; init; } = string.Empty;
+        public int TotalScore { get; init; }
+        public int CorrectCount { get; init; }
+        public int AnswersCount { get; init; }
     }
 }

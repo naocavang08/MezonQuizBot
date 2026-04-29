@@ -70,6 +70,7 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
         public Guid? SessionId { get; set; }
+        public string QuizTitle { get; set; } = string.Empty;
         public bool? IsCorrect { get; set; }
         public int? PointsEarned { get; set; }
         public int? TotalScore { get; set; }
@@ -80,5 +81,6 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public int? SelectedOptionDisplay { get; set; }
         public bool CanRevealCorrectAnswer { get; set; } = true;
         public List<int> CorrectOptionDisplays { get; set; } = new();
+        public bool ParticipantCompletedQuiz { get; set; }
     }
 }

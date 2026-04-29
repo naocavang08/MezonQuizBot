@@ -362,9 +362,19 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return Fail("Participant is not in this session.");
             }
 
+            var removedParticipantMezonUserId = await _dbContext.SessionParticipants
+                .AsNoTracking()
+                .Where(p => p.SessionId == sessionId && p.UserId == request.UserId)
+                .Select(p => p.User.MezonUserId)
+                .FirstOrDefaultAsync();
+
             _dbContext.SessionParticipants.Remove(participant);
             await _dbContext.SaveChangesAsync();
 
+            await NotifyUsersSessionUnavailableAsync(
+                mezonUserIds: [removedParticipantMezonUserId],
+                title: "Session no longer available",
+                description: $"You have been removed from session {session.Code}.");
             await BroadcastSessionStateChanged(session);
             return Success("Participant cleared successfully.");
         }
@@ -506,8 +516,19 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return Fail("Session not found or host is not allowed.");
             }
 
+            var participantMezonUserIds = await _dbContext.SessionParticipants
+                .AsNoTracking()
+                .Where(p => p.SessionId == sessionId)
+                .Select(p => p.User.MezonUserId)
+                .ToListAsync();
+
             _dbContext.QuizSessions.Remove(session);
             await _dbContext.SaveChangesAsync();
+
+            await NotifyUsersSessionUnavailableAsync(
+                mezonUserIds: participantMezonUserIds,
+                title: "Session no longer available",
+                description: $"Session {session.Code} has been deleted by the host.");
             return Success("Session deleted successfully.");
         }
 
@@ -745,6 +766,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 Success = true,
                 Message = "Answer submitted successfully.",
                 SessionId = sessionId,
+                QuizTitle = quiz.Title,
                 IsCorrect = isCorrect,
                 PointsEarned = points,
                 TotalScore = participant.TotalScore,
@@ -754,8 +776,61 @@ namespace WebApp.Application.ManageQuizSession.Services
                 SelectedOptionDisplays = selectedOptionDisplays,
                 SelectedOptionDisplay = selectedOptionDisplay,
                 CanRevealCorrectAnswer = settings.ShowCorrectAnswer,
-                CorrectOptionDisplays = settings.ShowCorrectAnswer ? correctOptionDisplays : new List<int>()
+                CorrectOptionDisplays = settings.ShowCorrectAnswer ? correctOptionDisplays : new List<int>(),
+                ParticipantCompletedQuiz = participant.CompletedAt.HasValue
             };
+        }
+
+        public async Task<QuizSessionDto?> GetCurrentSessionForUser(Guid userId)
+        {
+            if (userId == Guid.Empty)
+            {
+                return null;
+            }
+
+            var participantCountsQuery = _dbContext.SessionParticipants
+                .AsNoTracking()
+                .GroupBy(p => p.SessionId)
+                .Select(g => new
+                {
+                    SessionId = g.Key,
+                    Count = g.Count()
+                });
+
+            return await _dbContext.SessionParticipants
+                .AsNoTracking()
+                .Where(p => p.UserId == userId)
+                .Join(
+                    _dbContext.QuizSessions.AsNoTracking()
+                        .Where(s => s.Status != SessionStatus.Finished && s.Status != SessionStatus.Cancelled),
+                    participant => participant.SessionId,
+                    session => session.Id,
+                    (participant, session) => session)
+                .GroupJoin(
+                    participantCountsQuery,
+                    session => session.Id,
+                    count => count.SessionId,
+                    (session, counts) => new { Session = session, ParticipantCount = counts.Select(c => c.Count).FirstOrDefault() })
+                .OrderByDescending(x => x.Session.CreatedAt)
+                .Select(x => new QuizSessionDto
+                {
+                    Id = x.Session.Id,
+                    Code = x.Session.Code ?? string.Empty,
+                    QuizId = x.Session.QuizId,
+                    QuizTitle = x.Session.Quiz.Title,
+                    HostId = x.Session.HostId,
+                    Status = x.Session.Status,
+                    CurrentQuestion = x.Session.CurrentQuestion,
+                    DeepLink = x.Session.DeepLink,
+                    QrCodeUrl = x.Session.QrCodeUrl,
+                    MezonChannelId = x.Session.MezonChannelId,
+                    MaxParticipants = x.Session.MaxParticipants,
+                    ParticipantCount = x.ParticipantCount,
+                    StartedAt = x.Session.StartedAt,
+                    FinishedAt = x.Session.FinishedAt,
+                    CreatedAt = x.Session.CreatedAt
+                })
+                .FirstOrDefaultAsync();
         }
 
         public async Task<List<SessionParticipantDto>> GetLeaderboard(Guid sessionId)
@@ -802,6 +877,11 @@ namespace WebApp.Application.ManageQuizSession.Services
                     JoinedAt = p.JoinedAt
                 })
                 .ToList();
+
+            for (var index = 0; index < participants.Count; index++)
+            {
+                participants[index].Rank = index + 1;
+            }
 
             return participants;
         }
@@ -1275,6 +1355,32 @@ namespace WebApp.Application.ManageQuizSession.Services
             _logger.LogInformation(
                 "Session status notification dispatched. SessionId={SessionId}, Title={Title}, Sent={SentCount}/{RequestedCount}",
                 session.Id,
+                title,
+                sendResult.SentCount,
+                sendResult.RequestedCount);
+        }
+
+        private async Task NotifyUsersSessionUnavailableAsync(
+            IEnumerable<string?> mezonUserIds,
+            string title,
+            string description)
+        {
+            var targetUserIds = mezonUserIds
+                .Where(value => long.TryParse(value, out var parsed) && parsed > 0)
+                .Select(value => long.Parse(value!))
+                .Distinct()
+                .ToList();
+
+            if (targetUserIds.Count == 0)
+            {
+                return;
+            }
+
+            var content = QuizBotMessageFormatter.BuildSessionUnavailableMessageContent(title, description);
+            var sendResult = await _mezonBotHostedService.SendDmMessageToUsersAsync(targetUserIds, content);
+
+            _logger.LogInformation(
+                "Session unavailable notification dispatched. Title={Title}, Sent={SentCount}/{RequestedCount}",
                 title,
                 sendResult.SentCount,
                 sendResult.RequestedCount);
