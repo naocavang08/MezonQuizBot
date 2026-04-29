@@ -759,6 +759,15 @@ public sealed class MezonBotHostedService : BackgroundService
                 summary.TotalScore,
                 summary.CorrectCount,
                 summary.AnswersCount));
+
+        _logger.LogInformation(
+            "Sent participant finished quiz message. SessionId={SessionId}, UserId={UserId}, QuizTitle={QuizTitle}, TotalScore={TotalScore}, CorrectCount={CorrectCount}, AnswersCount={AnswersCount}",
+            sessionId,
+            userId,
+            summary.QuizTitle,
+            summary.TotalScore,
+            summary.CorrectCount,
+            summary.AnswersCount);
     }
 
     private static ParticipantCompletionSummary? BuildParticipantCompletionSummary(SessionOperationResult? submitResult)

@@ -190,6 +190,20 @@ public static class QuizBotMessageFormatter
         int correctCount,
         int answersCount)
     {
+        var resolvedQuizTitle = string.IsNullOrWhiteSpace(quizTitle)
+            ? "Quiz"
+            : quizTitle.Trim();
+        var resolvedTotalScore = Math.Max(0, totalScore);
+        var resolvedCorrectCount = Math.Max(0, correctCount);
+        var resolvedAnswersCount = Math.Max(resolvedCorrectCount, answersCount);
+        var descriptionLines = new[]
+        {
+            $"You completed: `{resolvedQuizTitle}`",
+            $"Score: `{resolvedTotalScore}`",
+            $"Correct answers: `{resolvedCorrectCount}/{resolvedAnswersCount}`",
+            "Use `/leaderboard` to view the current session ranking."
+        };
+
         return new ChannelMessageContent
         {
             Text = string.Empty,
@@ -199,7 +213,7 @@ public static class QuizBotMessageFormatter
                 {
                     Color = "#0F766E",
                     Title = "Finish quiz",
-                    Description = $"You completed **{quizTitle}**.\nScore: **{totalScore}**\nCorrect answers: **{correctCount}/{answersCount}**\nUse `/leaderboard` to view the current session ranking."
+                    Description = string.Join("\n", descriptionLines)
                 }
             ]
         };
