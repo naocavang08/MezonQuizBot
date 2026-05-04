@@ -12,7 +12,7 @@ import {
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { ACCESS_PERMISSIONS, hasAnyPermission, PERMISSIONS } from '../Lib/Utils/permissions'
+import { ACCESS_PERMISSIONS, hasAnyPermission, PERMISSIONS, PUBLIC_HOME_PATH } from '../Lib/Utils/permissions'
 import useAuthStore from '../Stores/login.store'
 import useThemeStore from '../Stores/theme.store'
 import { MdDarkMode, MdLightMode } from 'react-icons/md'
@@ -368,7 +368,7 @@ const Layout = () => {
               size="small"
               onClick={() => {
                 clearAuth()
-                navigate('/login', { replace: true })
+                navigate(PUBLIC_HOME_PATH, { replace: true })
               }}
               sx={{ color: colors.textSecondary, textTransform: 'none', minWidth: 0, px: 1 }}
             >

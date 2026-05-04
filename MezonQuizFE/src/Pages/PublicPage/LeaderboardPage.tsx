@@ -31,6 +31,7 @@ import useAuthStore from "../../Stores/login.store";
 import { getSessionDetails, getSessionLeaderboard } from "../../Api/session.api";
 import type { QuizSessionDto, SessionParticipantDto } from "../../Interface/session.dto";
 import { SessionStatusValue } from "../../Interface/session.dto";
+import { canAccessApp, resolveDefaultAppPath } from "../../Lib/Utils/permissions";
 import { isSameLeaderboard, isSameSession } from "../../Lib/Utils/sessionRender";
 import { dt } from "../../Lib/designTokens";
 
@@ -199,6 +200,9 @@ const PublicLeaderboardPage = () => {
   const { snackbar, closeSnackbar, showError } = useAppSnackbar();
   const currentUser = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const roleName = useAuthStore((state) => state.roleName);
+  const permissionName = useAuthStore((state) => state.permissionName);
+  const hasSystemRole = useAuthStore((state) => state.hasSystemRole);
 
   const [session, setSession] = useState<QuizSessionDto | null>(null);
   const [leaderboard, setLeaderboard] = useState<SessionParticipantDto[]>([]);
@@ -288,6 +292,9 @@ const PublicLeaderboardPage = () => {
 
     return Math.max(0, nextHigherEntry.participant.totalScore - currentUserEntry.participant.totalScore);
   }, [currentUserEntry, orderedLeaderboard]);
+
+  const defaultAppPath = resolveDefaultAppPath(permissionName, hasSystemRole, roleName);
+  const hasAppAccess = canAccessApp(permissionName, hasSystemRole, roleName);
 
   return (
     <Box
@@ -646,22 +653,24 @@ const PublicLeaderboardPage = () => {
                           {currentUserEntry?.participant.totalScore ?? 0}
                         </Typography>
                       </Box>
-                      <Button
-                        variant="contained"
-                        onClick={() => navigate(isAuthenticated ? "/app" : "/login")}
-                        sx={{
-                          bgcolor: dt.colors.surfaceContainerLowest,
-                          color: dt.colors.primary,
-                          boxShadow: "none",
-                          textTransform: "none",
-                          "&:hover": {
-                            bgcolor: dt.colors.surfaceContainerLow,
+                      {hasAppAccess ? (
+                        <Button
+                          variant="contained"
+                          onClick={() => navigate(isAuthenticated ? defaultAppPath : "/login")}
+                          sx={{
+                            bgcolor: dt.colors.surfaceContainerLowest,
+                            color: dt.colors.primary,
                             boxShadow: "none",
-                          },
-                        }}
-                      >
-                        Open App
-                      </Button>
+                            textTransform: "none",
+                            "&:hover": {
+                              bgcolor: dt.colors.surfaceContainerLow,
+                              boxShadow: "none",
+                            },
+                          }}
+                        >
+                          Open App
+                        </Button>
+                      ) : null}
                     </Stack>
                   </Stack>
                 </Paper>

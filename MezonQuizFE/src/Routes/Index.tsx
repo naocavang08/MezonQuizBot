@@ -17,7 +17,7 @@ import FindQuizPage from "../Pages/FindQuizPage";
 import QuizDetailPage from "../Pages/QuizDetailPage";
 import SessionRoomPage from "../Pages/SessionRoomPage";
 import Layout from "../Layouts/Layout";
-import { ACCESS_PERMISSIONS, PERMISSIONS, resolveDefaultAppPath } from "../Lib/Utils/permissions";
+import { ACCESS_PERMISSIONS, PERMISSIONS, PUBLIC_HOME_PATH, resolveDefaultAppPath } from "../Lib/Utils/permissions";
 import StartQuizPage from "../Pages/StartQuizPage";
 import QuizLeaderboardPage from "../Pages/QuizLeaderboardPage";
 import GlobalSearchPage from "../Pages/Search/GlobalSearchPage";
@@ -31,24 +31,25 @@ import PublicLeaderboardPage from "../Pages/PublicPage/LeaderboardPage";
 
 const AppRoutes = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const roleName = useAuthStore((state) => state.roleName);
   const permissionName = useAuthStore((state) => state.permissionName);
   const hasSystemRole = useAuthStore((state) => state.hasSystemRole);
 
-  const defaultAppPath = resolveDefaultAppPath(permissionName, hasSystemRole);
+  const defaultAppPath = resolveDefaultAppPath(permissionName, hasSystemRole, roleName);
 
   return (
     <Routes>
       <Route
         path="/login"
-        element={isAuthenticated ? <Navigate to="/app" replace /> : <LoginPage />}
+        element={isAuthenticated ? <Navigate to={defaultAppPath} replace /> : <LoginPage />}
       />
 
       <Route path="/oauth/mezon/callback" element={<OAuthCallback />} />
 
       {/* Public landing */}
       <Route element={<LandingLayout />}>
-        <Route path="/" element={<Navigate to="/explore" replace />} />
-        <Route path="/explore" element={<Explore />} />
+        <Route path="/" element={<Navigate to={PUBLIC_HOME_PATH} replace />} />
+        <Route path={PUBLIC_HOME_PATH} element={<Explore />} />
         <Route path="/categories" element={<PublicCategoryPage />} />
         <Route path="/quizzes" element={<PublicQuizPage />} />
         <Route path="/quizzes/:quizId" element={<PublicQuizDetailPage />} />
@@ -113,7 +114,7 @@ const AppRoutes = () => {
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to={isAuthenticated ? "/app" : "/login"} replace />} />
+      <Route path="*" element={<Navigate to={isAuthenticated ? defaultAppPath : PUBLIC_HOME_PATH} replace />} />
     </Routes>
   )
 };

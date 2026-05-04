@@ -49,7 +49,6 @@ export const ACCESS_PERMISSIONS = {
   QUIZ_WORKSPACE: [
     PERMISSIONS.QUIZZES_ADMIN_LIST,
     PERMISSIONS.QUIZZES_CREATOR_LIST,
-    PERMISSIONS.QUIZZES_PLAYER_LIST,
   ],
   CATEGORY_PAGE: [
     PERMISSIONS.CATEGORIES_ADMIN_LIST,
@@ -59,9 +58,18 @@ export const ACCESS_PERMISSIONS = {
   SESSION_ROOM: [
     PERMISSIONS.SESSIONS_ADMIN_VIEW,
     PERMISSIONS.SESSIONS_CREATOR_VIEW,
-    PERMISSIONS.SESSIONS_PLAYER_VIEW,
   ],
 } as const
+
+export const PUBLIC_HOME_PATH = '/explore'
+
+export function isPlayerOnlyRole(roleNames: string[] = []): boolean {
+  const normalizedRoles = roleNames
+    .map((roleName) => roleName.trim().toLowerCase())
+    .filter(Boolean)
+
+  return normalizedRoles.length === 1 && normalizedRoles[0] === 'player'
+}
 
 export function hasAnyPermission(
   userPermissions: string[],
@@ -80,7 +88,12 @@ export function hasAnyPermission(
 export function resolveDefaultAppPath(
   userPermissions: string[],
   hasSystemRole = false,
+  roleNames: string[] = [],
 ): string {
+  if (isPlayerOnlyRole(roleNames)) {
+    return PUBLIC_HOME_PATH
+  }
+
   if (hasSystemRole && hasAnyPermission(userPermissions, ACCESS_PERMISSIONS.DASHBOARD, hasSystemRole)) {
     return '/app/dashboard'
   }
@@ -105,5 +118,13 @@ export function resolveDefaultAppPath(
     return '/app/roles'
   }
 
-  return '/app/find-quizzes'
+  return PUBLIC_HOME_PATH
+}
+
+export function canAccessApp(
+  userPermissions: string[],
+  hasSystemRole = false,
+  roleNames: string[] = [],
+): boolean {
+  return resolveDefaultAppPath(userPermissions, hasSystemRole, roleNames) !== PUBLIC_HOME_PATH
 }

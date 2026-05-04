@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import {
+  Avatar,
   AppBar,
   Box,
   Button,
@@ -8,12 +9,15 @@ import {
   Drawer,
   IconButton,
   Link,
+  Menu,
+  MenuItem,
   Stack,
   Toolbar,
   Typography,
 } from '@mui/material';
 import { Outlet, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { MdMenu, MdClose } from 'react-icons/md';
+import { canAccessApp, PUBLIC_HOME_PATH, resolveDefaultAppPath } from '../Lib/Utils/permissions';
 import useAuthStore from '../Stores/login.store';
 import { dt } from '../Lib/designTokens';
 
@@ -26,23 +30,44 @@ const NAV_LINKS = [
 const LandingLayout = () => {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const roleName = useAuthStore((s) => s.roleName);
+  const permissionName = useAuthStore((s) => s.permissionName);
+  const hasSystemRole = useAuthStore((s) => s.hasSystemRole);
+  const user = useAuthStore((s) => s.user);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [profileMenuAnchor, setProfileMenuAnchor] = useState<HTMLElement | null>(null);
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const defaultAppPath = resolveDefaultAppPath(permissionName, hasSystemRole, roleName);
+  const hasAppAccess = canAccessApp(permissionName, hasSystemRole, roleName);
+  const isProfileMenuOpen = Boolean(profileMenuAnchor);
 
   const handleGetStarted = () => {
-    navigate(isAuthenticated ? '/app' : '/login');
+    navigate(isAuthenticated ? defaultAppPath : '/login');
+  };
+
+  const handleOpenProfileMenu = (event: MouseEvent<HTMLElement>) => {
+    setProfileMenuAnchor(event.currentTarget);
+  };
+
+  const handleCloseProfileMenu = () => {
+    setProfileMenuAnchor(null);
+  };
+
+  const handleGoToApp = () => {
+    handleCloseProfileMenu();
+    navigate(defaultAppPath);
   };
 
   const handleLogout = () => {
+    handleCloseProfileMenu();
     clearAuth();
-    navigate('/login', { replace: true });
+    navigate(PUBLIC_HOME_PATH, { replace: true });
   };
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        // Section 5.1 from design: subtle radial gradient for paper-like depth
         background: `radial-gradient(circle at top right, ${dt.colors.surfaceContainerLow} 0%, ${dt.colors.surfaceContainerLowest} 60%)`,
         color: dt.colors.onBackground,
         fontFamily: dt.typography.fontFamily,
@@ -53,7 +78,6 @@ const LandingLayout = () => {
         position="fixed"
         elevation={0}
         sx={{
-          // Glassmorphism header, per design: white/80 backdrop
           bgcolor: 'rgba(248, 249, 255, 0.82)',
           backdropFilter: 'blur(14px)',
           borderBottom: `1px solid ${dt.colors.outlineVariant}`,
@@ -62,7 +86,6 @@ const LandingLayout = () => {
       >
         <Container sx={{ maxWidth: dt.spacing.containerMax + ' !important' }}>
           <Toolbar sx={{ justifyContent: 'space-between', py: 0.75 }}>
-            {/* Logo — Primary Indigo, bold */}
             <Typography
               component={RouterLink}
               to="/explore"
@@ -79,7 +102,6 @@ const LandingLayout = () => {
               Mezon Quiz
             </Typography>
 
-            {/* Desktop Nav */}
             <Stack
               direction="row"
               spacing={4}
@@ -103,52 +125,109 @@ const LandingLayout = () => {
               ))}
             </Stack>
 
-            {/* CTA Button — Primary filled, per design button spec */}
             <Stack direction="row" spacing={1} alignItems="center">
               {isAuthenticated ? (
+                <>
+                  <IconButton
+                    onClick={handleOpenProfileMenu}
+                    sx={{
+                      display: { xs: 'none', md: 'inline-flex' },
+                      p: 0.5,
+                      borderRadius: dt.radius.full,
+                      border: `1px solid ${dt.colors.outlineVariant}`,
+                      bgcolor: dt.colors.surfaceContainerLowest,
+                      '&:hover': {
+                        bgcolor: dt.colors.surfaceContainerLow,
+                      },
+                    }}
+                  >
+                    <Avatar
+                      src={user?.avatarUrl}
+                      alt={user?.displayName || user?.username || 'User'}
+                      sx={{
+                        width: 38,
+                        height: 38,
+                        bgcolor: dt.colors.primaryContainer,
+                        color: dt.colors.onPrimary,
+                        fontFamily: dt.typography.fontFamily,
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      {(user?.displayName || user?.username || 'U').slice(0, 1).toUpperCase()}
+                    </Avatar>
+                  </IconButton>
+                  <Menu
+                    anchorEl={profileMenuAnchor}
+                    open={isProfileMenuOpen}
+                    onClose={handleCloseProfileMenu}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    slotProps={{
+                      paper: {
+                        sx: {
+                          mt: 1,
+                          minWidth: 180,
+                          borderRadius: dt.radius.md,
+                          border: `1px solid ${dt.colors.outlineVariant}`,
+                          boxShadow: dt.shadows.card,
+                          bgcolor: dt.colors.surfaceContainerLowest,
+                        },
+                      },
+                    }}
+                  >
+                    {hasAppAccess ? (
+                      <MenuItem
+                        onClick={handleGoToApp}
+                        sx={{
+                          ...dt.typography.bodyMd,
+                          fontFamily: dt.typography.fontFamily,
+                          color: dt.colors.onSurface,
+                        }}
+                      >
+                        Go to App
+                      </MenuItem>
+                    ) : null}
+                    <MenuItem
+                      onClick={handleLogout}
+                      sx={{
+                        ...dt.typography.bodyMd,
+                        fontFamily: dt.typography.fontFamily,
+                        color: dt.colors.onSurface,
+                      }}
+                    >
+                      Logout
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : null}
+              {!isAuthenticated ? (
                 <Button
-                  onClick={handleLogout}
+                  onClick={handleGetStarted}
                   sx={{
                     display: { xs: 'none', md: 'inline-flex' },
-                    color: dt.colors.onSurface,
+                    bgcolor: dt.colors.primaryContainer,
+                    color: dt.colors.onPrimary,
                     fontFamily: dt.typography.fontFamily,
                     ...dt.typography.button,
                     borderRadius: dt.radius.default,
-                    px: 2,
+                    px: 2.5,
                     py: 1.1,
                     textTransform: 'none',
-                    border: `1px solid ${dt.colors.outlineVariant}`,
+                    boxShadow: 'none',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      bgcolor: dt.colors.primary,
+                      transform: 'translateY(-2px)',
+                      boxShadow: dt.shadows.ctaButton,
+                    },
+                    '&:active': { transform: 'scale(0.97)' },
                   }}
-                  >
-                    Logout
-                  </Button>
+                >
+                  Get Started
+                </Button>
               ) : null}
-              <Button
-                onClick={handleGetStarted}
-                sx={{
-                  display: { xs: 'none', md: 'inline-flex' },
-                  bgcolor: dt.colors.primaryContainer,
-                  color: dt.colors.onPrimary,
-                  fontFamily: dt.typography.fontFamily,
-                  ...dt.typography.button,
-                  borderRadius: dt.radius.default,
-                  px: 2.5,
-                  py: 1.1,
-                  textTransform: 'none',
-                  boxShadow: 'none',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    bgcolor: dt.colors.primary,
-                    transform: 'translateY(-2px)',
-                    boxShadow: dt.shadows.ctaButton,
-                  },
-                  '&:active': { transform: 'scale(0.97)' },
-                }}
-              >
-                {isAuthenticated ? 'Go to App' : 'Get Started'}
-              </Button>
 
-              {/* Mobile hamburger */}
               <IconButton
                 onClick={() => setDrawerOpen(true)}
                 sx={{ display: { md: 'none' }, color: dt.colors.onSurface }}
@@ -160,7 +239,6 @@ const LandingLayout = () => {
         </Container>
       </AppBar>
 
-      {/* ── Mobile Drawer ── */}
       <Drawer
         anchor="right"
         open={drawerOpen}
@@ -210,32 +288,32 @@ const LandingLayout = () => {
             </Link>
           ))}
           <Divider sx={{ borderColor: dt.colors.outlineVariant }} />
-          <Button
-            onClick={() => { setDrawerOpen(false); handleGetStarted(); }}
-            fullWidth
-            sx={{
-              bgcolor: dt.colors.primaryContainer,
-              color: dt.colors.onPrimary,
-              fontFamily: dt.typography.fontFamily,
-              ...dt.typography.button,
-              borderRadius: dt.radius.default,
-              py: 1.25,
-              textTransform: 'none',
-              boxShadow: 'none',
-              '&:hover': { bgcolor: dt.colors.primary },
-            }}
-          >
-            {isAuthenticated ? 'Go to App' : 'Get Started'}
-          </Button>
+          {!isAuthenticated || hasAppAccess ? (
+            <Button
+              onClick={() => { setDrawerOpen(false); handleGetStarted(); }}
+              fullWidth
+              sx={{
+                bgcolor: dt.colors.primaryContainer,
+                color: dt.colors.onPrimary,
+                fontFamily: dt.typography.fontFamily,
+                ...dt.typography.button,
+                borderRadius: dt.radius.default,
+                py: 1.25,
+                textTransform: 'none',
+                boxShadow: 'none',
+                '&:hover': { bgcolor: dt.colors.primary },
+              }}
+            >
+              {isAuthenticated ? 'Go to App' : 'Get Started'}
+            </Button>
+          ) : null}
         </Stack>
       </Drawer>
 
-      {/* ── Main Content ── */}
       <Box component="main" sx={{ pt: 8 }}>
         <Outlet />
       </Box>
 
-      {/* ── Footer ── */}
       <Box
         component="footer"
         sx={{

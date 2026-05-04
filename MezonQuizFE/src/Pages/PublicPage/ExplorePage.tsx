@@ -18,6 +18,7 @@ import { getBotLink } from '../../Api/session.api';
 import type { CategoryDto } from '../../Interface/category.dto';
 import CategoryIconBadge from '../../Lib/Utils/categoryIconBadge';
 import { getCategoryIconOption } from '../../Lib/Utils/categoryIconOptions';
+import { resolveDefaultAppPath } from '../../Lib/Utils/permissions';
 import useAuthStore from '../../Stores/login.store';
 import { dt } from '../../Lib/designTokens';
 import catQrImage from '../../assets/hinh-nen-meo-9.jpg';
@@ -363,6 +364,8 @@ const QrPreviewCard = ({ qrCodeUrl, isLoading }: QrPreviewCardProps) => (
 const Explore = () => {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const permissionName = useAuthStore((s) => s.permissionName);
+  const hasSystemRole = useAuthStore((s) => s.hasSystemRole);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [isCategoryLoading, setIsCategoryLoading] = useState(true);
   const [categoryError, setCategoryError] = useState<string | null>(null);
@@ -427,7 +430,8 @@ const Explore = () => {
     fetchBotLink();
   }, []);
 
-  const handleGetStarted = () => navigate(isAuthenticated ? '/app' : '/login');
+  const defaultAppPath = resolveDefaultAppPath(permissionName, hasSystemRole);
+  const handleGetStarted = () => navigate(isAuthenticated ? defaultAppPath : '/login');
 
   return (
     <>

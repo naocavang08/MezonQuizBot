@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import queryString from 'query-string';
 import type { LoginResponse } from '../Interface/login.dto';
+import { PUBLIC_HOME_PATH } from '../Lib/Utils/permissions';
 import useAuthStore from '../Stores/login.store';
 import { getRefreshToken, getTokenAccess } from '../Lib/Utils/localStorage';
 
@@ -29,11 +30,11 @@ baseURL.interceptors.request.use((request) => {
   return request;
 });
 
-const clearAuthAndRedirectToLogin = () => {
+const clearAuthAndRedirectToPublicHome = () => {
   useAuthStore.getState().clearAuth();
 
-  if (window.location.pathname !== '/login') {
-    window.location.href = '/login';
+  if (window.location.pathname !== PUBLIC_HOME_PATH) {
+    window.location.href = PUBLIC_HOME_PATH;
   }
 };
 
@@ -86,7 +87,7 @@ baseURL.interceptors.response.use(
     }
 
     if (statusCode === 401) {
-      clearAuthAndRedirectToLogin();
+      clearAuthAndRedirectToPublicHome();
     }
 
     return Promise.reject(error);
