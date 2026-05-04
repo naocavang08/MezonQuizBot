@@ -27,9 +27,15 @@ const LandingLayout = () => {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const handleGetStarted = () => {
     navigate(isAuthenticated ? '/app' : '/login');
+  };
+
+  const handleLogout = () => {
+    clearAuth();
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -99,6 +105,24 @@ const LandingLayout = () => {
 
             {/* CTA Button — Primary filled, per design button spec */}
             <Stack direction="row" spacing={1} alignItems="center">
+              {isAuthenticated ? (
+                <Button
+                  onClick={handleLogout}
+                  sx={{
+                    display: { xs: 'none', md: 'inline-flex' },
+                    color: dt.colors.onSurface,
+                    fontFamily: dt.typography.fontFamily,
+                    ...dt.typography.button,
+                    borderRadius: dt.radius.default,
+                    px: 2,
+                    py: 1.1,
+                    textTransform: 'none',
+                    border: `1px solid ${dt.colors.outlineVariant}`,
+                  }}
+                  >
+                    Logout
+                  </Button>
+              ) : null}
               <Button
                 onClick={handleGetStarted}
                 sx={{
