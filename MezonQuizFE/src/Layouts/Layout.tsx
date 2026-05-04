@@ -407,6 +407,13 @@ const Layout = () => {
             </Stack>
 
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexShrink: 0 }}>
+              <Button
+                variant="outlined"
+                sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 700, borderColor: colors.border, color: colors.textPrimary, '&:hover': { borderColor: colors.textPrimary } }}
+                onClick={() => navigate(PUBLIC_HOME_PATH)}
+              >
+                Go To Web
+              </Button>
               {canCreateQuiz ? (
                 <Button
                   variant="contained"

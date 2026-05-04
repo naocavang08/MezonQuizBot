@@ -263,15 +263,6 @@ const PublicLeaderboardPage = () => {
       .filter((entry): entry is { participant: SessionParticipantDto; rank: number } => Boolean(entry));
   }, [orderedLeaderboard]);
 
-  const workspaceLabel = session?.mezonChannelId?.trim()
-    ? `Workspace ${session.mezonChannelId}`
-    : "Public Workspace";
-
-  const heroTitle = session?.quizTitle?.trim() || "Session Leaderboard";
-  const heroSubtitle = session
-    ? `Session results for ${workspaceLabel}. Rankings update from this session only.`
-    : "Session-based rankings for the selected workspace.";
-
   const currentUserEntry = useMemo(() => {
     if (!currentUser?.id) {
       return null;
@@ -309,6 +300,9 @@ const PublicLeaderboardPage = () => {
       <Container maxWidth="lg">
         <Stack spacing={4}>
           <Stack spacing={2} alignItems="center" textAlign="center">
+            {isLoading ? (
+              <CircularProgress />
+            ) : null}
             <Typography
               sx={{
                 fontFamily: dt.typography.fontFamily,
@@ -317,34 +311,20 @@ const PublicLeaderboardPage = () => {
                 fontSize: { xs: "2.5rem", md: dt.typography.display.fontSize },
               }}
             >
-              {heroTitle}
-            </Typography>
-            <Typography
-              sx={{
-                maxWidth: 760,
-                fontFamily: dt.typography.fontFamily,
-                ...dt.typography.bodyLg,
-                color: dt.colors.onSurfaceVariant,
-              }}
-            >
-              {heroSubtitle}
+              {session?.quizTitle?.trim()}
             </Typography>
 
             <Stack direction="row" spacing={1.25} flexWrap="wrap" useFlexGap justifyContent="center">
-              <Chip
-                label={workspaceLabel}
-                sx={{ bgcolor: dt.colors.surfaceContainerLowest, border: `1px solid ${dt.colors.outlineVariant}` }}
-              />
               {session ? (
                 <Chip
                   label={`Status: ${statusLabel[session.status] ?? "Unknown"}`}
-                  sx={{ bgcolor: dt.colors.surfaceContainerLowest, border: `1px solid ${dt.colors.outlineVariant}` }}
+                  sx={{ color: dt.colors.onSurface, bgcolor: dt.colors.surfaceContainerLowest, border: `1px solid ${dt.colors.outlineVariant}` }}
                 />
               ) : null}
               {session?.code ? (
                 <Chip
                   label={`Code: ${session.code}`}
-                  sx={{ bgcolor: dt.colors.surfaceContainerLowest, border: `1px solid ${dt.colors.outlineVariant}` }}
+                  sx={{ color: dt.colors.onSurface, bgcolor: dt.colors.surfaceContainerLowest, border: `1px solid ${dt.colors.outlineVariant}` }}
                 />
               ) : null}
             </Stack>
