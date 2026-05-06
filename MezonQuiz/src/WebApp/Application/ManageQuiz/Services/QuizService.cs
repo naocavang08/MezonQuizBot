@@ -174,8 +174,8 @@ namespace WebApp.Application.ManageQuiz.Services
 
         public async Task<bool> CreateQuiz(Guid userId, SaveQuizDto input)
         {
-            if (!IsValidinput(input))
-                return false;
+            ArgumentNullException.ThrowIfNull(input);
+            input.Validate();
 
             var now = DateTime.UtcNow;
             var mappedQuestions = MapQuestions(input.Questions);
@@ -184,8 +184,8 @@ namespace WebApp.Application.ManageQuiz.Services
             {
                 Id = Guid.NewGuid(),
                 CreatorId = userId,
-                Title = input.Title,
-                Description = input.Description,
+                Title = input.Title.Trim(),
+                Description = input.Description?.Trim(),
                 CategoryId = input.CategoryId,
                 Questions = mappedQuestions,
                 TotalPoints = mappedQuestions.Sum(q => q.Points),
@@ -201,8 +201,8 @@ namespace WebApp.Application.ManageQuiz.Services
 
         public async Task<bool> UpdateQuiz(Guid userId, Guid quizId, SaveQuizDto input)
         {
-            if (!IsValidinput(input))
-                return false;
+            ArgumentNullException.ThrowIfNull(input);
+            input.Validate();
 
             var quiz = await GetQuiz(quizId);
 
@@ -214,8 +214,8 @@ namespace WebApp.Application.ManageQuiz.Services
 
             var mappedQuestions = MapQuestions(input.Questions);
 
-            quiz.Title = input.Title;
-            quiz.Description = input.Description;
+            quiz.Title = input.Title.Trim();
+            quiz.Description = input.Description?.Trim();
             quiz.CategoryId = input.CategoryId;
             quiz.Questions = mappedQuestions;
             quiz.TotalPoints = mappedQuestions.Sum(q => q.Points);
@@ -235,8 +235,8 @@ namespace WebApp.Application.ManageQuiz.Services
 
         public async Task<bool> AddQuestion(Guid quizId, QuizQuestion questionData)
         {
-            if (questionData is null || !questionData.IsValid())
-                return false;
+            ArgumentNullException.ThrowIfNull(questionData);
+            questionData.Validate();
 
             var quiz = await GetQuiz(quizId);
             if (quiz is null)
@@ -250,8 +250,8 @@ namespace WebApp.Application.ManageQuiz.Services
 
         public async Task<bool> UpdateQuestion(Guid quizId, int questionIndex, QuizQuestion questionData)
         {
-            if (questionData is null || !questionData.IsValid())
-                return false;
+            ArgumentNullException.ThrowIfNull(questionData);
+            questionData.Validate();
 
             var quiz = await GetQuiz(quizId);
             if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out _))
@@ -277,18 +277,22 @@ namespace WebApp.Application.ManageQuiz.Services
 
         public async Task<bool> AddOption(Guid quizId, int questionIndex, QuizOption optionData)
         {
-            var quiz = await GetQuiz(quizId);
-            if (quiz is null || optionData is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
-                return false;
+            ArgumentNullException.ThrowIfNull(optionData);
+            optionData.Validate();
 
-            if (!IsValidOptionData(optionData))
+            var quiz = await GetQuiz(quizId);
+            if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
                 return false;
 
             question.Options.Add(optionData);
-            if (!question.IsValid())
+            try
+            {
+                question.Validate();
+            }
+            catch (ArgumentException)
             {
                 question.Options.RemoveAt(question.Options.Count - 1);
-                return false;
+                throw;
             }
 
             UpdateQuizMetadata(quiz);
@@ -298,23 +302,27 @@ namespace WebApp.Application.ManageQuiz.Services
 
         public async Task<bool> UpdateOption(Guid quizId, int questionIndex, int optionIndex, QuizOption optionData)
         {
+            ArgumentNullException.ThrowIfNull(optionData);
+            optionData.Validate();
+
             var quiz = await GetQuiz(quizId);
-            if (quiz is null || optionData is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
+            if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
                 return false;
 
             if (!TryGetOptionByListIndex(question, optionIndex, out _))
                 return false;
 
-            if (!IsValidOptionData(optionData))
-                return false;
-
             var previousOption = question.Options[optionIndex];
             question.Options[optionIndex] = optionData;
 
-            if (!question.IsValid())
+            try
+            {
+                question.Validate();
+            }
+            catch (ArgumentException)
             {
                 question.Options[optionIndex] = previousOption;
-                return false;
+                throw;
             }
 
             UpdateQuizMetadata(quiz);
@@ -333,10 +341,14 @@ namespace WebApp.Application.ManageQuiz.Services
 
             question.Options.RemoveAt(optionIndex);
 
-            if (!question.IsValid())
+            try
+            {
+                question.Validate();
+            }
+            catch (ArgumentException)
             {
                 question.Options.Insert(optionIndex, optionToRemove);
-                return false;
+                throw;
             }
 
             UpdateQuizMetadata(quiz);
@@ -346,8 +358,11 @@ namespace WebApp.Application.ManageQuiz.Services
 
         public async Task<bool> UpdateQuizSettings(Guid quizId, QuizSettings settingsData)
         {
+            ArgumentNullException.ThrowIfNull(settingsData);
+            settingsData.Validate();
+
             var quiz = await GetQuiz(quizId);
-            if (quiz is null || settingsData is null)
+            if (quiz is null)
                 return false;
 
             quiz.Settings = MapSettings(settingsData);
@@ -404,23 +419,6 @@ namespace WebApp.Application.ManageQuiz.Services
 
             var markdown = $"![quiz-media]({absoluteUrl})";
             return (true, "Upload successful.", absoluteUrl, markdown);
-        }
-
-        private static bool IsValidinput(SaveQuizDto? input)
-        {
-            if (input is null)
-                return false;
-
-            if (string.IsNullOrWhiteSpace(input.Title))
-                return false;
-
-            if (input.Settings is null)
-                return false;
-
-            if (input.Questions is null)
-                return false;
-
-            return input.Questions.All(q => q.IsValid());
         }
 
         private static List<QuizQuestion> MapQuestions(IEnumerable<QuizQuestion>? questions)
@@ -486,9 +484,5 @@ namespace WebApp.Application.ManageQuiz.Services
             return true;
         }
 
-        private static bool IsValidOptionData(QuizOption optionData)
-        {
-            return !string.IsNullOrWhiteSpace(optionData.Content);
-        }
     }
 }

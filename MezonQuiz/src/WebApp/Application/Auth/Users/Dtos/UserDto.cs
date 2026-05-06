@@ -13,6 +13,24 @@ namespace WebApp.Application.Auth.Users.Dtos
         public string Password { get; set; } = null!;
         public string? DisplayName { get; set; }
         public string? AvatarUrl { get; set; }
+
+        public void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(Username))
+            {
+                throw new ArgumentException("Username is required.", nameof(Username));
+            }
+
+            if (string.IsNullOrWhiteSpace(Password))
+            {
+                throw new ArgumentException("Password is required.", nameof(Password));
+            }
+
+            if (string.IsNullOrWhiteSpace(Email) || !UserRequestValidation.IsValidEmail(Email))
+            {
+                throw new ArgumentException("Valid email is required.", nameof(Email));
+            }
+        }
     }
 
     public class UpdateUserRequestDto
@@ -21,6 +39,14 @@ namespace WebApp.Application.Auth.Users.Dtos
         public string? DisplayName { get; set; }
         public string? AvatarUrl { get; set; }
         public bool IsActive { get; set; }
+
+        public void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(Email) || !UserRequestValidation.IsValidEmail(Email))
+            {
+                throw new ArgumentException("Valid email is required.", nameof(Email));
+            }
+        }
     }
 
     public class UserDto
@@ -55,5 +81,21 @@ namespace WebApp.Application.Auth.Users.Dtos
     {
         [Required]
         public IFormFile File { get; set; } = null!;
+    }
+
+    internal static class UserRequestValidation
+    {
+        public static bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

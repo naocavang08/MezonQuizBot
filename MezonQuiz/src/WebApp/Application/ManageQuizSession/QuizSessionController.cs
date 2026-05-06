@@ -53,11 +53,18 @@ namespace WebApp.Application.ManageQuizSession
                 return Unauthorized(new { Message = "User identity is invalid or missing." });
             }
 
-            var (result, session) = await _sessionService.CreateSession(request, currentUserId);
-            if (!result.Success)
-                return BadRequest(new { Message = result.Message });
+            try
+            {
+                var (result, session) = await _sessionService.CreateSession(request, currentUserId);
+                if (!result.Success)
+                    return BadRequest(new { Message = result.Message });
 
-            return Ok(new { Message = result.Message, Session = session });
+                return Ok(new { Message = result.Message, Session = session });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPost("join/{code}")]
@@ -67,13 +74,20 @@ namespace WebApp.Application.ManageQuizSession
             PermissionNames.Sessions.Admin_View)]
         public async Task<IActionResult> JoinByCode(string code, [FromBody] JoinQuizSessionDto request)
         {
-            var result = await _sessionService.JoinByCode(code, request);
-            if (!result.Success)
+            try
             {
-                return BadRequest(new { Message = result.Message });
-            }
+                var result = await _sessionService.JoinByCode(code, request);
+                if (!result.Success)
+                {
+                    return BadRequest(new { Message = result.Message });
+                }
 
-            return Ok(new { Message = result.Message, SessionId = result.SessionId });
+                return Ok(new { Message = result.Message, SessionId = result.SessionId });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPost("{sessionId}/clear")]
@@ -84,11 +98,18 @@ namespace WebApp.Application.ManageQuizSession
                 return Unauthorized(new { Message = "User identity is invalid or missing." });
             }
 
-            var result = await _sessionService.ClearParticipant(sessionId, currentUserId, request);
-            if (!result.Success)
-                return BadRequest(new { Message = result.Message });
+            try
+            {
+                var result = await _sessionService.ClearParticipant(sessionId, currentUserId, request);
+                if (!result.Success)
+                    return BadRequest(new { Message = result.Message });
 
-            return Ok(new { Message = result.Message });
+                return Ok(new { Message = result.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPost("{sessionId}/start")]
@@ -223,11 +244,18 @@ namespace WebApp.Application.ManageQuizSession
         [HttpPost("{sessionId}/answers")]
         public async Task<IActionResult> SubmitAnswer(Guid sessionId, [FromBody] SubmitAnswerDto request)
         {
-            var result = await _sessionService.SubmitAnswer(sessionId, request);
-            if (!result.Success)
-                return BadRequest(new { Message = result.Message });
+            try
+            {
+                var result = await _sessionService.SubmitAnswer(sessionId, request);
+                if (!result.Success)
+                    return BadRequest(new { Message = result.Message });
 
-            return Ok(new { Message = result.Message });
+                return Ok(new { Message = result.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpGet("{sessionId}/leaderboard")]

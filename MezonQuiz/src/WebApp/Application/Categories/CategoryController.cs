@@ -27,18 +27,32 @@ namespace WebApp.Application.Categories
         [PermissionAuthorize(PermissionNames.Categories.Create)]
         public async Task<IActionResult> CreateCategory([FromBody] SaveCategoryDto request)
         {
-            var result = await _categoryService.CreateCategoryAsync(request);
-            if (result) return Ok();
-            return BadRequest("Failed to create category");
+            try
+            {
+                var result = await _categoryService.CreateCategoryAsync(request);
+                if (result) return Ok();
+                return BadRequest("Failed to create category");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPut("{id}")]
         [PermissionAuthorize(PermissionNames.Categories.Update)]
         public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] SaveCategoryDto request)
         {
-            var result = await _categoryService.UpdateCategoryAsync(id, request);
-            if (result) return Ok();
-            return NotFound("Category not found");
+            try
+            {
+                var result = await _categoryService.UpdateCategoryAsync(id, request);
+                if (result) return Ok();
+                return NotFound("Category not found");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpDelete("{id}")]

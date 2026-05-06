@@ -16,5 +16,13 @@ namespace WebApp.Application.Categories.Dtos
         public string? Icon { get; set; }
         public int SortOrder { get; set; }
 
+        public void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(Name))
+            {
+                throw new ArgumentException("Category name is required.", nameof(Name));
+            }
+        }
+
     }
 }

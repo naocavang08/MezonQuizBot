@@ -15,12 +15,15 @@ namespace WebApp.Application.Categories.Services
         }
         public async Task<bool> CreateCategoryAsync(SaveCategoryDto request)
         {
+            ArgumentNullException.ThrowIfNull(request);
+            request.Validate();
+
             var category = new QuizCategory
             {
                 Id = Guid.NewGuid(),
-                Name = request.Name,
-                Slug = request.Slug,
-                Icon = request.Icon,
+                Name = request.Name.Trim(),
+                Slug = request.Slug?.Trim(),
+                Icon = request.Icon?.Trim(),
                 SortOrder = request.SortOrder,
                 CreatedAt = DateTime.UtcNow,
             };
@@ -73,12 +76,15 @@ namespace WebApp.Application.Categories.Services
 
         public async Task<bool> UpdateCategoryAsync(Guid categoryId, SaveCategoryDto request)
         {
+            ArgumentNullException.ThrowIfNull(request);
+            request.Validate();
+
             var category = await _dbContext.QuizCategories.FindAsync(categoryId);
             if (category == null) return false;
-            category.Name = request.Name;
+            category.Name = request.Name.Trim();
             category.SortOrder = request.SortOrder;
-            category.Slug = request.Slug;
-            category.Icon = request.Icon;
+            category.Slug = request.Slug?.Trim();
+            category.Icon = request.Icon?.Trim();
             _dbContext.QuizCategories.Update(category);
             var result = await _dbContext.SaveChangesAsync();
             return result > 0;

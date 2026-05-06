@@ -9,6 +9,19 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public string? DeepLink { get; set; }
         public string? QrCodeUrl { get; set; }
         public string? MezonChannelId { get; set; }
+
+        public void Validate()
+        {
+            if (QuizId == Guid.Empty)
+            {
+                throw new ArgumentException("Quiz ID is required.", nameof(QuizId));
+            }
+
+            if (MaxParticipants.HasValue && MaxParticipants.Value < 1)
+            {
+                throw new ArgumentException("MaxParticipants must be greater than 0.", nameof(MaxParticipants));
+            }
+        }
     }
 
     public class QuizSessionDto
@@ -33,11 +46,27 @@ namespace WebApp.Application.ManageQuizSession.Dtos
     public class JoinQuizSessionDto
     {
         public Guid UserId { get; set; }
+
+        public void Validate()
+        {
+            if (UserId == Guid.Empty)
+            {
+                throw new ArgumentException("User ID is required.", nameof(UserId));
+            }
+        }
     }
 
     public class ClearParticipantDto
     {
         public Guid UserId { get; set; }
+
+        public void Validate()
+        {
+            if (UserId == Guid.Empty)
+            {
+                throw new ArgumentException("User ID is required.", nameof(UserId));
+            }
+        }
     }
 
     public class SubmitAnswerDto
@@ -47,6 +76,19 @@ namespace WebApp.Application.ManageQuizSession.Dtos
         public List<int>? SelectedOptions { get; set; }
         public int? ResponseTimeMs { get; set; }
         public bool SkipAutoDispatchNextQuestion { get; set; }
+
+        public void Validate()
+        {
+            if (UserId == Guid.Empty)
+            {
+                throw new ArgumentException("User ID is required.", nameof(UserId));
+            }
+
+            if (ResponseTimeMs.HasValue && ResponseTimeMs.Value < 0)
+            {
+                throw new ArgumentException("ResponseTimeMs must be greater than or equal to 0.", nameof(ResponseTimeMs));
+            }
+        }
     }
 
     public class SessionParticipantDto

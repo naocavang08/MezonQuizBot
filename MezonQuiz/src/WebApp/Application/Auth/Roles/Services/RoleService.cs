@@ -41,11 +41,10 @@ namespace WebApp.Application.Auth.Roles.Services
 
         public async Task<RoleDto> CreateRoleAsync(RoleRequestDto request)
         {
-            var normalizedName = request.Name?.Trim();
-            if (string.IsNullOrWhiteSpace(normalizedName))
-            {
-                throw new ArgumentException("Role name is required.", nameof(request.Name));
-            }
+            ArgumentNullException.ThrowIfNull(request);
+            request.Validate();
+
+            var normalizedName = request.Name.Trim();
 
             var existed = await _dbContext.Roles
                 .AnyAsync(r => r.Name.ToLower() == normalizedName.ToLower());

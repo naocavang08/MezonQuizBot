@@ -93,21 +93,11 @@ namespace WebApp.Application.Auth.Users.Services
 
         public async Task<UserDto> CreateUserAsync(CreateUserRequestDto request)
         {
-            var normalizedName = request.Username?.Trim();
-            if (string.IsNullOrWhiteSpace(normalizedName))
-            {
-                throw new ArgumentException("Username is required.", nameof(request.Username));
-            }
+            ArgumentNullException.ThrowIfNull(request);
+            request.Validate();
 
-            if (string.IsNullOrWhiteSpace(request.Password))
-            {
-                throw new ArgumentException("Password is required.", nameof(request.Password));
-            }
-
-            if (string.IsNullOrWhiteSpace(request.Email) || !IsValidEmail(request.Email))
-            {
-                throw new ArgumentException("Valid email is required.", nameof(request.Email));
-            }
+            var normalizedName = request.Username.Trim();
+            var normalizedEmail = request.Email!.Trim();
 
             var usernameExisted = await _dbContext.Users
                 .AnyAsync(r => r.Username.ToLower() == normalizedName.ToLower());
@@ -118,7 +108,7 @@ namespace WebApp.Application.Auth.Users.Services
             }
 
             var emailExisted = await _dbContext.Users
-                .AnyAsync(r => r.Email!.ToLower() == request.Email.ToLower());
+                .AnyAsync(r => r.Email!.ToLower() == normalizedEmail.ToLower());
 
             if (emailExisted)
             {
@@ -128,11 +118,11 @@ namespace WebApp.Application.Auth.Users.Services
             var user = new User
             {
                 Id = Guid.NewGuid(),
-                Email = request.Email,
+                Email = normalizedEmail,
                 Username = normalizedName,
                 DisplayName = request.DisplayName?.Trim(),
                 Password = BCrypt.Net.BCrypt.HashPassword(request.Password?.Trim()),
-                AvatarUrl = request.AvatarUrl,
+                AvatarUrl = request.AvatarUrl?.Trim(),
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -178,6 +168,9 @@ namespace WebApp.Application.Auth.Users.Services
 
         public async Task<UserDto> UpdateUserAsync(Guid id, UpdateUserRequestDto request)
         {
+            ArgumentNullException.ThrowIfNull(request);
+            request.Validate();
+
             var user = await _dbContext.Users
                 .FirstOrDefaultAsync(r => r.Id == id);
             if (user == null)
@@ -190,22 +183,19 @@ namespace WebApp.Application.Auth.Users.Services
                 throw new InvalidOperationException("OAuth2 users cannot be edited from this endpoint.");
             }
 
-            if (string.IsNullOrWhiteSpace(request.Email) || !IsValidEmail(request.Email))
-            {
-                throw new ArgumentException("Valid email is required.", nameof(request.Email));
-            }
+            var normalizedEmail = request.Email!.Trim();
 
             var emailExisted = await _dbContext.Users
-                .AnyAsync(r => r.Email!.ToLower() == request.Email.ToLower() && r.Id != id);
+                .AnyAsync(r => r.Email!.ToLower() == normalizedEmail.ToLower() && r.Id != id);
 
             if (emailExisted)
             {
                 throw new InvalidOperationException("Email already exists.");
             }
 
-            user.Email = request.Email;
-            user.DisplayName = request.DisplayName;
-            user.AvatarUrl = request.AvatarUrl;
+            user.Email = normalizedEmail;
+            user.DisplayName = request.DisplayName?.Trim();
+            user.AvatarUrl = request.AvatarUrl?.Trim();
             user.IsActive = request.IsActive;
             user.UpdatedAt = DateTime.UtcNow;
             await _dbContext.SaveChangesAsync();
@@ -278,19 +268,6 @@ namespace WebApp.Application.Auth.Users.Services
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             };
-        }
-
-        private bool IsValidEmail(string email)
-        {
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         public async Task<List<Guid>> GetUserRoleIdsAsync(Guid userId)

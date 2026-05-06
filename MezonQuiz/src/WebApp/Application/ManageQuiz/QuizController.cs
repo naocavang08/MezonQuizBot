@@ -80,11 +80,6 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Create)]
         public async Task<IActionResult> CreateQuiz([FromBody] SaveQuizDto input)
         {
-            if (input is null)
-            {
-                return BadRequest(new { Message = "Quiz payload is required." });
-            }
-
             var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userIdClaimValue, out var userId))
             {
@@ -92,22 +87,24 @@ namespace WebApp.Application.ManageQuiz
                 return Unauthorized(new { Message = "User identity is invalid or missing." });
             }
 
-            var created = await _quizService.CreateQuiz(userId, input);
-            if (!created)
-                return BadRequest(new { Message = "Invalid quiz data or failed to create quiz." });
+            try
+            {
+                var created = await _quizService.CreateQuiz(userId, input);
+                if (!created)
+                    return BadRequest(new { Message = "Invalid quiz data or failed to create quiz." });
 
-            return Ok(new { Message = "Quiz created successfully" });
+                return Ok(new { Message = "Quiz created successfully" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPut("{quizId}")]
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateQuiz(Guid quizId, [FromBody] SaveQuizDto input)
         {
-            if (input is null)
-            {
-                return BadRequest(new { Message = "Quiz payload is required." });
-            }
-
             var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userIdClaimValue, out var userId))
             {
@@ -119,6 +116,10 @@ namespace WebApp.Application.ManageQuiz
             try
             {
                 updated = await _quizService.UpdateQuiz(userId, quizId, input);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -150,22 +151,36 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> AddQuestion(Guid quizId, [FromBody] QuizQuestion questionData)
         {
-            var added = await _quizService.AddQuestion(quizId, questionData);
-            if (!added)
-                return BadRequest(new { Message = "Could not add question to quiz." });
+            try
+            {
+                var added = await _quizService.AddQuestion(quizId, questionData);
+                if (!added)
+                    return BadRequest(new { Message = "Could not add question to quiz." });
 
-            return Ok(new { Message = "Question added successfully" });
+                return Ok(new { Message = "Question added successfully" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPut("{quizId}/questions/{questionIndex}")]
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateQuestion(Guid quizId, int questionIndex, [FromBody] QuizQuestion questionData)
         {
-            var updated = await _quizService.UpdateQuestion(quizId, questionIndex, questionData);
-            if (!updated)
-                return BadRequest(new { Message = "Could not update question." });
+            try
+            {
+                var updated = await _quizService.UpdateQuestion(quizId, questionIndex, questionData);
+                if (!updated)
+                    return BadRequest(new { Message = "Could not update question." });
 
-            return Ok(new { Message = "Question updated successfully" });
+                return Ok(new { Message = "Question updated successfully" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpDelete("{quizId}/questions/{questionIndex}")]
@@ -183,22 +198,36 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> AddOption(Guid quizId, int questionIndex, [FromBody] QuizOption optionData)
         {
-            var added = await _quizService.AddOption(quizId, questionIndex, optionData);
-            if (!added)
-                return BadRequest(new { Message = "Could not add option to question." });
+            try
+            {
+                var added = await _quizService.AddOption(quizId, questionIndex, optionData);
+                if (!added)
+                    return BadRequest(new { Message = "Could not add option to question." });
 
-            return Ok(new { Message = "Option added successfully" });
+                return Ok(new { Message = "Option added successfully" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPut("{quizId}/questions/{questionIndex}/options/{optionIndex}")]
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateOption(Guid quizId, int questionIndex, int optionIndex, [FromBody] QuizOption optionData)
         {
-            var updated = await _quizService.UpdateOption(quizId, questionIndex, optionIndex, optionData);
-            if (!updated)
-                return BadRequest(new { Message = "Could not update option." });
+            try
+            {
+                var updated = await _quizService.UpdateOption(quizId, questionIndex, optionIndex, optionData);
+                if (!updated)
+                    return BadRequest(new { Message = "Could not update option." });
 
-            return Ok(new { Message = "Option updated successfully" });
+                return Ok(new { Message = "Option updated successfully" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpDelete("{quizId}/questions/{questionIndex}/options/{optionIndex}")]
@@ -216,11 +245,18 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateQuizSettings(Guid quizId, [FromBody] QuizSettings settingsData)
         {
-            var updated = await _quizService.UpdateQuizSettings(quizId, settingsData);
-            if (!updated)
-                return BadRequest(new { Message = "Could not update quiz settings." });
+            try
+            {
+                var updated = await _quizService.UpdateQuizSettings(quizId, settingsData);
+                if (!updated)
+                    return BadRequest(new { Message = "Could not update quiz settings." });
 
-            return Ok(new { Message = "Quiz settings updated successfully" });
+                return Ok(new { Message = "Quiz settings updated successfully" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPost("upload-media")]

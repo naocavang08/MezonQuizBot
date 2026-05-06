@@ -7,5 +7,9 @@ namespace WebApp.Application.ManageQuiz.Dtos
         public bool ShuffleQuestions { get; set; } = false;
         public bool ShuffleOptions { get; set; } = false;
         public bool ShowCorrectAnswer { get; set; } = true;
+
+        public void Validate()
+        {
+        }
     }
 }

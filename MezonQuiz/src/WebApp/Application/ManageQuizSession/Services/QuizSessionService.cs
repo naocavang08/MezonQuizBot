@@ -139,10 +139,13 @@ namespace WebApp.Application.ManageQuizSession.Services
 
         public async Task<(SessionOperationResult Result, QuizSessionDto? Session)> CreateSession(CreateQuizSessionDto request, Guid hostId)
         {
-            if (request is null || request.QuizId == Guid.Empty || hostId == Guid.Empty)
+            if (hostId == Guid.Empty)
             {
                 return (Fail("Invalid create session request."), null);
             }
+
+            ArgumentNullException.ThrowIfNull(request);
+            request.Validate();
 
             var quiz = await _dbContext.Quizzes.FirstOrDefaultAsync(q => q.Id == request.QuizId);
             if (quiz is null)
@@ -158,11 +161,6 @@ namespace WebApp.Application.ManageQuizSession.Services
             if (hostId != quiz.CreatorId)
             {
                 return (Fail("HostId must be the quiz creatorId."), null);
-            }
-
-            if (request.MaxParticipants.HasValue && request.MaxParticipants.Value < 1)
-            {
-                return (Fail("MaxParticipants must be greater than 0."), null);
             }
 
             var existSession = await _dbContext.QuizSessions
@@ -221,10 +219,8 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return Fail("Session code is required.");
             }
 
-            if (request is null || request.UserId == Guid.Empty)
-            {
-                return Fail("Invalid join request.");
-            }
+            ArgumentNullException.ThrowIfNull(request);
+            request.Validate();
 
             var session = await _dbContext.QuizSessions
                 .FirstOrDefaultAsync(s => s.Code == code.ToUpperInvariant());
@@ -338,10 +334,8 @@ namespace WebApp.Application.ManageQuizSession.Services
 
         public async Task<SessionOperationResult> ClearParticipant(Guid sessionId, Guid hostId, ClearParticipantDto request)
         {
-            if (request is null || request.UserId == Guid.Empty)
-            {
-                return Fail("Invalid clear participant request.");
-            }
+            ArgumentNullException.ThrowIfNull(request);
+            request.Validate();
 
             var session = await GetSessionForHostAction(sessionId, hostId);
             if (session is null)
@@ -624,10 +618,8 @@ namespace WebApp.Application.ManageQuizSession.Services
 
         public async Task<SessionOperationResult> SubmitAnswer(Guid sessionId, SubmitAnswerDto request)
         {
-            if (request is null || request.UserId == Guid.Empty)
-            {
-                return Fail("Invalid answer request.");
-            }
+            ArgumentNullException.ThrowIfNull(request);
+            request.Validate();
 
             var session = await _dbContext.QuizSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
             if (session is null)
