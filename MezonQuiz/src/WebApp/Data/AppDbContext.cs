@@ -12,6 +12,7 @@ namespace WebApp.Data
 {
       public class AppDbContext : DbContext
       {
+            private const int MaxAuditLogEntries = 2000;
             private readonly IHttpContextAccessor? _httpContextAccessor;
             private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -53,26 +54,32 @@ namespace WebApp.Data
 
             public override int SaveChanges()
             {
-                  AddAuditLogs();
+                  PrepareAuditLogsForSave();
                   return base.SaveChanges();
             }
 
             public override int SaveChanges(bool acceptAllChangesOnSuccess)
             {
-                  AddAuditLogs();
+                  PrepareAuditLogsForSave();
                   return base.SaveChanges(acceptAllChangesOnSuccess);
             }
 
             public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
             {
-                  AddAuditLogs();
+                  PrepareAuditLogsForSave();
                   return base.SaveChangesAsync(cancellationToken);
             }
 
             public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
             {
-                  AddAuditLogs();
+                  PrepareAuditLogsForSave();
                   return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            }
+
+            private void PrepareAuditLogsForSave()
+            {
+                  AddAuditLogs();
+                  EnforceAuditLogRetention();
             }
 
             private void AddAuditLogs()
@@ -118,6 +125,47 @@ namespace WebApp.Data
                   }
 
                   AuditLogs.AddRange(logs);
+            }
+
+            private void EnforceAuditLogRetention()
+            {
+                  var pendingAuditLogs = ChangeTracker
+                        .Entries<AuditLog>()
+                        .Where(entry => entry.State == EntityState.Added)
+                        .OrderBy(entry => entry.Entity.CreatedAt)
+                        .ThenBy(entry => entry.Entity.Id)
+                        .ToList();
+
+                  var extraPendingLogs = pendingAuditLogs.Count - MaxAuditLogEntries;
+                  if (extraPendingLogs > 0)
+                  {
+                        foreach (var entry in pendingAuditLogs.Take(extraPendingLogs))
+                        {
+                              entry.State = EntityState.Detached;
+                        }
+
+                        pendingAuditLogs = pendingAuditLogs.Skip(extraPendingLogs).ToList();
+                  }
+
+                  var pendingCount = pendingAuditLogs.Count;
+                  var overflowCount = AuditLogs.Count() + pendingCount - MaxAuditLogEntries;
+                  if (overflowCount <= 0)
+                  {
+                        return;
+                  }
+
+                  var staleLogs = AuditLogs
+                        .OrderBy(log => log.CreatedAt)
+                        .ThenBy(log => log.Id)
+                        .Take(overflowCount)
+                        .ToList();
+
+                  if (staleLogs.Count == 0)
+                  {
+                        return;
+                  }
+
+                  AuditLogs.RemoveRange(staleLogs);
             }
 
             private static string ResolveAction(EntityState state)
