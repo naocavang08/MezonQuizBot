@@ -22,6 +22,7 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
+import { useForm } from "react-hook-form";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import useAuthStore from "../../Stores/login.store";
@@ -38,6 +39,9 @@ import {
 import { getAllRoles } from "../../Api/role.api";
 import type { RoleResponse } from "../../Interface/role.dto";
 import type { CreateUserRequest, UpdateUserRequest, UserResponse } from "../../Interface/user.dto";
+
+const getFirstErrorMessage = (errors: Record<string, { message?: string } | undefined>) =>
+	Object.values(errors).find((error) => error?.message)?.message ?? "Invalid user data.";
 
 const UserPage = () => {
 	const [users, setUsers] = useState<UserResponse[]>([]);
@@ -75,6 +79,23 @@ const UserPage = () => {
 		displayName: "",
 		avatarUrl: "",
 		isActive: true,
+	});
+	const createMethods = useForm<CreateUserRequest>({
+		defaultValues: {
+			email: "",
+			username: "",
+			password: "",
+			displayName: "",
+			avatarUrl: "",
+		},
+	});
+	const editMethods = useForm<UpdateUserRequest>({
+		defaultValues: {
+			email: "",
+			displayName: "",
+			avatarUrl: "",
+			isActive: true,
+		},
 	});
 
 	const isPasswordUser = (user: UserResponse) => Boolean(user.hasPassword) && !user.isOAuthUser;
@@ -128,6 +149,12 @@ const UserPage = () => {
 			avatarUrl: user.avatarUrl ?? "",
 			isActive: user.isActive,
 		});
+		editMethods.reset({
+			email: user.email ?? "",
+			displayName: user.displayName ?? "",
+			avatarUrl: user.avatarUrl ?? "",
+			isActive: user.isActive,
+		});
 		setOpenEditDialog(true);
 	};
 
@@ -151,8 +178,10 @@ const UserPage = () => {
 
 			if (target === "create") {
 				setCreateForm((prev) => ({ ...prev, avatarUrl: uploadedUrl }));
+				createMethods.setValue("avatarUrl", uploadedUrl, { shouldValidate: false });
 			} else {
 				setEditForm((prev) => ({ ...prev, avatarUrl: uploadedUrl }));
+				editMethods.setValue("avatarUrl", uploadedUrl, { shouldValidate: false });
 			}
 
 			showSuccess("Upload avatar thành công.");
@@ -167,23 +196,31 @@ const UserPage = () => {
 		}
 	};
 
-	const handleCreateUser = async () => {
+	const handleCreateUser = createMethods.handleSubmit(async (data) => {
 		if (!canCreateUser) {
 			showError("You do not have permission to create users.");
 			return;
 		}
 
-		if (!createForm.username || !createForm.password) {
-			showError("Username và Password là bắt buộc.");
-			return;
-		}
-
 		setLoading(true);
 		try {
-			await createUser(createForm);
+			await createUser({
+				email: data.email?.trim(),
+				username: data.username.trim(),
+				password: data.password,
+				displayName: data.displayName?.trim() || undefined,
+				avatarUrl: data.avatarUrl?.trim() || undefined,
+			});
 			showSuccess("Create user thành công.");
 			setOpenCreateDialog(false);
 			setCreateForm({
+				email: "",
+				username: "",
+				password: "",
+				displayName: "",
+				avatarUrl: "",
+			});
+			createMethods.reset({
 				email: "",
 				username: "",
 				password: "",
@@ -196,9 +233,9 @@ const UserPage = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, () => showError(getFirstErrorMessage(createMethods.formState.errors as Record<string, { message?: string } | undefined>)));
 
-	const handleUpdateUser = async () => {
+	const handleUpdateUser = editMethods.handleSubmit(async (data) => {
 		if (!canUpdateUser) {
 			showError("You do not have permission to update users.");
 			return;
@@ -210,7 +247,12 @@ const UserPage = () => {
 
 		setLoading(true);
 		try {
-			await updateUser(selectedUser.id, editForm);
+			await updateUser(selectedUser.id, {
+				email: data.email?.trim(),
+				displayName: data.displayName?.trim() || undefined,
+				avatarUrl: data.avatarUrl?.trim() || undefined,
+				isActive: data.isActive,
+			});
 			showSuccess("Update user thành công.");
 			setOpenEditDialog(false);
 			setSelectedUser(null);
@@ -220,7 +262,7 @@ const UserPage = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, () => showError(getFirstErrorMessage(editMethods.formState.errors as Record<string, { message?: string } | undefined>)));
 
 	const handleDeleteUser = async (id: string) => {
 		if (!canDeleteUser) {
@@ -301,7 +343,23 @@ const UserPage = () => {
 					User Management
 				</Typography>
 				{canCreateUser ? (
-					<Button variant="contained" onClick={() => setOpenCreateDialog(true)}>
+					<Button variant="contained" onClick={() => {
+						setCreateForm({
+							email: "",
+							username: "",
+							password: "",
+							displayName: "",
+							avatarUrl: "",
+						});
+						createMethods.reset({
+							email: "",
+							username: "",
+							password: "",
+							displayName: "",
+							avatarUrl: "",
+						});
+						setOpenCreateDialog(true);
+					}}>
 						Add User
 					</Button>
 				) : null}
@@ -400,27 +458,56 @@ const UserPage = () => {
 					<Stack spacing={2} sx={{ mt: 1 }}>
 						<TextField
 							label="Username"
+							{...createMethods.register("username", {
+								required: "Username is required.",
+								validate: (value) => value.trim().length > 0 || "Username is required.",
+							})}
 							value={createForm.username}
-							onChange={(e) => setCreateForm((prev) => ({ ...prev, username: e.target.value }))}
+							onChange={(e) => {
+								setCreateForm((prev) => ({ ...prev, username: e.target.value }));
+								createMethods.setValue("username", e.target.value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 						<TextField
 							label="Password"
 							type="password"
+							{...createMethods.register("password", {
+								required: "Password is required.",
+								validate: (value) => (value?.trim().length ?? 0) > 0 || "Password is required.",
+							})}
 							value={createForm.password}
-							onChange={(e) => setCreateForm((prev) => ({ ...prev, password: e.target.value }))}
+							onChange={(e) => {
+								setCreateForm((prev) => ({ ...prev, password: e.target.value }));
+								createMethods.setValue("password", e.target.value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 						<TextField
 							label="Email"
+							{...createMethods.register("email", {
+								required: "Valid email is required.",
+								pattern: {
+									value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+									message: "Valid email is required.",
+								},
+								validate: (value) => (value?.trim().length ?? 0) > 0 || "Valid email is required.",
+							})}
 							value={createForm.email}
-							onChange={(e) => setCreateForm((prev) => ({ ...prev, email: e.target.value }))}
+							onChange={(e) => {
+								setCreateForm((prev) => ({ ...prev, email: e.target.value }));
+								createMethods.setValue("email", e.target.value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 						<TextField
 							label="Display Name"
+							{...createMethods.register("displayName")}
 							value={createForm.displayName}
-							onChange={(e) => setCreateForm((prev) => ({ ...prev, displayName: e.target.value }))}
+							onChange={(e) => {
+								setCreateForm((prev) => ({ ...prev, displayName: e.target.value }));
+								createMethods.setValue("displayName", e.target.value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 						<Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -469,14 +556,29 @@ const UserPage = () => {
 					<Stack spacing={2} sx={{ mt: 1 }}>
 						<TextField
 							label="Email"
+							{...editMethods.register("email", {
+								required: "Valid email is required.",
+								pattern: {
+									value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+									message: "Valid email is required.",
+								},
+								validate: (value) => (value?.trim().length ?? 0) > 0 || "Valid email is required.",
+							})}
 							value={editForm.email}
-							onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+							onChange={(e) => {
+								setEditForm((prev) => ({ ...prev, email: e.target.value }));
+								editMethods.setValue("email", e.target.value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 						<TextField
 							label="Display Name"
+							{...editMethods.register("displayName")}
 							value={editForm.displayName}
-							onChange={(e) => setEditForm((prev) => ({ ...prev, displayName: e.target.value }))}
+							onChange={(e) => {
+								setEditForm((prev) => ({ ...prev, displayName: e.target.value }));
+								editMethods.setValue("displayName", e.target.value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 						<Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -513,7 +615,10 @@ const UserPage = () => {
 							control={
 								<Switch
 									checked={editForm.isActive}
-									onChange={(e) => setEditForm((prev) => ({ ...prev, isActive: e.target.checked }))}
+									onChange={(e) => {
+										setEditForm((prev) => ({ ...prev, isActive: e.target.checked }));
+										editMethods.setValue("isActive", e.target.checked, { shouldValidate: false });
+									}}
 								/>
 							}
 							label="Active"

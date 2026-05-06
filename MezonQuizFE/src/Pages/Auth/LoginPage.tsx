@@ -13,6 +13,16 @@ import { MdLogin } from "react-icons/md";
 import CopyWrite from "../../Components/CopyWrite";
 import useLoginPage, { type LoginFormValues } from "../../Hooks/useLoginPage";
 
+const usernameRules = {
+    required: "Username là bắt buộc",
+    validate: (value: string) => value.trim().length > 0 || "Username là bắt buộc",
+};
+
+const passwordRules = {
+    required: "Password là bắt buộc",
+    validate: (value: string) => value.trim().length > 0 || "Password là bắt buộc",
+};
+
 const fadeIn = keyframes`
     from {
         opacity: 0;
@@ -73,7 +83,7 @@ const LoginPage = () => {
                             <TextField
                                 label="Username"
                                 fullWidth
-                                {...register("username", { required: "Username là bắt buộc" })}
+                                {...register("username", usernameRules)}
                                 error={Boolean(errors.username)}
                                 helperText={errors.username?.message}
                             />
@@ -82,7 +92,7 @@ const LoginPage = () => {
                                 label="Password"
                                 type="password"
                                 fullWidth
-                                {...register("password", { required: "Password là bắt buộc" })}
+                                {...register("password", passwordRules)}
                                 error={Boolean(errors.password)}
                                 helperText={errors.password?.message}
                             />

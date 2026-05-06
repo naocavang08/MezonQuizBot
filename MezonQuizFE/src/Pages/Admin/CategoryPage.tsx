@@ -19,6 +19,7 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
+import { useForm } from "react-hook-form";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import useAuthStore from "../../Stores/login.store";
@@ -34,6 +35,9 @@ const defaultForm: SaveCategoryDto = {
 	icon: "",
 	sortOrder: 0,
 };
+
+const getFirstErrorMessage = (errors: Record<string, { message?: string } | undefined>) =>
+	Object.values(errors).find((error) => error?.message)?.message ?? "Invalid category data.";
 
 const CategoryPage = () => {
 	const [categories, setCategories] = useState<CategoryDto[]>([]);
@@ -52,6 +56,8 @@ const CategoryPage = () => {
 
 	const [createForm, setCreateForm] = useState<SaveCategoryDto>(defaultForm);
 	const [editForm, setEditForm] = useState<SaveCategoryDto>(defaultForm);
+	const createMethods = useForm<SaveCategoryDto>({ defaultValues: defaultForm });
+	const editMethods = useForm<SaveCategoryDto>({ defaultValues: defaultForm });
 
 	const fetchCategories = async () => {
 		setLoading(true);
@@ -76,44 +82,32 @@ const CategoryPage = () => {
 		sortOrder: typeof form.sortOrder === "number" ? form.sortOrder : 0,
 	});
 
-	const validateForm = (form: SaveCategoryDto): boolean => {
-		if (!form.name.trim() || !form.slug.trim()) {
-			showError("Name và Slug là bắt buộc.");
-			return false;
-		}
-
-		const iconKey = form.icon?.trim();
-		if (iconKey && !getCategoryIconOption(iconKey)) {
-			showError("Icon không hợp lệ. Vui lòng chọn từ danh sách.");
-			return false;
-		}
-
-		return true;
-	};
-
-	const handleCreateCategory = async () => {
+	const handleCreateCategory = createMethods.handleSubmit(async (data) => {
 		if (!canCreateCategory) {
 			showError("You do not have permission to create categories.");
 			return;
 		}
 
-		if (!validateForm(createForm)) {
+		const createIconKey = data.icon?.trim();
+		if (createIconKey && !getCategoryIconOption(createIconKey)) {
+			showError("Icon không hợp lệ. Vui lòng chọn từ danh sách.");
 			return;
 		}
 
 		setLoading(true);
 		try {
-			await createCategory(normalizeForm(createForm));
+			await createCategory(normalizeForm(data));
 			showSuccess("Tạo category thành công.");
 			setOpenCreateDialog(false);
 			setCreateForm(defaultForm);
+			createMethods.reset(defaultForm);
 			await fetchCategories();
 		} catch {
 			showError("Tạo category thất bại.");
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, () => showError(getFirstErrorMessage(createMethods.formState.errors as Record<string, { message?: string } | undefined>)));
 
 	const handleOpenEditDialog = (category: CategoryDto) => {
 		if (!canUpdateCategory) {
@@ -128,10 +122,16 @@ const CategoryPage = () => {
 			icon: category.icon ?? "",
 			sortOrder: category.sortOrder ?? 0,
 		});
+		editMethods.reset({
+			name: category.name,
+			slug: category.slug,
+			icon: category.icon ?? "",
+			sortOrder: category.sortOrder ?? 0,
+		});
 		setOpenEditDialog(true);
 	};
 
-	const handleUpdateCategory = async () => {
+	const handleUpdateCategory = editMethods.handleSubmit(async (data) => {
 		if (!canUpdateCategory) {
 			showError("You do not have permission to update categories.");
 			return;
@@ -141,13 +141,15 @@ const CategoryPage = () => {
 			return;
 		}
 
-		if (!validateForm(editForm)) {
+		const editIconKey = data.icon?.trim();
+		if (editIconKey && !getCategoryIconOption(editIconKey)) {
+			showError("Icon không hợp lệ. Vui lòng chọn từ danh sách.");
 			return;
 		}
 
 		setLoading(true);
 		try {
-			await updateCategory(selectedCategory.id, normalizeForm(editForm));
+			await updateCategory(selectedCategory.id, normalizeForm(data));
 			showSuccess("Cập nhật category thành công.");
 			setOpenEditDialog(false);
 			setSelectedCategory(null);
@@ -157,7 +159,7 @@ const CategoryPage = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, () => showError(getFirstErrorMessage(editMethods.formState.errors as Record<string, { message?: string } | undefined>)));
 
 	const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
 		if (!canDeleteCategory) {
@@ -188,7 +190,11 @@ const CategoryPage = () => {
 					Category Management
 				</Typography>
 				{canCreateCategory ? (
-					<Button variant="contained" onClick={() => setOpenCreateDialog(true)}>
+					<Button variant="contained" onClick={() => {
+						setCreateForm(defaultForm);
+						createMethods.reset(defaultForm);
+						setOpenCreateDialog(true);
+					}}>
 						Add Category
 					</Button>
 				) : null}
@@ -265,21 +271,38 @@ const CategoryPage = () => {
 					<Stack spacing={2} sx={{ mt: 1 }}>
 						<TextField
 							label="Name"
+							{...createMethods.register("name", {
+								required: "Category name is required.",
+								validate: (value) => value.trim().length > 0 || "Category name is required.",
+							})}
 							value={createForm.name}
-							onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
+							onChange={(e) => {
+								setCreateForm((prev) => ({ ...prev, name: e.target.value }));
+								createMethods.setValue("name", e.target.value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 						<TextField
 							label="Slug"
+							{...createMethods.register("slug", {
+								required: "Slug is required.",
+								validate: (value) => value.trim().length > 0 || "Slug is required.",
+							})}
 							value={createForm.slug}
-							onChange={(e) => setCreateForm((prev) => ({ ...prev, slug: e.target.value }))}
+							onChange={(e) => {
+								setCreateForm((prev) => ({ ...prev, slug: e.target.value }));
+								createMethods.setValue("slug", e.target.value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 						<Select
 							displayEmpty
 							fullWidth
 							value={createForm.icon || ""}
-							onChange={(e) => setCreateForm((prev) => ({ ...prev, icon: String(e.target.value) }))}
+							onChange={(e) => {
+								setCreateForm((prev) => ({ ...prev, icon: String(e.target.value) }));
+								createMethods.setValue("icon", String(e.target.value), { shouldValidate: false });
+							}}
 							renderValue={(value) => {
 								const selectedIcon = String(value);
 								const selectedOption = getCategoryIconOption(selectedIcon);
@@ -312,9 +335,12 @@ const CategoryPage = () => {
 							label="Sort Order"
 							type="number"
 							value={createForm.sortOrder ?? 0}
-							onChange={(e) =>
-								setCreateForm((prev) => ({ ...prev, sortOrder: Number(e.target.value) || 0 }))
-							}
+							{...createMethods.register("sortOrder")}
+							onChange={(e) => {
+								const value = Number(e.target.value) || 0;
+								setCreateForm((prev) => ({ ...prev, sortOrder: value }));
+								createMethods.setValue("sortOrder", value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 					</Stack>
@@ -333,21 +359,38 @@ const CategoryPage = () => {
 					<Stack spacing={2} sx={{ mt: 1 }}>
 						<TextField
 							label="Name"
+							{...editMethods.register("name", {
+								required: "Category name is required.",
+								validate: (value) => value.trim().length > 0 || "Category name is required.",
+							})}
 							value={editForm.name}
-							onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+							onChange={(e) => {
+								setEditForm((prev) => ({ ...prev, name: e.target.value }));
+								editMethods.setValue("name", e.target.value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 						<TextField
 							label="Slug"
+							{...editMethods.register("slug", {
+								required: "Slug is required.",
+								validate: (value) => value.trim().length > 0 || "Slug is required.",
+							})}
 							value={editForm.slug}
-							onChange={(e) => setEditForm((prev) => ({ ...prev, slug: e.target.value }))}
+							onChange={(e) => {
+								setEditForm((prev) => ({ ...prev, slug: e.target.value }));
+								editMethods.setValue("slug", e.target.value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 						<Select
 							displayEmpty
 							fullWidth
 							value={editForm.icon || ""}
-							onChange={(e) => setEditForm((prev) => ({ ...prev, icon: String(e.target.value) }))}
+							onChange={(e) => {
+								setEditForm((prev) => ({ ...prev, icon: String(e.target.value) }));
+								editMethods.setValue("icon", String(e.target.value), { shouldValidate: false });
+							}}
 							renderValue={(value) => {
 								const selectedIcon = String(value);
 								const selectedOption = getCategoryIconOption(selectedIcon);
@@ -380,7 +423,12 @@ const CategoryPage = () => {
 							label="Sort Order"
 							type="number"
 							value={editForm.sortOrder ?? 0}
-							onChange={(e) => setEditForm((prev) => ({ ...prev, sortOrder: Number(e.target.value) || 0 }))}
+							{...editMethods.register("sortOrder")}
+							onChange={(e) => {
+								const value = Number(e.target.value) || 0;
+								setEditForm((prev) => ({ ...prev, sortOrder: value }));
+								editMethods.setValue("sortOrder", value, { shouldValidate: false });
+							}}
 							fullWidth
 						/>
 					</Stack>

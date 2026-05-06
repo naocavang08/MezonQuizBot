@@ -11,13 +11,14 @@ import {
     Stack,
     Typography,
 } from "@mui/material";
+import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { createQuizSession, deleteQuizSession, getQuizSessions } from "../Api/session.api";
 import { getQuiz } from "../Api/quiz.api";
 import { QuizStatus } from "../Interface/quiz.dto";
-import { SessionStatusValue, type QuizSessionDto } from "../Interface/session.dto";
+import { SessionStatusValue, type CreateQuizSessionDto, type QuizSessionDto } from "../Interface/session.dto";
 import useAuthStore from "../Stores/login.store";
 
 const sessionStatusLabel: Record<number, string> = {
@@ -49,6 +50,22 @@ const QuizSessionPage = () => {
     const [isCreatingSession, setIsCreatingSession] = useState(false);
     const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
     const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
+    const createSessionMethods = useForm<CreateQuizSessionDto>({
+        defaultValues: {
+            quizId: "",
+            maxParticipants: undefined,
+            deepLink: undefined,
+            qrCodeUrl: undefined,
+            mezonChannelId: undefined,
+        },
+    });
+
+    useEffect(() => {
+        createSessionMethods.register("quizId", {
+            required: "Quiz ID is required.",
+            validate: (value) => value.trim().length > 0 || "Quiz ID is required.",
+        });
+    }, [createSessionMethods]);
 
     const loadSessions = useCallback(async () => {
         if (!quizId) {
@@ -132,7 +149,7 @@ const QuizSessionPage = () => {
         }
     };
 
-    const handleCreateSession = async () => {
+    const handleCreateSession = createSessionMethods.handleSubmit(async (data) => {
         if (!userId) {
             showError("User is not available. Please login again.");
             return;
@@ -148,9 +165,14 @@ const QuizSessionPage = () => {
             return;
         }
 
+        createSessionMethods.reset({ quizId });
+
         try {
             setIsCreatingSession(true);
-            const response = await createQuizSession({ quizId });
+            const response = await createQuizSession({
+                ...data,
+                quizId: data.quizId.trim(),
+            });
             showSuccess(response.message || "Session created successfully.");
             await loadSessions();
         } catch {
@@ -158,7 +180,7 @@ const QuizSessionPage = () => {
         } finally {
             setIsCreatingSession(false);
         }
-    };
+    }, () => showError("Quiz ID is required."));
 
     const handleDeleteSession = async (sessionId: string) => {
         if (!userId) {

@@ -24,10 +24,13 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
+import { z } from "zod";
 import { createCategory, getAllCategories } from "../Api/category.api";
 import { deleteQuiz, getQuiz, updateQuiz, updateQuizSettings, uploadQuizMedia } from "../Api/quiz.api";
 import type { CategoryDto } from "../Interface/category.dto";
@@ -41,6 +44,73 @@ import {
 	type QuizOptionDto,
 	type QuizQuestionDto,
 } from "../Interface/quiz.dto";
+
+const categorySchema = z.object({
+	name: z.string().trim().min(1, "Category name is required."),
+	slug: z.string().trim().min(1, "Slug is required."),
+	icon: z.string(),
+	sortOrder: z.number(),
+});
+
+const quizOptionSchema = z.object({
+	id: z.number().optional(),
+	index: z.number(),
+	content: z.string().trim().min(1, "Option content is required."),
+	isCorrect: z.boolean(),
+});
+
+const quizQuestionSchema = z.object({
+	id: z.number().optional(),
+	index: z.number(),
+	content: z.string().trim().min(1, "Question content is required."),
+	mediaUrl: z.string().optional(),
+	timeLimitSeconds: z.number().min(10, "Time limit must be between 10 and 30 seconds.").max(30, "Time limit must be between 10 and 30 seconds."),
+	points: z.number().min(1, "Points must be between 1 and 20.").max(20, "Points must be between 1 and 20."),
+	questionType: z.union([
+		z.literal(QuestionType.SingleChoice),
+		z.literal(QuestionType.MultipleChoice),
+		z.literal(QuestionType.TrueFalse),
+	]),
+	options: z.array(quizOptionSchema).min(2, "Questions must have at least 2 options."),
+}).superRefine((question, ctx) => {
+	const correctCount = question.options.filter((option) => option.isCorrect).length;
+	if (question.questionType === QuestionType.TrueFalse) {
+		if (question.options.length !== 2 || correctCount !== 1) {
+			ctx.addIssue({ code: z.ZodIssueCode.custom, message: "True/False questions must have exactly 2 options and 1 correct answer." });
+		}
+		return;
+	}
+	if (question.questionType === QuestionType.SingleChoice && correctCount !== 1) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Single choice questions must have exactly 1 correct answer." });
+	}
+	if (question.questionType === QuestionType.MultipleChoice && correctCount < 2) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Multiple choice questions must have at least 2 correct answers." });
+	}
+});
+
+const quizSettingsSchema = z.object({
+	shuffleQuestions: z.boolean(),
+	shuffleOptions: z.boolean(),
+	showCorrectAnswer: z.boolean(),
+});
+
+const saveQuizSchema = z.object({
+	title: z.string().trim().min(1, "Quiz title is required.").max(500, "Quiz title must not exceed 500 characters."),
+	description: z.string().optional(),
+	categoryId: z.string().optional(),
+	questions: z.array(quizQuestionSchema),
+	settings: quizSettingsSchema,
+	visibility: z.union([
+		z.literal(QuizVisibility.Private),
+		z.literal(QuizVisibility.Public),
+		z.literal(QuizVisibility.Unlisted),
+	]),
+	status: z.union([
+		z.literal(QuizStatus.Draft),
+		z.literal(QuizStatus.Published),
+		z.literal(QuizStatus.Archived),
+	]),
+});
 
 type FormState = {
 	creatorId: string;
@@ -125,6 +195,34 @@ const QuizSettingPage = () => {
 	const [createCategoryForm, setCreateCategoryForm] = useState<CategoryFormState>(defaultCategoryForm);
 	const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
+	const categoryMethods = useForm<CategoryFormState>({
+		resolver: zodResolver(categorySchema),
+		defaultValues: defaultCategoryForm,
+	});
+	const quizMethods = useForm<SaveQuizDto>({
+		resolver: zodResolver(saveQuizSchema),
+		defaultValues: {
+			title: "",
+			description: undefined,
+			categoryId: undefined,
+			visibility: QuizVisibility.Private,
+			status: QuizStatus.Draft,
+			settings: {
+				shuffleQuestions: false,
+				shuffleOptions: false,
+				showCorrectAnswer: true,
+			},
+			questions: [makeDefaultQuestion(1)],
+		},
+	});
+	const settingsMethods = useForm<SaveQuizDto["settings"]>({
+		resolver: zodResolver(quizSettingsSchema),
+		defaultValues: {
+			shuffleQuestions: false,
+			shuffleOptions: false,
+			showCorrectAnswer: true,
+		},
+	});
 	const [form, setForm] = useState<FormState>({
 		creatorId: "",
 		title: "",
@@ -138,6 +236,26 @@ const QuizSettingPage = () => {
 			showCorrectAnswer: true
 		},
 		questions: [makeDefaultQuestion(1)],
+	});
+
+	const toPayload = (overrideStatus?: SaveQuizDto["status"]): SaveQuizDto => ({
+		title: form.title.trim(),
+		description: form.description.trim() || undefined,
+		categoryId: form.categoryId || undefined,
+		visibility: form.visibility,
+		status: overrideStatus ?? form.status,
+		settings: form.settings,
+		questions: form.questions.map((question, questionIndex) => ({
+			...question,
+			index: questionIndex + 1,
+			content: question.content.trim(),
+			mediaUrl: question.mediaUrl?.trim() || undefined,
+			options: question.options.map((option, optionIndex) => ({
+				...option,
+				index: optionIndex + 1,
+				content: option.content.trim(),
+			})),
+		})),
 	});
 
 	useEffect(() => {
@@ -214,34 +332,24 @@ const QuizSettingPage = () => {
 		sortOrder: Number(createCategoryForm.sortOrder) || 0,
 	});
 
-	const validateCategoryForm = (formValue: CategoryFormState): boolean => {
-		if (!formValue.name || !formValue.slug) {
-			showError("Name và Slug là bắt buộc.");
-			return false;
-		}
-
-		if (formValue.icon && !getCategoryIconOption(formValue.icon)) {
-			showError("Icon không hợp lệ. Vui lòng chọn từ danh sách.");
-			return false;
-		}
-
-		return true;
-	};
-
 	const handleCreateCategory = async () => {
 		const normalized = normalizeCategoryForm();
-		if (!validateCategoryForm(normalized)) {
+		categoryMethods.reset(normalized);
+		if (normalized.icon && !getCategoryIconOption(normalized.icon)) {
+			showError("Icon không hợp lệ. Vui lòng chọn từ danh sách.");
+			return;
+		}
+
+		const isValid = await categoryMethods.trigger();
+		if (!isValid) {
+			const firstMessage = Object.values(categoryMethods.formState.errors).find((error) => error?.message)?.message;
+			showError(firstMessage ?? "Invalid category data.");
 			return;
 		}
 
 		try {
 			setIsCreatingCategory(true);
-			await createCategory({
-				name: normalized.name,
-				slug: normalized.slug,
-				icon: normalized.icon || undefined,
-				sortOrder: normalized.sortOrder,
-			});
+			await createCategory(categoryMethods.getValues());
 
 			const updatedCategories = await loadCategories();
 			const createdCategory = updatedCategories.find(
@@ -425,95 +533,27 @@ const QuizSettingPage = () => {
 		});
 	};
 
-	const validateBeforeSubmit = (): string | null => {
-		if (!form.creatorId) {
-			return "Quiz creator id is missing.";
-		}
-
-		if (!form.title.trim()) {
-			return "Quiz title is required.";
-		}
-
-		if (form.questions.length === 0) {
-			return "At least one question is required.";
-		}
-
-		for (let qIndex = 0; qIndex < form.questions.length; qIndex += 1) {
-			const question = form.questions[qIndex];
-			if (!question.content.trim()) {
-				return `Question ${qIndex + 1}: content is required.`;
-			}
-
-			if (question.timeLimitSeconds < 10 || question.timeLimitSeconds > 30) {
-				return `Question ${qIndex + 1}: time limit must be between 10 and 30 seconds.`;
-			}
-
-			if (question.points < 1 || question.points > 20) {
-				return `Question ${qIndex + 1}: points must be between 1 and 20.`;
-			}
-
-			if (question.options.length < 2) {
-				return `Question ${qIndex + 1}: at least 2 options are required.`;
-			}
-
-			if (question.options.some((option) => !option.content.trim())) {
-				return `Question ${qIndex + 1}: option content cannot be empty.`;
-			}
-
-			const correctCount = question.options.filter((option) => option.isCorrect).length;
-			if (question.questionType === QuestionType.SingleChoice && correctCount !== 1) {
-				return `Question ${qIndex + 1}: single choice must have exactly 1 correct option.`;
-			}
-
-			if (question.questionType === QuestionType.MultipleChoice && correctCount < 2) {
-				return `Question ${qIndex + 1}: multiple choice must have at least 2 correct options.`;
-			}
-
-			if (
-				question.questionType === QuestionType.TrueFalse
-				&& (question.options.length !== 2 || correctCount !== 1)
-			) {
-				return `Question ${qIndex + 1}: true/false requires exactly 2 options with 1 correct answer.`;
-			}
-		}
-
-		return null;
-	};
-
-	const toPayload = (overrideStatus?: SaveQuizDto["status"]): SaveQuizDto => ({
-		title: form.title.trim(),
-		description: form.description.trim() || undefined,
-		categoryId: form.categoryId || undefined,
-		visibility: form.visibility,
-		status: overrideStatus ?? form.status,
-		settings: form.settings,
-		questions: form.questions.map((question, questionIndex) => ({
-			...question,
-			index: questionIndex + 1,
-			content: question.content.trim(),
-			mediaUrl: question.mediaUrl?.trim() || undefined,
-			options: question.options.map((option, optionIndex) => ({
-				...option,
-				index: optionIndex + 1,
-				content: option.content.trim(),
-			})),
-		})),
-	});
-
 	const saveQuiz = async () => {
 		if (!quizId) {
 			return;
 		}
 
-		const validationError = validateBeforeSubmit();
-		if (validationError) {
-			showError(validationError);
+		if (!form.creatorId) {
+			showError("Quiz creator id is missing.");
+			return;
+		}
+
+		quizMethods.reset(toPayload());
+		const isValid = await quizMethods.trigger();
+		if (!isValid) {
+			const firstMessage = Object.values(quizMethods.formState.errors).find((error) => error?.message)?.message;
+			showError(firstMessage ?? "Invalid quiz data.");
 			return;
 		}
 
 		try {
 			setIsSubmitting(true);
-			const result = await updateQuiz(quizId, toPayload());
+			const result = await updateQuiz(quizId, quizMethods.getValues());
 			showSuccess(result.message || "Quiz updated successfully.");
 		} catch {
 			showError("Failed to update quiz. Please check your data and try again.");
@@ -527,9 +567,17 @@ const QuizSettingPage = () => {
 			return;
 		}
 
+		settingsMethods.reset(form.settings);
+		const isValid = await settingsMethods.trigger();
+		if (!isValid) {
+			const firstMessage = Object.values(settingsMethods.formState.errors).find((error) => error?.message)?.message;
+			showError(firstMessage ?? "Invalid quiz settings.");
+			return;
+		}
+
 		try {
 			setIsSavingSettings(true);
-			const result = await updateQuizSettings(quizId, form.settings);
+			const result = await updateQuizSettings(quizId, settingsMethods.getValues());
 			showSuccess(result.message || "Quiz settings updated.");
 		} catch {
 			showError("Failed to update quiz settings.");
@@ -543,9 +591,17 @@ const QuizSettingPage = () => {
 			return;
 		}
 
+		quizMethods.reset(toPayload(status));
+		const isValid = await quizMethods.trigger();
+		if (!isValid) {
+			const firstMessage = Object.values(quizMethods.formState.errors).find((error) => error?.message)?.message;
+			showError(firstMessage ?? "Invalid quiz data.");
+			return;
+		}
+
 		try {
 			setIsUpdatingStatus(true);
-			const result = await updateQuiz(quizId, toPayload(status));
+			const result = await updateQuiz(quizId, quizMethods.getValues());
 			setForm((prev) => ({ ...prev, status }));
 			showSuccess(result.message || "Quiz status updated.");
 		} catch {

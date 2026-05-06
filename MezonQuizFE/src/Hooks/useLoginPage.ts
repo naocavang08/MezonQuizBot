@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, mezonAuthorize } from "../Api/login.api";
 import { resolveDefaultAppPath } from "../Lib/Utils/permissions";

@@ -15,12 +15,16 @@ import {
 	CircularProgress,
 	FormControlLabel,
 } from "@mui/material";
+import { useForm } from "react-hook-form";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import useAuthStore from "../../Stores/login.store";
 import { hasAnyPermission, PERMISSIONS } from "../../Lib/Utils/permissions";
 import { getAllRoles, getAllPermissions, getRolePermissions, assignPermissionsToRole, deleteRole, createRole } from "../../Api/role.api";
 import type { RoleResponse, PermissionResponse, RoleRequest } from "../../Interface/role.dto";
+
+const getFirstErrorMessage = (errors: Record<string, { message?: string } | undefined>) =>
+	Object.values(errors).find((error) => error?.message)?.message ?? "Invalid role data.";
 
 const RolePage = () => {
 	const [roles, setRoles] = useState<RoleResponse[]>([]);
@@ -49,6 +53,20 @@ const RolePage = () => {
 		displayName: "",
 		description: "",
 		isSystem: false,
+	});
+	const {
+		register,
+		handleSubmit,
+		setValue,
+		reset,
+		formState: { errors },
+	} = useForm<RoleRequest>({
+		defaultValues: {
+			name: "",
+			displayName: "",
+			description: "",
+			isSystem: false,
+		},
 	});
 
 	const fetchRoles = async () => {
@@ -88,11 +106,9 @@ const RolePage = () => {
 		setPermissionLoading(true);
 		try {
 			const data = await getRolePermissions(roleId);
-			// Handle different response types
 			if (Array.isArray(data)) {
 				setSelectedPermissions(data);
 			} else if (typeof data === "string") {
-				// Try to parse if it's a JSON string
 				if (data.startsWith("[")) {
 					try {
 						const parsed = JSON.parse(data);
@@ -160,23 +176,30 @@ const RolePage = () => {
 		}
 	};
 
-	const handleCreateRole = async () => {
+	const handleCreateRole = handleSubmit(async (data) => {
 		if (!canCreateRole) {
 			showError("You do not have permission to create roles.");
 			return;
 		}
 
-		if (!newRole.name || !newRole.displayName) {
-			showError("Name and Display Name are required");
-			return;
-		}
-
 		setLoading(true);
 		try {
-			await createRole(newRole);
-			showSuccess(`Role ${newRole.displayName} created successfully`);
+			const payload = {
+				...data,
+				name: data.name.trim(),
+				displayName: data.displayName?.trim() || undefined,
+				description: data.description?.trim() || undefined,
+			};
+			await createRole(payload);
+			showSuccess(`Role ${payload.displayName || payload.name} created successfully`);
 			setOpenCreateRoleDialog(false);
 			setNewRole({
+				name: "",
+				displayName: "",
+				description: "",
+				isSystem: false,
+			});
+			reset({
 				name: "",
 				displayName: "",
 				description: "",
@@ -189,7 +212,9 @@ const RolePage = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, () => {
+		showError(getFirstErrorMessage(errors));
+	});
 
 	const handleDeleteRole = async (roleId: string, roleName: string) => {
 		if (!canDeleteRole) {
@@ -243,7 +268,21 @@ const RolePage = () => {
 				{canCreateRole ? (
 					<Button
 						variant="contained"
-						onClick={() => setOpenCreateRoleDialog(true)}
+						onClick={() => {
+							reset({
+								name: "",
+								displayName: "",
+								description: "",
+								isSystem: false,
+							});
+							setNewRole({
+								name: "",
+								displayName: "",
+								description: "",
+								isSystem: false,
+							});
+							setOpenCreateRoleDialog(true);
+						}}
 					>
 						Add Role
 					</Button>
@@ -383,20 +422,31 @@ const RolePage = () => {
 							label="Name"
 							placeholder="e.g., editor"
 							fullWidth
+							{...register("name", {
+								required: "Role name is required.",
+								validate: (value) => value.trim().length > 0 || "Role name is required.",
+								maxLength: { value: 50, message: "Role name must not exceed 50 characters." },
+							})}
 							value={newRole.name}
-							onChange={(e) =>
-								setNewRole({ ...newRole, name: e.target.value })
-							}
+							onChange={(e) => {
+								setNewRole({ ...newRole, name: e.target.value });
+								setValue("name", e.target.value, { shouldValidate: false });
+							}}
 							disabled={loading}
 						/>
 						<TextField
 							label="Display Name"
 							placeholder="e.g., Editor"
 							fullWidth
+							{...register("displayName", {
+								validate: (value) =>
+									!value || value.trim().length <= 100 || "Display name must not exceed 100 characters.",
+							})}
 							value={newRole.displayName}
-							onChange={(e) =>
-								setNewRole({ ...newRole, displayName: e.target.value })
-							}
+							onChange={(e) => {
+								setNewRole({ ...newRole, displayName: e.target.value });
+								setValue("displayName", e.target.value, { shouldValidate: false });
+							}}
 							disabled={loading}
 						/>
 						<TextField
@@ -405,10 +455,12 @@ const RolePage = () => {
 							fullWidth
 							multiline
 							rows={3}
+							{...register("description")}
 							value={newRole.description}
-							onChange={(e) =>
-								setNewRole({ ...newRole, description: e.target.value })
-							}
+							onChange={(e) => {
+								setNewRole({ ...newRole, description: e.target.value });
+								setValue("description", e.target.value, { shouldValidate: false });
+							}}
 							disabled={loading}
 						/>
 					</Stack>
