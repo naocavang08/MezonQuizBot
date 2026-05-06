@@ -258,6 +258,7 @@ namespace WebApp.Application.Auth.MezonAuth
 
             var now = DateTime.UtcNow;
             DomainUser? user = null;
+            var isNewUser = false;
 
             if (!string.IsNullOrWhiteSpace(mezonUserId))
             {
@@ -271,6 +272,7 @@ namespace WebApp.Application.Auth.MezonAuth
 
             if (user is null)
             {
+                isNewUser = true;
                 var baseUsername = !string.IsNullOrWhiteSpace(username)
                     ? username.Trim()
                     : $"mezon_{mezonUserId!.Trim()}";
@@ -307,6 +309,28 @@ namespace WebApp.Application.Auth.MezonAuth
                 user.LastLoginAt = now;
                 user.UpdatedAt = now;
                 user.IsActive = true;
+            }
+
+            if (isNewUser)
+            {
+                var playerRoleId = await _dbContext.Roles
+                    .Where(r => r.Name == "player")
+                    .Select(r => (Guid?)r.Id)
+                    .FirstOrDefaultAsync();
+
+                if (playerRoleId.HasValue)
+                {
+                    _dbContext.UserRoles.Add(new UserRole
+                    {
+                        UserId = user.Id,
+                        RoleId = playerRoleId.Value,
+                        AssignedAt = now
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Player role not found when creating OAuth user {Username}.", user.Username);
+                }
             }
 
             var accessTokenResult = _tokenService.CreateAccessToken(user);

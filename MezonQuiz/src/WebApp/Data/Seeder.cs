@@ -111,6 +111,9 @@ namespace WebApp.Data
             var adminRole = await context.Roles
                 .FirstOrDefaultAsync(r => r.Name == "super_admin");
 
+            var playerRole = await context.Roles
+                .FirstOrDefaultAsync(r => r.Name == "player");
+
             if (adminRole == null)
             {
                 adminRole = new Role
@@ -124,6 +127,22 @@ namespace WebApp.Data
                 };
 
                 context.Roles.Add(adminRole);
+                await context.SaveChangesAsync();
+            }
+
+            if (playerRole == null)
+            {
+                playerRole = new Role
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "player",
+                    DisplayName = "Player",
+                    Description = "Default role for users who join and play quizzes",
+                    IsSystem = false,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                context.Roles.Add(playerRole);
                 await context.SaveChangesAsync();
             }
 
@@ -186,6 +205,38 @@ namespace WebApp.Data
             if (missingRolePermissions.Count > 0)
             {
                 context.RolePermissions.AddRange(missingRolePermissions);
+                await context.SaveChangesAsync();
+            }
+
+            var playerPermissionIds = await context.Permissions
+                .AsNoTracking()
+                .Where(p =>
+                    (p.Resource == "quizzes" && (p.Action == "player_list" || p.Action == "player_view")) ||
+                    (p.Resource == "categories" && p.Action == "player_list") ||
+                    (p.Resource == "sessions" && (p.Action == "player_list" || p.Action == "player_view")))
+                .Select(p => p.Id)
+                .ToListAsync();
+
+            var existingPlayerPermissionIds = await context.RolePermissions
+                .AsNoTracking()
+                .Where(rp => rp.RoleId == playerRole.Id)
+                .Select(rp => rp.PermissionId)
+                .ToListAsync();
+
+            var existingPlayerPermissionSet = existingPlayerPermissionIds.ToHashSet();
+
+            var missingPlayerPermissions = playerPermissionIds
+                .Where(permissionId => !existingPlayerPermissionSet.Contains(permissionId))
+                .Select(permissionId => new RolePermission
+                {
+                    RoleId = playerRole.Id,
+                    PermissionId = permissionId
+                })
+                .ToList();
+
+            if (missingPlayerPermissions.Count > 0)
+            {
+                context.RolePermissions.AddRange(missingPlayerPermissions);
                 await context.SaveChangesAsync();
             }
         }
