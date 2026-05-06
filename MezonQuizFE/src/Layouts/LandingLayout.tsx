@@ -176,6 +176,33 @@ const LandingLayout = () => {
                       },
                     }}
                   >
+                    <Box sx={{ px: 2, py: 1.5 }}>
+                      <Typography
+                        sx={{
+                          ...dt.typography.bodyMd,
+                          fontFamily: dt.typography.fontFamily,
+                          fontWeight: 700,
+                          color: dt.colors.onSurface,
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {user?.displayName || user?.username || 'Quiz User'}
+                      </Typography>
+                      {user?.email ? (
+                        <Typography
+                          sx={{
+                            ...dt.typography.labelSm,
+                            fontFamily: dt.typography.fontFamily,
+                            color: dt.colors.onSurfaceVariant,
+                            lineHeight: 1.4,
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {user.email}
+                        </Typography>
+                      ) : null}
+                    </Box>
+                    <Divider sx={{ borderColor: dt.colors.outlineVariant }} />
                     {hasAppAccess ? (
                       <MenuItem
                         onClick={handleGoToApp}

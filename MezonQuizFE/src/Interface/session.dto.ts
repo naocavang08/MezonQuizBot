@@ -112,3 +112,8 @@ export interface SessionParticipantDto {
     joinedAt: string;
     totalSessionsCount?: number;
 }
+
+export interface BotLinkDto {
+    deepLink: string;
+    qrCodeUrl: string;
+}

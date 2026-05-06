@@ -50,10 +50,15 @@ namespace WebApp.Application.ManageQuizSession.Services
             };
         }
 
-        public string BuildQrCodeUri()
+        public SessionLinksDto BuildBotLinks()
         {
             var linkForQr = BuildLinkForQr();
-            return GenerateQrCodeDataUri(linkForQr);
+
+            return new SessionLinksDto
+            {
+                DeepLink = linkForQr,
+                QrCodeUrl = GenerateQrCodeDataUri(linkForQr)
+            };
         }
 
         /// <summary>

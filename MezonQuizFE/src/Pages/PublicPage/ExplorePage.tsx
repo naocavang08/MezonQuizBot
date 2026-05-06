@@ -16,6 +16,7 @@ import { MdAutoAwesome, MdTimer, MdBarChart, MdArrowForward, MdBolt, MdCheckCirc
 import { getAllCategories } from '../../Api/category.api';
 import { getBotLink } from '../../Api/session.api';
 import type { CategoryDto } from '../../Interface/category.dto';
+import type { BotLinkDto } from '../../Interface/session.dto';
 import CategoryIconBadge from '../../Lib/Utils/categoryIconBadge';
 import { getCategoryIconOption } from '../../Lib/Utils/categoryIconOptions';
 import { resolveDefaultAppPath } from '../../Lib/Utils/permissions';
@@ -245,121 +246,150 @@ const HeroQuizPreview = () => (
 
 type QrPreviewCardProps = {
   qrCodeUrl: string;
+  deepLink: string;
   isLoading: boolean;
 };
 
-const QrPreviewCard = ({ qrCodeUrl, isLoading }: QrPreviewCardProps) => (
-  <Stack spacing={2.25} alignItems="center">
-    <Box
-      sx={{
-        p: 3,
-        borderRadius: '28px',
-        bgcolor: dt.colors.surfaceContainerLowest,
-        border: '1px solid rgba(255,255,255,0.82)',
-        boxShadow: '0 18px 50px rgba(15, 23, 42, 0.1)',
-        transform: { md: 'rotate(2deg)' },
-        transition: 'transform 0.3s ease',
-        '&:hover': {
-          transform: { md: 'rotate(0deg) scale(1.02)' },
-        },
-      }}
-    >
-      {isLoading ? (
-        <Box
-          sx={{
-            width: { xs: 160, md: 192 },
-            height: { xs: 160, md: 192 },
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <CircularProgress size={32} />
-        </Box>
-      ) : qrCodeUrl ? (
-        <Box
-          component="img"
-          src={qrCodeUrl}
-          alt="Mezon Quiz Bot QR code"
-          sx={{
-            width: { xs: 160, md: 192 },
-            height: { xs: 160, md: 192 },
-            display: 'block',
-            objectFit: 'contain',
-            borderRadius: '16px',
-          }}
-        />
-      ) : (
-        <Box
-          sx={{
-            width: { xs: 160, md: 192 },
-            height: { xs: 160, md: 192 },
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            px: 2,
-          }}
-        >
-          <Typography
-            sx={{
-              fontFamily: dt.typography.fontFamily,
-              color: dt.colors.onSurfaceVariant,
-              fontSize: '0.9rem',
-              fontWeight: 600,
-            }}
-          >
-            QR code unavailable
-          </Typography>
-        </Box>
-      )}
-    </Box>
+const QrPreviewCard = ({ qrCodeUrl, deepLink, isLoading }: QrPreviewCardProps) => {
+  const handleOpenBotLink = () => {
+    if (!deepLink) {
+      return;
+    }
 
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        px: 2.5,
-        py: 1.75,
-        borderRadius: '20px',
-        bgcolor: dt.colors.surfaceContainerLowest,
-        border: `1px solid ${dt.colors.outlineVariant}`,
-        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
-      }}
-    >
+    window.open(deepLink, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <Stack spacing={2.25} alignItems="center">
       <Box
         sx={{
-          width: 40,
-          height: 40,
-          borderRadius: '12px',
-          overflow: 'hidden',
-          flexShrink: 0,
+          p: 3,
+          borderRadius: '28px',
+          bgcolor: dt.colors.surfaceContainerLowest,
+          border: '1px solid rgba(255,255,255,0.82)',
+          boxShadow: '0 18px 50px rgba(15, 23, 42, 0.1)',
+          transform: { md: 'rotate(2deg)' },
+          transition: 'transform 0.3s ease',
+          '&:hover': {
+            transform: { md: 'rotate(0deg) scale(1.02)' },
+          },
+        }}
+      >
+        {isLoading ? (
+          <Box
+            sx={{
+              width: { xs: 160, md: 192 },
+              height: { xs: 160, md: 192 },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <CircularProgress size={32} />
+          </Box>
+        ) : qrCodeUrl ? (
+          <Box
+            component="img"
+            src={qrCodeUrl}
+            alt="Mezon Quiz Bot QR code"
+            sx={{
+              width: { xs: 160, md: 192 },
+              height: { xs: 160, md: 192 },
+              display: 'block',
+              objectFit: 'contain',
+              borderRadius: '16px',
+            }}
+          />
+        ) : (
+          <Box
+            sx={{
+              width: { xs: 160, md: 192 },
+              height: { xs: 160, md: 192 },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              px: 2,
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: dt.typography.fontFamily,
+                color: dt.colors.onSurfaceVariant,
+                fontSize: '0.9rem',
+                fontWeight: 600,
+              }}
+            >
+              QR code unavailable
+            </Typography>
+          </Box>
+        )}
+      </Box>
+
+      <Box
+        component="button"
+        type="button"
+        onClick={handleOpenBotLink}
+        disabled={!deepLink}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          px: 2.5,
+          py: 1.75,
+          borderRadius: '20px',
+          bgcolor: dt.colors.surfaceContainerLowest,
+          border: `1px solid ${dt.colors.outlineVariant}`,
+          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
+          width: '100%',
+          appearance: 'none',
+          textAlign: 'left',
+          cursor: deepLink ? 'pointer' : 'default',
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          '&:hover': deepLink
+            ? {
+                transform: { md: 'translateY(-1px)' },
+                boxShadow: '0 14px 34px rgba(15, 23, 42, 0.1)',
+              }
+            : undefined,
+          '&:disabled': {
+            opacity: 0.7,
+          },
         }}
       >
         <Box
-          component="img"
-          src={catQrImage}
-          alt="Mezon Quiz Bot"
           sx={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
+            width: 40,
+            height: 40,
+            borderRadius: '12px',
+            overflow: 'hidden',
+            flexShrink: 0,
           }}
-        />
+        >
+          <Box
+            component="img"
+            src={catQrImage}
+            alt="Mezon Quiz Bot"
+            sx={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        </Box>
+        <Typography
+          sx={{
+            fontFamily: dt.typography.fontFamily,
+            fontWeight: 700,
+            color: dt.colors.onSurface,
+          }}
+        >
+          Practice with Mezon Bot
+        </Typography>
       </Box>
-      <Typography
-        sx={{
-          fontFamily: dt.typography.fontFamily,
-          fontWeight: 700,
-          color: dt.colors.onSurface,
-        }}
-      >
-        Practice with Mezon Bot
-      </Typography>
-    </Box>
-  </Stack>
-);
+    </Stack>
+  );
+};
 
 const Explore = () => {
   const navigate = useNavigate();
@@ -369,7 +399,7 @@ const Explore = () => {
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [isCategoryLoading, setIsCategoryLoading] = useState(true);
   const [categoryError, setCategoryError] = useState<string | null>(null);
-  const [botQrCodeUrl, setBotQrCodeUrl] = useState('');
+  const [botLink, setBotLink] = useState<BotLinkDto | null>(null);
   const [isBotQrLoading, setIsBotQrLoading] = useState(true);
   const accentPresets = [
     {
@@ -417,9 +447,9 @@ const Explore = () => {
     setIsBotQrLoading(true);
     try {
       const data = await getBotLink();
-      setBotQrCodeUrl(data ?? '');
+      setBotLink(data ?? null);
     } catch {
-      setBotQrCodeUrl('');
+      setBotLink(null);
     } finally {
       setIsBotQrLoading(false);
     }
@@ -891,7 +921,7 @@ const Explore = () => {
                 </Stack>
               </Stack>
 
-              <QrPreviewCard qrCodeUrl={botQrCodeUrl} isLoading={isBotQrLoading} />
+              <QrPreviewCard qrCodeUrl={botLink?.qrCodeUrl ?? ''} deepLink={botLink?.deepLink ?? ''} isLoading={isBotQrLoading} />
             </Box>
           </Box>
         </Container>

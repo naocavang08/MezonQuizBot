@@ -272,7 +272,6 @@ const QuizPage = () => {
 								<Table>
 									<TableHead>
 										<TableRow>
-											<TableCell>ID</TableCell>
 											<TableCell>Title</TableCell>
 											<TableCell>Status</TableCell>
 										</TableRow>
@@ -291,7 +290,6 @@ const QuizPage = () => {
 														backgroundColor: isSelected ? "action.selected" : undefined,
 													}}
 												>
-													<TableCell>{quiz.id}</TableCell>
 													<TableCell>{quiz.title}</TableCell>
 													<TableCell>
 														<Chip

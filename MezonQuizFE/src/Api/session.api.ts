@@ -11,6 +11,7 @@ import type {
     SubmitAnswerDto,
     QuizSessionQuestionDto,
     QuizSessionDto,
+    BotLinkDto,
 } from "../Interface/session.dto";
 
 const normalizePagedSessions = (
@@ -108,5 +109,5 @@ export const submitSessionAnswer = (sessionId: string, body: SubmitAnswerDto) =>
 };
 
 export const getBotLink = () => {
-    return apiClient.get<string>(`/api/QuizSession/quiz/bot-link`).then((res) => res.data);
+    return apiClient.get<BotLinkDto>(`/api/QuizSession/quiz/bot-link`).then((res) => res.data);
 }

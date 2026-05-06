@@ -20,7 +20,7 @@ import { getAvailableQuiz, getQuiz } from "../../Api/quiz.api";
 import { getBotLink, getQuizSessions } from "../../Api/session.api";
 import type { CategoryDto } from "../../Interface/category.dto";
 import type { AvailableQuizDto } from "../../Interface/quiz.dto";
-import { SessionStatusValue, type QuizSessionDto } from "../../Interface/session.dto";
+import { SessionStatusValue, type BotLinkDto, type QuizSessionDto } from "../../Interface/session.dto";
 import CategoryIconBadge from "../../Lib/Utils/categoryIconBadge";
 import { dt } from "../../Lib/designTokens";
 import catQrImage from "../../assets/hinh-nen-meo-9.jpg";
@@ -42,7 +42,7 @@ const QuizDetailPage = () => {
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [sessions, setSessions] = useState<QuizSessionDto[]>([]);
   const [questionCount, setQuestionCount] = useState<number | null>(null);
-  const [botLink, setBotLink] = useState("");
+  const [botLink, setBotLink] = useState<BotLinkDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
@@ -73,13 +73,13 @@ const QuizDetailPage = () => {
         getAvailableQuiz(quizId),
         getAllCategories(),
         getQuizSessions({ quizId, page: 1, pageSize: 50 }),
-        getBotLink().catch(() => ""),
+        getBotLink().catch(() => null),
       ]);
 
       setQuiz(quizData);
       setCategories(Array.isArray(categoryData) ? categoryData : []);
       setSessions(Array.isArray(sessionData.items) ? sessionData.items : []);
-      setBotLink(typeof botLinkData === "string" ? botLinkData : "");
+      setBotLink(botLinkData ?? null);
 
       try {
         const quizDetail = await getQuiz(quizId);
@@ -111,6 +111,14 @@ const QuizDetailPage = () => {
     } catch {
       showError("Can not copy value right now.");
     }
+  };
+
+  const openBotLink = () => {
+    if (!botLink?.deepLink) {
+      return;
+    }
+
+    window.open(botLink.deepLink, "_blank", "noopener,noreferrer");
   };
 
   useEffect(() => {
@@ -393,10 +401,10 @@ const QuizDetailPage = () => {
                           >
                             <CircularProgress size={32} />
                           </Box>
-                        ) : botLink ? (
+                        ) : botLink?.qrCodeUrl ? (
                           <Box
                             component="img"
-                            src={botLink}
+                            src={botLink.qrCodeUrl}
                             alt="Mezon Quiz Bot QR code"
                             sx={{
                               width: { xs: 160, md: 192 },
@@ -433,6 +441,10 @@ const QuizDetailPage = () => {
                       </Box>
 
                       <Box
+                        component="button"
+                        type="button"
+                        onClick={openBotLink}
+                        disabled={!botLink?.deepLink}
                         sx={{
                           display: "flex",
                           alignItems: "center",
@@ -443,6 +455,18 @@ const QuizDetailPage = () => {
                           bgcolor: dt.colors.surfaceContainerLowest,
                           border: `1px solid ${dt.colors.outlineVariant}`,
                           boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+                          width: "100%",
+                          cursor: botLink?.deepLink ? "pointer" : "default",
+                          appearance: "none",
+                          textAlign: "left",
+                          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                          "&:hover": botLink?.deepLink ? {
+                            transform: { md: "translateY(-1px)" },
+                            boxShadow: "0 14px 34px rgba(15, 23, 42, 0.1)",
+                          } : undefined,
+                          "&:disabled": {
+                            opacity: 0.7,
+                          },
                         }}
                       >
                         <Box

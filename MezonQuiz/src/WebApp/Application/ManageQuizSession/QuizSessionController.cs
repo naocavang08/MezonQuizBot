@@ -248,9 +248,9 @@ namespace WebApp.Application.ManageQuizSession
 
         [HttpGet("quiz/bot-link")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetBotLink()
+        public IActionResult GetBotLink()
         {
-            var links = _dynamicLinkService.BuildQrCodeUri();
+            var links = _dynamicLinkService.BuildBotLinks();
             return Ok(links);
         }
 
