@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
+import { getApiErrorMessage } from "../Api/ApiClient";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { createQuizSession, deleteQuizSession, getQuizSessions } from "../Api/session.api";
@@ -82,8 +83,8 @@ const QuizSessionPage = () => {
             });
 
             setSessions(Array.isArray(data.items) ? data.items : []);
-        } catch {
-            showError("Could not load created sessions for this quiz.");
+        } catch (error) {
+            showError(getApiErrorMessage(error, "Could not load created sessions for this quiz."));
         } finally {
             setIsLoadingSessions(false);
         }
@@ -118,9 +119,9 @@ const QuizSessionPage = () => {
                 setQuizTitle(quizData.title ?? "");
                 setQuizStatus(quizData.status ?? null);
                 setSessions(Array.isArray(sessionsData.items) ? sessionsData.items : []);
-            } catch {
+            } catch (error) {
                 if (isMounted) {
-                    showError("Could not load quiz sessions.");
+                    showError(getApiErrorMessage(error, "Could not load quiz sessions."));
                 }
             } finally {
                 if (isMounted) {
@@ -175,8 +176,8 @@ const QuizSessionPage = () => {
             });
             showSuccess(response.message || "Session created successfully.");
             await loadSessions();
-        } catch {
-            showError("Can not create session for this quiz right now.");
+        } catch (error) {
+            showError(getApiErrorMessage(error, "Can not create session for this quiz right now."));
         } finally {
             setIsCreatingSession(false);
         }
@@ -198,8 +199,8 @@ const QuizSessionPage = () => {
             const result = await deleteQuizSession(sessionId);
             showSuccess(result.message || "Session deleted.");
             await loadSessions();
-        } catch {
-            showError("Failed to delete session.");
+        } catch (error) {
+            showError(getApiErrorMessage(error, "Failed to delete session."));
         } finally {
             setDeletingSessionId(null);
         }

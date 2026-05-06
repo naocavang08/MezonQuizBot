@@ -25,6 +25,7 @@ import {
 } from "@mui/material";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { getApiErrorMessage } from "../Api/ApiClient";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdAdd, MdDelete } from "react-icons/md";
@@ -248,8 +249,8 @@ const CreateQuizPage = () => {
 			const data = await getAllCategories();
 			setCategories(Array.isArray(data) ? data : []);
 			return Array.isArray(data) ? data : [];
-		} catch {
-			showError("Failed to load categories.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to load categories."));
 			return [];
 		} finally {
 			setIsLoadingCategories(false);
@@ -298,8 +299,8 @@ const CreateQuizPage = () => {
 			showSuccess("Category created successfully.");
 			setOpenCreateCategoryDialog(false);
 			setCreateCategoryForm(defaultCategoryForm);
-		} catch {
-			showError("Failed to create category.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to create category."));
 		} finally {
 			setIsCreatingCategory(false);
 		}
@@ -484,8 +485,8 @@ const CreateQuizPage = () => {
 			setTimeout(() => {
 				navigate("/app/my-quizzes", { replace: true });
 			}, 800);
-		} catch {
-			showError("Failed to create quiz. Please check your data and try again.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to create quiz. Please check your data and try again."));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -502,8 +503,8 @@ const CreateQuizPage = () => {
 
             setQuestionField(questionIndex, "mediaUrl", uploadedUrl);
             showSuccess("Media uploaded successfully.");
-        } catch {
-            showError("Failed to upload media.");
+        } catch (error) {
+            showError(getApiErrorMessage(error, "Failed to upload media."));
         } finally {
             setUploadingQuestionIndex(null);
         }

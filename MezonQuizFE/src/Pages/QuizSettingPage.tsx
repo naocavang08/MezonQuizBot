@@ -26,6 +26,7 @@ import {
 } from "@mui/material";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { getApiErrorMessage } from "../Api/ApiClient";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
 import { MdAdd, MdDelete } from "react-icons/md";
@@ -292,9 +293,9 @@ const QuizSettingPage = () => {
 					settings: quizData.settings,
 					questions: quizData.questions,
 				});
-			} catch {
+			} catch (error) {
 				if (isMounted) {
-					showError("Could not load quiz details.");
+					showError(getApiErrorMessage(error, "Could not load quiz details."));
 				}
 			} finally {
 				if (isMounted) {
@@ -317,8 +318,8 @@ const QuizSettingPage = () => {
 			const data = await getAllCategories();
 			setCategories(Array.isArray(data) ? data : []);
 			return Array.isArray(data) ? data : [];
-		} catch {
-			showError("Could not load categories.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Could not load categories."));
 			return [];
 		} finally {
 			setIsLoadingCategories(false);
@@ -336,7 +337,7 @@ const QuizSettingPage = () => {
 		const normalized = normalizeCategoryForm();
 		categoryMethods.reset(normalized);
 		if (normalized.icon && !getCategoryIconOption(normalized.icon)) {
-			showError("Icon không hợp lệ. Vui lòng chọn từ danh sách.");
+			showError("Icon is not valid. Please select an icon from the list.");
 			return;
 		}
 
@@ -363,8 +364,8 @@ const QuizSettingPage = () => {
 			showSuccess("Category created successfully.");
 			setOpenCreateCategoryDialog(false);
 			setCreateCategoryForm(defaultCategoryForm);
-		} catch {
-			showError("Failed to create category.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to create category."));
 		} finally {
 			setIsCreatingCategory(false);
 		}
@@ -555,8 +556,8 @@ const QuizSettingPage = () => {
 			setIsSubmitting(true);
 			const result = await updateQuiz(quizId, quizMethods.getValues());
 			showSuccess(result.message || "Quiz updated successfully.");
-		} catch {
-			showError("Failed to update quiz. Please check your data and try again.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to update quiz. Please check your data and try again."));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -579,8 +580,8 @@ const QuizSettingPage = () => {
 			setIsSavingSettings(true);
 			const result = await updateQuizSettings(quizId, settingsMethods.getValues());
 			showSuccess(result.message || "Quiz settings updated.");
-		} catch {
-			showError("Failed to update quiz settings.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to update quiz settings."));
 		} finally {
 			setIsSavingSettings(false);
 		}
@@ -604,8 +605,8 @@ const QuizSettingPage = () => {
 			const result = await updateQuiz(quizId, quizMethods.getValues());
 			setForm((prev) => ({ ...prev, status }));
 			showSuccess(result.message || "Quiz status updated.");
-		} catch {
-			showError("Failed to update quiz status.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to update quiz status."));
 		} finally {
 			setIsUpdatingStatus(false);
 		}
@@ -626,8 +627,8 @@ const QuizSettingPage = () => {
 			const result = await deleteQuiz(quizId);
 			showSuccess(result.message || "Quiz removed.");
 			navigate("/app/my-quizzes", { replace: true });
-		} catch {
-			showError("Failed to remove quiz.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to remove quiz."));
 		} finally {
 			setIsDeletingQuiz(false);
 		}
@@ -644,8 +645,8 @@ const QuizSettingPage = () => {
 
             setQuestionField(questionIndex, "mediaUrl", uploadedUrl);
             showSuccess("Media uploaded successfully.");
-        } catch {
-            showError("Failed to upload media.");
+        } catch (error) {
+            showError(getApiErrorMessage(error, "Failed to upload media."));
         } finally {
             setUploadingQuestionIndex(null);
         }

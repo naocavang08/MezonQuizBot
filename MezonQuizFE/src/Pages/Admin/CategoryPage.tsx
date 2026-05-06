@@ -20,6 +20,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { useForm } from "react-hook-form";
+import { getApiErrorMessage } from "../../Api/ApiClient";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import useAuthStore from "../../Stores/login.store";
@@ -64,8 +65,8 @@ const CategoryPage = () => {
 		try {
 			const data = await getAllCategories();
 			setCategories(data);
-		} catch {
-			showError("Không thể tải danh sách category.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to fetch categories."));
 		} finally {
 			setLoading(false);
 		}
@@ -90,20 +91,20 @@ const CategoryPage = () => {
 
 		const createIconKey = data.icon?.trim();
 		if (createIconKey && !getCategoryIconOption(createIconKey)) {
-			showError("Icon không hợp lệ. Vui lòng chọn từ danh sách.");
+			showError("Icon is not valid. Please select from the list.");
 			return;
 		}
 
 		setLoading(true);
 		try {
 			await createCategory(normalizeForm(data));
-			showSuccess("Tạo category thành công.");
+			showSuccess("Create category successfully.");
 			setOpenCreateDialog(false);
 			setCreateForm(defaultForm);
 			createMethods.reset(defaultForm);
 			await fetchCategories();
-		} catch {
-			showError("Tạo category thất bại.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to create category."));
 		} finally {
 			setLoading(false);
 		}
@@ -143,19 +144,19 @@ const CategoryPage = () => {
 
 		const editIconKey = data.icon?.trim();
 		if (editIconKey && !getCategoryIconOption(editIconKey)) {
-			showError("Icon không hợp lệ. Vui lòng chọn từ danh sách.");
+			showError("Icon is not valid. Please select from the list.");
 			return;
 		}
 
 		setLoading(true);
 		try {
 			await updateCategory(selectedCategory.id, normalizeForm(data));
-			showSuccess("Cập nhật category thành công.");
+			showSuccess("Update category successfully.");
 			setOpenEditDialog(false);
 			setSelectedCategory(null);
 			await fetchCategories();
-		} catch {
-			showError("Cập nhật category thất bại.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to update category."));
 		} finally {
 			setLoading(false);
 		}
@@ -167,17 +168,17 @@ const CategoryPage = () => {
 			return;
 		}
 
-		if (!window.confirm(`Bạn có chắc muốn xóa category \\"${categoryName}\\"?`)) {
+		if (!window.confirm(`Are you sure you want to delete the category \\"${categoryName}\\"?`)) {
 			return;
 		}
 
 		setLoading(true);
 		try {
 			await deleteCategory(categoryId);
-			showSuccess("Xóa category thành công.");
+			showSuccess("Delete category successfully.");
 			await fetchCategories();
-		} catch {
-			showError("Xóa category thất bại.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to delete category."));
 		} finally {
 			setLoading(false);
 		}

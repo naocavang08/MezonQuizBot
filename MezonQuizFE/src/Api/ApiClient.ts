@@ -16,6 +16,65 @@ const baseURL = axios.create({
 
 let refreshPromise: Promise<string | null> | null = null;
 
+type ErrorPayload = {
+  message?: string;
+  Message?: string;
+  detail?: string;
+  title?: string;
+  errors?: Record<string, string[] | string | undefined>;
+};
+
+const extractValidationMessage = (errors?: ErrorPayload['errors']) => {
+  if (!errors) {
+    return null;
+  }
+
+  for (const value of Object.values(errors)) {
+    if (Array.isArray(value) && value.length > 0) {
+      return value[0];
+    }
+
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value;
+    }
+  }
+
+  return null;
+};
+
+export const getApiErrorMessage = (error: unknown, fallbackMessage: string) => {
+  if (axios.isAxiosError(error)) {
+    const payload = error.response?.data as ErrorPayload | string | undefined;
+
+    if (typeof payload === 'string' && payload.trim().length > 0) {
+      return payload;
+    }
+
+    if (payload && typeof payload === 'object') {
+      const directMessage =
+        payload.message?.trim() ||
+        payload.Message?.trim() ||
+        payload.detail?.trim() ||
+        extractValidationMessage(payload.errors) ||
+        payload.title?.trim();
+
+      if (directMessage) {
+        return directMessage;
+      }
+    }
+
+    if (typeof error.message === 'string' && error.message.trim().length > 0) {
+      return error.message;
+    }
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return fallbackMessage;
+};
+
 baseURL.interceptors.request.use((request) => {
   const accessToken = getTokenAccess();
 

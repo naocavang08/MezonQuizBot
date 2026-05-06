@@ -16,6 +16,7 @@ import {
 	FormControlLabel,
 } from "@mui/material";
 import { useForm } from "react-hook-form";
+import { getApiErrorMessage } from "../../Api/ApiClient";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
 import useAuthStore from "../../Stores/login.store";
@@ -75,7 +76,7 @@ const RolePage = () => {
 			const data = await getAllRoles();
 			setRoles(data);
 		} catch (err) {
-			showError("Failed to load roles");
+			showError(getApiErrorMessage(err, "Failed to load roles"));
 			console.error(err);
 		} finally {
 			setLoading(false);
@@ -92,7 +93,7 @@ const RolePage = () => {
 			const data = await getAllPermissions();
 			setPermissions(data);
 		} catch (err) {
-			showError("Failed to load permissions");
+			showError(getApiErrorMessage(err, "Failed to load permissions"));
 			console.error(err);
 		}
 	};
@@ -125,6 +126,7 @@ const RolePage = () => {
 				setSelectedPermissions([]);
 			}
 		} catch (err) {
+			showError(getApiErrorMessage(err, "Failed to fetch role permissions"));
 			console.error("Failed to fetch role permissions:", err);
 			setSelectedPermissions([]);
 		} finally {
@@ -169,7 +171,7 @@ const RolePage = () => {
 
 			await fetchRoles();
 		} catch (err) {
-			showError("Failed to save permissions");
+			showError(getApiErrorMessage(err, "Failed to save permissions"));
 			console.error(err);
 		} finally {
 			setPermissionLoading(false);
@@ -207,7 +209,7 @@ const RolePage = () => {
 			});
 			await fetchRoles();
 		} catch (err) {
-			showError("Failed to create role");
+			showError(getApiErrorMessage(err, "Failed to create role"));
 			console.error(err);
 		} finally {
 			setLoading(false);
@@ -229,7 +231,7 @@ const RolePage = () => {
 				showSuccess(`Role ${roleName} deleted successfully`);
 				await fetchRoles();
 			} catch (err) {
-				showError("Failed to delete role");
+				showError(getApiErrorMessage(err, "Failed to delete role"));
 				console.error(err);
 			} finally {
 				setLoading(false);

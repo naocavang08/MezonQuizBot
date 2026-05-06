@@ -36,6 +36,7 @@ import {
 	uploadUserAvatar,
 	updateUser,
 } from "../../Api/user.api";
+import { getApiErrorMessage } from "../../Api/ApiClient";
 import { getAllRoles } from "../../Api/role.api";
 import type { RoleResponse } from "../../Interface/role.dto";
 import type { CreateUserRequest, UpdateUserRequest, UserResponse } from "../../Interface/user.dto";
@@ -105,8 +106,8 @@ const UserPage = () => {
 		try {
 			const data = await getAllUsers();
 			setUsers(data);
-		} catch {
-			showError("Failed to load users.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to load users."));
 		} finally {
 			setLoading(false);
 		}
@@ -121,8 +122,8 @@ const UserPage = () => {
 		try {
 			const data = await getAllRoles();
 			setRoles(data);
-		} catch {
-			showError("Failed to load roles.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to load roles."));
 		}
 	}, [canAssignRole, showError]);
 
@@ -172,7 +173,7 @@ const UserPage = () => {
 
 			const uploadedUrl = await uploadUserAvatar(file);
 			if (!uploadedUrl) {
-				showError("Upload thành công nhưng không nhận được avatar URL.");
+				showError("Failed to upload avatar.");
 				return;
 			}
 
@@ -184,9 +185,9 @@ const UserPage = () => {
 				editMethods.setValue("avatarUrl", uploadedUrl, { shouldValidate: false });
 			}
 
-			showSuccess("Upload avatar thành công.");
-		} catch {
-			showError("Upload avatar thất bại.");
+			showSuccess("Avatar uploaded successfully.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to upload avatar."));
 		} finally {
 			if (target === "create") {
 				setUploadingCreateAvatar(false);
@@ -211,7 +212,7 @@ const UserPage = () => {
 				displayName: data.displayName?.trim() || undefined,
 				avatarUrl: data.avatarUrl?.trim() || undefined,
 			});
-			showSuccess("Create user thành công.");
+			showSuccess("Create user successfully.");
 			setOpenCreateDialog(false);
 			setCreateForm({
 				email: "",
@@ -228,8 +229,8 @@ const UserPage = () => {
 				avatarUrl: "",
 			});
 			await fetchUsers();
-		} catch {
-			showError("Create user thất bại.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to create user."));
 		} finally {
 			setLoading(false);
 		}
@@ -253,12 +254,12 @@ const UserPage = () => {
 				avatarUrl: data.avatarUrl?.trim() || undefined,
 				isActive: data.isActive,
 			});
-			showSuccess("Update user thành công.");
+			showSuccess("Update user successfully.");
 			setOpenEditDialog(false);
 			setSelectedUser(null);
 			await fetchUsers();
-		} catch {
-			showError("Update user thất bại.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to update user."));
 		} finally {
 			setLoading(false);
 		}
@@ -277,10 +278,10 @@ const UserPage = () => {
 		setLoading(true);
 		try {
 			await deleteUser(id);
-			showSuccess("Delete user thành công.");
+			showSuccess("Delete user successfully.");
 			await fetchUsers();
-		} catch {
-			showError("Delete user thất bại.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to delete user."));
 		} finally {
 			setLoading(false);
 		}
@@ -298,9 +299,9 @@ const UserPage = () => {
 		try {
 			const roleIds = await getUserRoles(user.id);
 			setSelectedRoleIds(Array.isArray(roleIds) ? roleIds : []);
-		} catch {
+		} catch (error) {
 			setSelectedRoleIds([]);
-			showError("Không tải được danh sách role của user.");
+			showError(getApiErrorMessage(error, "Failed to load user roles."));
 		} finally {
 			setRoleDialogLoading(false);
 		}
@@ -325,12 +326,12 @@ const UserPage = () => {
 		setLoading(true);
 		try {
 			await assignRolesToUser({ id: selectedUser.id, roleIds: selectedRoleIds });
-			showSuccess("Assign roles thành công.");
+			showSuccess("Assign roles successfully.");
 			setOpenAssignRoleDialog(false);
 			setSelectedUser(null);
 			setSelectedRoleIds([]);
-		} catch {
-			showError("Assign roles thất bại.");
+		} catch (error) {
+			showError(getApiErrorMessage(error, "Failed to assign roles."));
 		} finally {
 			setLoading(false);
 		}

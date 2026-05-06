@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiErrorMessage } from "../Api/ApiClient";
 import { login, mezonAuthorize } from "../Api/login.api";
 import { resolveDefaultAppPath } from "../Lib/Utils/permissions";
 import useAuthStore from "../Stores/login.store";
@@ -9,8 +10,8 @@ export type LoginFormValues = {
 	password: string;
 };
 
-const DEFAULT_ERROR_MESSAGE = "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.";
-const MEZON_LOGIN_INIT_ERROR = "Không thể khởi tạo đăng nhập Mezon.";
+const DEFAULT_ERROR_MESSAGE = "Failed to login. Please check your information.";
+const MEZON_LOGIN_INIT_ERROR = "Failed to initialize Mezon login.";
 
 const useLoginPage = () => {
 	const navigate = useNavigate();
@@ -33,14 +34,7 @@ const useLoginPage = () => {
 			setAuth(response);
 			navigate(resolveDefaultAppPath(response.permissionName ?? [], response.hasSystemRole ?? false), { replace: true });
 		} catch (error: unknown) {
-			if (error && typeof error === "object" && "response" in error) {
-				const errorResponse = (error as { response?: { data?: { message?: string } } }).response;
-				const backendMessage = errorResponse?.data?.message;
-
-				setErrorMessage(backendMessage ?? DEFAULT_ERROR_MESSAGE);
-			} else {
-				setErrorMessage(DEFAULT_ERROR_MESSAGE);
-			}
+			setErrorMessage(getApiErrorMessage(error, DEFAULT_ERROR_MESSAGE));
 		} finally {
 			setIsSubmitting(false);
 		}
