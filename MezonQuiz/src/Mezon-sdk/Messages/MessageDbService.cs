@@ -12,13 +12,17 @@ namespace Mezon_sdk.Messages
 {
     public class MessageDbService : IAsyncDisposable
     {
-        private readonly string _connectionString = "DataSource=MezonCache;Mode=Memory;Cache=Shared";
+        private readonly string _connectionString;
         private readonly SqliteConnection _masterConnection;
         private readonly DbContextOptions<MessageDbContext> _dbContextOptions;
         private static readonly Logger Logger = new Logger("MessageDB");
 
-        public MessageDbService()
+        public MessageDbService(string? connectionString = null)
         {
+            _connectionString = string.IsNullOrWhiteSpace(connectionString)
+                ? "DataSource=MezonCache;Mode=Memory;Cache=Shared"
+                : connectionString;
+
             _masterConnection = new SqliteConnection(_connectionString);
             _masterConnection.Open();
 

@@ -2,13 +2,14 @@ using Mezon_sdk.Messages;
 
 namespace xUTest.Integration
 {
+    [Collection("MessageDbServiceTests")]
     public sealed class MessageDbServiceTests : IAsyncLifetime
     {
         private MessageDbService _service = null!;
 
         public Task InitializeAsync()
         {
-            _service = new MessageDbService();
+            _service = new MessageDbService($"DataSource=MezonCacheTests_{Guid.NewGuid():N};Mode=Memory;Cache=Shared");
             return Task.CompletedTask;
         }
 

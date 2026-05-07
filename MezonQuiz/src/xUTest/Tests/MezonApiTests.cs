@@ -119,7 +119,7 @@ namespace xUTest.Tests
                 ParentId = 100,
                 CategoryId = 200,
                 Type = 4,
-                UserIds = new List<int> { 9, 10 }
+                UserIds = new List<long> { 9, 10 }
             });
 
             Assert.NotNull(captured);
