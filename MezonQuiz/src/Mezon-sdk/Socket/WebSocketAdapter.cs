@@ -1,5 +1,5 @@
 using Google.Protobuf;
-using Mezon.Protobuf.Realtime;
+using Mezon.Net.Internal.Realtime;
 using Mezon_sdk.Constants;
 using Mezon_sdk.Utils;
 using ApiUtils = Mezon_sdk.Api.Utils;

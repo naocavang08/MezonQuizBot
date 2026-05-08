@@ -1,6 +1,6 @@
 namespace Mezon_sdk.Models
 {
-    using Mezon.Protobuf;
+    using Mezon.Net.Internal.Api;
     using System;
     using System.Collections.Generic;
     using System.Text.Json.Serialization;

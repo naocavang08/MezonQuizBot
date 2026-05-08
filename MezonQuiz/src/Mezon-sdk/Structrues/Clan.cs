@@ -1,4 +1,4 @@
-using Mezon.Protobuf;
+using Mezon.Net.Internal.Api;
 using Mezon_sdk.Constants;
 using Mezon_sdk.Managers;
 using Mezon_sdk.Messages;

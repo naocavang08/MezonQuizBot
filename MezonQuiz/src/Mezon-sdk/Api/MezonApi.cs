@@ -1,6 +1,6 @@
 ﻿using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
-using Mezon.Protobuf;
+using Mezon.Net.Internal.Api;
 using Mezon_sdk.Constants;
 using Mezon_sdk.Models;
 using System.Net.Http.Headers;
@@ -8,7 +8,7 @@ using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json;
 using System.Linq;
-using static Mezon.Protobuf.Friend.Types;
+using static Mezon.Net.Internal.Api.Friend.Types;
 using Mezon_sdk.Api;
 
 public class MezonApi

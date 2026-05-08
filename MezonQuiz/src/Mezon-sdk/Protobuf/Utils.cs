@@ -1,6 +1,6 @@
 using System;
 using Google.Protobuf;
-using Mezon.Protobuf.Realtime;
+using Mezon.Net.Internal.Realtime;
 
 public static class ProtobufHelper
 {

@@ -5,6 +5,7 @@ namespace Mezon_sdk.Models
     using System.Text.Json;
     using System.Text.Json.Serialization;
     using static Mezon_sdk.Utils.Helper;
+    using ApiPb = Mezon.Net.Internal.Api;
 
     public class UserInitData
     {
@@ -29,7 +30,7 @@ namespace Mezon_sdk.Models
         [JsonPropertyName("dmChannelId")]
         public long DmChannelId { get; set; }
 
-        public static UserInitData FromProtobuf (Mezon.Protobuf.ChannelMessage message, long dmChannelId = 0)
+        public static UserInitData FromProtobuf (ApiPb.ChannelMessage message, long dmChannelId = 0)
         {
             return new UserInitData
             {

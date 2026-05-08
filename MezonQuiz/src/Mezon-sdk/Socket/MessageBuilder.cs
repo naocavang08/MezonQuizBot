@@ -1,8 +1,8 @@
 using System.Text.Json;
-using Mezon.Protobuf;
+using Mezon.Net.Internal.Api;
 using Mezon_sdk.Models;
-using Pb = Mezon.Protobuf;
-using Rt = Mezon.Protobuf.Realtime;
+using Pb = Mezon.Net.Internal.Api;
+using Rt = Mezon.Net.Internal.Realtime;
 
 namespace Mezon_sdk.Socket
 {

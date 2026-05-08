@@ -1,7 +1,7 @@
 namespace Mezon_sdk.Models
 {
     using Google.Protobuf;
-    using Mezon.Protobuf;
+    using Mezon.Net.Internal.Api;
     using System.Collections.Generic;
     using System.Text.Json.Serialization;
     using Mezon_sdk.Utils;

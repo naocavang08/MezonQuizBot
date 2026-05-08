@@ -10,8 +10,8 @@ using WebApp.Application.ManageQuizSession.Dtos;
 using WebApp.Application.ManageQuizSession.Formatters;
 using WebApp.Data;
 using WebApp.Application.ManageQuizSession;
-using PbChannelMessage = Mezon.Protobuf.ChannelMessage;
-using Rt = Mezon.Protobuf.Realtime;
+using PbChannelMessage = Mezon.Net.Internal.Api.ChannelMessage;
+using Rt = Mezon.Net.Internal.Realtime;
 using WebApp.Application.ManageQuiz.Dtos;
 
 namespace WebApp.Integration.Mezon;

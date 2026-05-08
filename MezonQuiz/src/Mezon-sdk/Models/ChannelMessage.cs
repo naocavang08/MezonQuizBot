@@ -5,6 +5,7 @@ namespace Mezon_sdk.Models
     using System.Text.Json;
     using System.Text.Json.Serialization;
     using static Mezon_sdk.Utils.Helper;
+    using ApiPb = Mezon.Net.Internal.Api;
 
     public class ChannelMessage
     {
@@ -85,7 +86,7 @@ namespace Mezon_sdk.Models
         [JsonPropertyName("referenced_message")]
         public byte[]? ReferencedMessage { get; set; }
 
-        public static ChannelMessage FromProtobuf(Mezon.Protobuf.ChannelMessage message)
+        public static ChannelMessage FromProtobuf(ApiPb.ChannelMessage message)
         {
             return new ChannelMessage
             {
@@ -142,7 +143,7 @@ namespace Mezon_sdk.Models
 
             try
             {
-                var list = Mezon.Protobuf.MessageMentionList.Parser.ParseFrom(data);
+                var list = ApiPb.MessageMentionList.Parser.ParseFrom(data);
 
                 return list.Mentions.Select(m => new ApiMessageMention
                 {
@@ -167,7 +168,7 @@ namespace Mezon_sdk.Models
 
             try
             {
-                var list = Mezon.Protobuf.MessageAttachmentList.Parser.ParseFrom(data);
+                var list = ApiPb.MessageAttachmentList.Parser.ParseFrom(data);
 
                 return list.Attachments.Select(a => new ApiMessageAttachment
                 {
@@ -193,7 +194,7 @@ namespace Mezon_sdk.Models
 
             try
             {
-                var list = Mezon.Protobuf.MessageReactionList.Parser.ParseFrom(data);
+                var list = ApiPb.MessageReactionList.Parser.ParseFrom(data);
 
                 return list.Reactions.Select(r => new ApiMessageReaction
                 {
@@ -219,7 +220,7 @@ namespace Mezon_sdk.Models
 
             try
             {
-                var list = Mezon.Protobuf.MessageRefList.Parser.ParseFrom(data);
+                var list = ApiPb.MessageRefList.Parser.ParseFrom(data);
 
 
                 return list.Refs.Select(r => new ApiMessageRef

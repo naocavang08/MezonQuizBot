@@ -10,9 +10,9 @@ using Mezon_sdk.Models;
 using Mezon_sdk.Structures;
 using Mezon_sdk.Utils;
 
-using Rt = Mezon.Protobuf.Realtime;
+using Rt = Mezon.Net.Internal.Realtime;
 using ApiUtils = Mezon_sdk.Api.Utils;
-using ApiPb = Mezon.Protobuf;
+using ApiPb = Mezon.Net.Internal.Api;
 
 namespace Mezon_sdk
 {
@@ -44,7 +44,7 @@ namespace Mezon_sdk
         public SessionManager? SessionManager { get; private set; }
         public ChannelManager? ChannelManager { get; private set; }
 
-        public event Func<Mezon.Protobuf.ChannelMessage, Task>? OnChannelMessage;
+        public event Func<ApiPb.ChannelMessage, Task>? OnChannelMessage;
         public event Func<Rt.ChannelCreatedEvent, Task>? OnChannelCreated;
         public event Func<Rt.ChannelUpdatedEvent, Task>? OnChannelUpdated;
         public event Func<Rt.ChannelDeletedEvent, Task>? OnChannelDeleted;
@@ -117,7 +117,7 @@ namespace Mezon_sdk
             EventManager.On(eventName, handler);
         }
 
-        public void OnChannelMessageEvent(Func<Mezon.Protobuf.ChannelMessage, Task> handler) => OnChannelMessage += handler;
+        public void OnChannelMessageEvent(Func<ApiPb.ChannelMessage, Task> handler) => OnChannelMessage += handler;
         public void OnChannelCreatedEvent(Func<Rt.ChannelCreatedEvent, Task> handler) => OnChannelCreated += handler;
         public void OnChannelUpdatedEvent(Func<Rt.ChannelUpdatedEvent, Task> handler) => OnChannelUpdated += handler;
         public void OnChannelDeletedEvent(Func<Rt.ChannelDeletedEvent, Task> handler) => OnChannelDeleted += handler;
@@ -371,7 +371,7 @@ namespace Mezon_sdk
 
         private void RegisterInternalEventBindings()
         {
-            BindDefaultHandler<Mezon.Protobuf.ChannelMessage>(
+            BindDefaultHandler<ApiPb.ChannelMessage>(
                 Events.ChannelMessage,
                 HandleChannelMessageDefaultAsync,
                 async message => await InvokeEventAsync(OnChannelMessage, message));
@@ -522,7 +522,7 @@ namespace Mezon_sdk
             }), isDefault: true);
         }
 
-        private async Task HandleChannelMessageDefaultAsync(Mezon.Protobuf.ChannelMessage message)
+        private async Task HandleChannelMessageDefaultAsync(ApiPb.ChannelMessage message)
         {
             var model = ChannelMessage.FromProtobuf(message);
             await MessageDb.SaveMessageAsync(model.ToDbDict());
@@ -798,7 +798,7 @@ namespace Mezon_sdk
                 service: MessageDb);
         }
 
-        private void TryCreateCachedChannelFromMessage(Mezon.Protobuf.ChannelMessage message)
+        private void TryCreateCachedChannelFromMessage(ApiPb.ChannelMessage message)
         {
             if (SocketManager == null)
             {

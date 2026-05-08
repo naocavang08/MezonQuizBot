@@ -3,8 +3,9 @@ using Google.Protobuf;
 using Mezon_sdk.Managers;
 using Mezon_sdk.Models;
 using Mezon_sdk.Utils;
-using Pb = Mezon.Protobuf;
-using Rt = Mezon.Protobuf.Realtime;
+using Pb = Mezon.Net.Internal.Api;
+using Rt = Mezon.Net.Internal.Realtime;
+using static Mezon_sdk.Utils.Helper;
 
 namespace Mezon_sdk.Socket
 {
@@ -27,7 +28,7 @@ namespace Mezon_sdk.Socket
 
 		public Session? Session { get; private set; }
 
-		private readonly ConcurrentDictionary<string, PromiseExecutor> _cids = new();
+		private readonly ConcurrentDictionary<int, PromiseExecutor> _cids = new();
 		private long _nextCid = 1;
 
 		private readonly int _heartbeatTimeoutMs;
@@ -58,9 +59,9 @@ namespace Mezon_sdk.Socket
 			_heartbeatTimeoutMs = DefaultHeartbeatTimeoutMs;
 		}
 
-		public string GenerateCid()
+		public int GenerateCid()
 		{
-			return Interlocked.Increment(ref _nextCid).ToString();
+			return (int)Interlocked.Increment(ref _nextCid);
 		}
 
 		public bool IsOpen()
@@ -144,7 +145,7 @@ namespace Mezon_sdk.Socket
 					}
 
 					var envelope = ProtobufHelper.ParseProtobuf(bytes);
-					if (!string.IsNullOrWhiteSpace(envelope.Cid))
+					if (envelope.Cid != 0)
 					{
 						if (_cids.TryGetValue(envelope.Cid, out var executor))
 						{
@@ -200,7 +201,7 @@ namespace Mezon_sdk.Socket
 			return Task.CompletedTask;
 		}
 
-		private void CleanupCid(string cid, PromiseExecutor executor)
+		private void CleanupCid(int cid, PromiseExecutor executor)
 		{
 			_cids.TryRemove(cid, out _);
 			executor.Dispose();
@@ -256,7 +257,7 @@ namespace Mezon_sdk.Socket
 			}
 
 			var cid = GenerateCid();
-			message.Cid = cid;
+            message.Cid = cid;
 
 			var executor = new PromiseExecutor();
 			_cids[cid] = executor;
