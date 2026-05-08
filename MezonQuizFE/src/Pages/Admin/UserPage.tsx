@@ -99,8 +99,6 @@ const UserPage = () => {
 		},
 	});
 
-	const isPasswordUser = (user: UserResponse) => Boolean(user.hasPassword) && !user.isOAuthUser;
-
 	const fetchUsers = useCallback(async () => {
 		setLoading(true);
 		try {
@@ -135,11 +133,6 @@ const UserPage = () => {
 	const handleOpenEditDialog = (user: UserResponse) => {
 		if (!canUpdateUser) {
 			showError("You do not have permission to update users.");
-			return;
-		}
-
-		if (!isPasswordUser(user)) {
-			showError("User đăng nhập bằng OAuth2 không hỗ trợ edit trong màn hình này.");
 			return;
 		}
 
@@ -411,7 +404,6 @@ const UserPage = () => {
 													<Button
 														size="small"
 														variant="outlined"
-														disabled={!isPasswordUser(user)}
 														onClick={() => handleOpenEditDialog(user)}
 													>
 														Edit

@@ -178,11 +178,6 @@ namespace WebApp.Application.Auth.Users.Services
                 throw new KeyNotFoundException("User not found.");
             }
 
-            if (string.IsNullOrWhiteSpace(user.Password))
-            {
-                throw new InvalidOperationException("OAuth2 users cannot be edited from this endpoint.");
-            }
-
             var normalizedEmail = request.Email!.Trim();
 
             var emailExisted = await _dbContext.Users
