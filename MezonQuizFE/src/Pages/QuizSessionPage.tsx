@@ -62,7 +62,6 @@ const QuizSessionPage = () => {
         try {
             setIsLoadingSessions(true);
             const data = await getQuizSessions({
-                hostId: userId || undefined,
                 quizId,
                 page: 1,
                 pageSize: 50,
@@ -91,7 +90,6 @@ const QuizSessionPage = () => {
                 const [quizData, sessionsData] = await Promise.all([
                     getQuiz(quizId),
                     getQuizSessions({
-                        hostId: userId || undefined,
                         quizId,
                         page: 1,
                         pageSize: 50,
@@ -268,7 +266,7 @@ const QuizSessionPage = () => {
                                             key={session.id}
                                         >
                                             <Divider sx={{ my: 1.5 }} />
-                                            
+
                                             <Stack spacing={0.8}>
                                                 <Typography variant="subtitle2" fontWeight={700}>
                                                     Session {session.id}

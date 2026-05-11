@@ -37,7 +37,6 @@ export interface QuizSessionDto {
 }
 
 export interface QuizSessionQueryParams {
-    hostId?: string;
     quizId?: string;
     status?: SessionStatus;
     page?: number;
