@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { HubConnectionBuilder, LogLevel, type HubConnection } from "@microsoft/signalr";
+import { useEffect, useRef } from "react";
+import { HubConnectionBuilder, LogLevel, type HubConnection, HubConnectionState } from "@microsoft/signalr";
 import type { SessionStateChangedDto } from "../Interface/session.dto";
 
 type UseSessionRealtimeOptions = {
@@ -21,6 +21,9 @@ const useSessionRealtime = ({
     joinGroup = true,
     enabled = true,
 }: UseSessionRealtimeOptions) => {
+    const callbackRef = useRef(onSessionStateChanged);
+    callbackRef.current = onSessionStateChanged;
+
     useEffect(() => {
         if (!enabled || (joinGroup && !sessionId && !quizId)) {
             return;
@@ -34,7 +37,7 @@ const useSessionRealtime = ({
             try {
                 const hub = new HubConnectionBuilder()
                     .withUrl(resolveHubUrl())
-                    .configureLogging(LogLevel.Warning)
+                    .configureLogging(LogLevel.Information)
                     .withAutomaticReconnect()
                     .build();
 
@@ -47,10 +50,15 @@ const useSessionRealtime = ({
                         return;
                     }
 
-                    void onSessionStateChanged();
+                    void callbackRef.current();
                 });
 
                 await hub.start();
+
+                if (isDisposed) {
+                    void hub.stop();
+                    return;
+                }
 
                 if (joinGroup && sessionId) {
                     await hub.invoke("JoinSessionGroup", sessionId);
@@ -61,20 +69,20 @@ const useSessionRealtime = ({
                 }
 
                 connection = hub;
-                
+
                 if (timer !== undefined) {
                     window.clearInterval(timer);
                     timer = undefined;
                 }
-            } catch {
-                // Keep fallback refresh active if realtime connection fails.
+            } catch (err) {
+                console.warn("SignalR connection failed, falling back to polling:", err);
             }
         };
 
         void connectHub();
 
         timer = window.setInterval(() => {
-            void onSessionStateChanged();
+            void callbackRef.current();
         }, pollingMs);
 
         return () => {
@@ -83,21 +91,16 @@ const useSessionRealtime = ({
                 window.clearInterval(timer);
             }
 
-            if (!connection) {
-                return;
+            if (connection) {
+                const conn = connection;
+                connection = null;
+                if (conn.state === HubConnectionState.Connected) {
+                    void conn.stop().catch(err => console.warn("Error stopping SignalR connection:", err));
+                }
             }
-
-            if (joinGroup && sessionId) {
-                void connection.invoke("LeaveSessionGroup", sessionId).catch(() => undefined);
-            }
-
-            if (joinGroup && quizId) {
-                void connection.invoke("LeaveQuizGroup", quizId).catch(() => undefined);
-            }
-
-            void connection.stop().catch(() => undefined);
         };
-    }, [enabled, joinGroup, onSessionStateChanged, pollingMs, sessionId, quizId]);
+    }, [enabled, joinGroup, pollingMs, sessionId, quizId]);
 };
 
 export default useSessionRealtime;
+

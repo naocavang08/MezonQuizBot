@@ -137,9 +137,13 @@ const StartQuizPage = () => {
         void loadSession();
     }, [loadSession]);
 
+    const handleSessionStateChanged = useCallback(() => {
+        void loadSession(true);
+    }, [loadSession]);
+
     useSessionRealtime({
         sessionId,
-        onSessionStateChanged: () => loadSession(true),
+        onSessionStateChanged: handleSessionStateChanged,
     });
 
     useEffect(() => {

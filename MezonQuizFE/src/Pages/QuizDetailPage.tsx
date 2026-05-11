@@ -142,9 +142,13 @@ const QuizDetailPage = () => {
     void loadData();
   }, [loadData]);
 
+  const handleSessionStateChanged = useCallback(() => {
+    void loadData(true);
+  }, [loadData]);
+
   useSessionRealtime({
     quizId: quizId,
-    onSessionStateChanged: () => loadData(true),
+    onSessionStateChanged: handleSessionStateChanged,
     enabled: Boolean(quizId),
     joinGroup: true,
   });
