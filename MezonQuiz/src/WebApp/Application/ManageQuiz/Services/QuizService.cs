@@ -179,7 +179,7 @@ namespace WebApp.Application.ManageQuiz.Services
 
             if (input.CategoryId.HasValue)
             {
-                var categoryExists = await _dbContext.Categories.AnyAsync(c => c.Id == input.CategoryId.Value);
+                var categoryExists = await _dbContext.QuizCategories.AnyAsync(c => c.Id == input.CategoryId.Value);
                 if (!categoryExists)
                 {
                     throw new ArgumentException("Category does not exist.", nameof(input.CategoryId));
@@ -215,7 +215,7 @@ namespace WebApp.Application.ManageQuiz.Services
 
             if (input.CategoryId.HasValue)
             {
-                var categoryExists = await _dbContext.Categories.AnyAsync(c => c.Id == input.CategoryId.Value);
+                var categoryExists = await _dbContext.QuizCategories.AnyAsync(c => c.Id == input.CategoryId.Value);
                 if (!categoryExists)
                 {
                     throw new ArgumentException("Category does not exist.", nameof(input.CategoryId));
