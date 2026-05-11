@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using static WebApp.Domain.Enums.Status;
 
 namespace WebApp.Application.ManageQuiz.Dtos
@@ -7,21 +7,20 @@ namespace WebApp.Application.ManageQuiz.Dtos
     {
         public Guid Id { get; set; }
 
-        [Required]
-        [MaxLength(500)]
         public string Title { get; set; } = null!;
 
         public string? Description { get; set; }
 
         public Guid? CategoryId { get; set; }
 
-        [Required]
         public List<QuizQuestion> Questions { get; set; } = new();
 
         public QuizSettings Settings { get; set; } = new();
 
+        [EnumDataType(typeof(QuizVisibility), ErrorMessage = "Quiz visibility is invalid")]
         public QuizVisibility Visibility { get; set; }
 
+        [EnumDataType(typeof(QuizStatus), ErrorMessage = "Quiz status is invalid")]
         public QuizStatus Status { get; set; }
 
         public void Validate()

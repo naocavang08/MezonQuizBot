@@ -10,7 +10,6 @@ namespace WebApp.Application.Categories.Dtos
 
     public class SaveCategoryDto
     {
-        [Required]
         public string Name { get; set; } = null!;
         public string? Slug { get; set; }
         public string? Icon { get; set; }

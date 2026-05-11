@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using WebApp.Domain.Entites;
 
 namespace WebApp.Application.ManageQuiz.Dtos
@@ -9,14 +9,15 @@ namespace WebApp.Application.ManageQuiz.Dtos
 
         public int Index { get; set; }
 
-        [Required(ErrorMessage = "Nội dung câu hỏi không được để trống")]
         public string Content { get; set; } = null!;
+
         public string? MediaUrl { get; set; }
-        [Range(10, 30, ErrorMessage = "Thời gian giới hạn phải từ 10 đến 30 giây")]
+
         public int TimeLimitSeconds { get; set; } = 30;
-        [Range(1, 20, ErrorMessage = "Điểm phải từ 1 đến 20")]
+        
         public int Points { get; set; } = 10;
 
+        [EnumDataType(typeof(QuestionType), ErrorMessage = "Question type is invalid")]
         public QuestionType QuestionType { get; set; }
         public List<QuizOption> Options { get; set; } = new();
 
@@ -71,7 +72,6 @@ namespace WebApp.Application.ManageQuiz.Dtos
     {
         public int Id { get; set; }
         public int Index { get; set; }
-        [Required(ErrorMessage = "Nội dung đáp án không được để trống")]
         public string Content { get; set; } = null!;
         public bool IsCorrect { get; set; } = false;
 

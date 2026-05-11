@@ -132,7 +132,7 @@ const QuizPreviewCard = ({ quiz, categoryById, onOpen }: QuizPreviewCardProps) =
                   textTransform: "uppercase",
                 }}
               >
-                {quizCategory?.slug || "General"}
+                {quizCategory?.name || "General"}
               </Box>
               <Box sx={{ color: dt.colors.outline }}>
                 <CategoryIconBadge iconKey={quizCategory?.icon} size={22} fallback={null} />
@@ -579,9 +579,9 @@ const QuizPage = () => {
               ) : null}
 
               {!isQuizLoading &&
-              !quizError &&
-              ((selectedCategory === "all" && filteredGroupedQuizzes.length === 0) ||
-                (selectedCategory !== "all" && filteredQuizzes.length === 0)) ? (
+                !quizError &&
+                ((selectedCategory === "all" && filteredGroupedQuizzes.length === 0) ||
+                  (selectedCategory !== "all" && filteredQuizzes.length === 0)) ? (
                 <Card variant="outlined" sx={emptyStateCardSx}>
                   <CardContent>
                     <Typography sx={{ ...dt.typography.h3, color: dt.colors.onSurface, fontFamily: dt.typography.fontFamily }}>
