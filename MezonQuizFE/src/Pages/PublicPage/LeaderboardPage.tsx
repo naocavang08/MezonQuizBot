@@ -19,13 +19,14 @@ import {
   MdGroups,
   MdHistory,
   MdMilitaryTech,
-  MdRefresh,
   MdSchedule,
   MdTimer,
   MdWorkspacePremium,
 } from "react-icons/md";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
+import useRefresh from "../../Hooks/useRefresh";
+import RefreshButton from "../../Components/RefreshButton";
 import useSessionRealtime from "../../Hooks/useSessionRealtime";
 import useAuthStore from "../../Stores/login.store";
 import { getSessionDetails, getSessionLeaderboard } from "../../Api/session.api";
@@ -195,6 +196,7 @@ const PodiumCard = ({ participant, rank }: { participant: SessionParticipantDto;
 };
 
 const PublicLeaderboardPage = () => {
+  const { refreshKey } = useRefresh();
   const navigate = useNavigate();
   const { quizId = "", sessionId = "" } = useParams();
   const { snackbar, closeSnackbar, showError } = useAppSnackbar();
@@ -240,7 +242,7 @@ const PublicLeaderboardPage = () => {
 
   useEffect(() => {
     void loadData();
-  }, [loadData]);
+  }, [loadData, refreshKey]);
 
   useSessionRealtime({
     sessionId,
@@ -330,9 +332,7 @@ const PublicLeaderboardPage = () => {
             </Stack>
 
             <Stack direction="row" spacing={1}>
-              <Button variant="outlined" startIcon={<MdRefresh />} onClick={() => void loadData()}>
-                Refresh
-              </Button>
+              <RefreshButton size="small" disabled={isLoading} sx={{ color: dt.colors.onSurface }} />
               <Button variant="text" startIcon={<MdArrowBack />} onClick={() => navigate(`/quizzes/${quizId}`)}>
                 Back to Quiz
               </Button>

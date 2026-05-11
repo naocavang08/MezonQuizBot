@@ -23,6 +23,8 @@ import { useForm } from "react-hook-form";
 import { getApiErrorMessage } from "../../Api/ApiClient";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
+import useRefresh from "../../Hooks/useRefresh";
+import RefreshButton from "../../Components/RefreshButton";
 import useAuthStore from "../../Stores/login.store";
 import { hasAnyPermission, PERMISSIONS } from "../../Lib/Utils/permissions";
 import { createCategory, deleteCategory, getAllCategories, updateCategory } from "../../Api/category.api";
@@ -41,6 +43,7 @@ const getFirstErrorMessage = (errors: Record<string, { message?: string } | unde
 	Object.values(errors).find((error) => error?.message)?.message ?? "Invalid category data.";
 
 const CategoryPage = () => {
+	const { refreshKey } = useRefresh();
 	const [categories, setCategories] = useState<CategoryDto[]>([]);
 	const [loading, setLoading] = useState(false);
 	const { snackbar, showError, showSuccess, closeSnackbar } = useAppSnackbar();
@@ -74,7 +77,7 @@ const CategoryPage = () => {
 
 	useEffect(() => {
 		fetchCategories();
-	}, []);
+	}, [refreshKey]);
 
 	const normalizeForm = (form: SaveCategoryDto): SaveCategoryDto => ({
 		name: form.name.trim(),
@@ -187,9 +190,12 @@ const CategoryPage = () => {
 	return (
 		<Box>
 			<Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-				<Typography variant="h5" fontWeight={700}>
-					Category Management
-				</Typography>
+				<Stack direction="row" spacing={1} alignItems="center">
+					<Typography variant="h5" fontWeight={700}>
+						Category Management
+					</Typography>
+					<RefreshButton size="small" disabled={loading} />
+				</Stack>
 				{canCreateCategory ? (
 					<Button variant="contained" onClick={() => {
 						setCreateForm(defaultForm);

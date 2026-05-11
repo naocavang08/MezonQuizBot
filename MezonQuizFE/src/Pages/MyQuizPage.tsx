@@ -14,6 +14,8 @@ import {
 } from "@mui/material";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
+import useRefresh from "../Hooks/useRefresh";
+import RefreshButton from "../Components/RefreshButton";
 import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
 import { getAllQuizzes } from "../Api/quiz.api";
@@ -34,6 +36,7 @@ const QUIZ_STATUS_LABELS: Record<QuizStatus, string> = {
 };
 
 const MyQuizPage = () => {
+  const { refreshKey } = useRefresh();
   const navigate = useNavigate();
   const userId = useAuthStore((state) => state.user?.id);
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
@@ -86,7 +89,7 @@ const MyQuizPage = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     let isMounted = true;
@@ -126,7 +129,7 @@ const MyQuizPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [page, pageSize, selectedCategory, searchTitle, userId, showError]);
+  }, [page, pageSize, selectedCategory, searchTitle, userId, showError, refreshKey]);
 
   const categoryNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -147,9 +150,12 @@ const MyQuizPage = () => {
         spacing={2}
         mb={3}
       >
-        <Typography variant="h4" fontWeight={700}>
-          My Quizzes
-        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography variant="h4" fontWeight={700}>
+            My Quizzes
+          </Typography>
+          <RefreshButton size="small" disabled={isLoading} />
+        </Stack>
 
         <Button
           variant="contained"

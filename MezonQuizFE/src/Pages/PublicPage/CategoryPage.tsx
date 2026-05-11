@@ -11,6 +11,8 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import useRefresh from "../../Hooks/useRefresh";
+import RefreshButton from "../../Components/RefreshButton";
 import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../../Api/category.api";
 import type { CategoryDto } from "../../Interface/category.dto";
@@ -19,6 +21,7 @@ import { getCategoryIconOption } from "../../Lib/Utils/categoryIconOptions";
 import { dt } from "../../Lib/designTokens";
 
 const CategoryPage = () => {
+  const { refreshKey } = useRefresh();
   const navigate = useNavigate();
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,7 +69,7 @@ const CategoryPage = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [refreshKey]);
 
   return (
     <Box
@@ -86,15 +89,18 @@ const CategoryPage = () => {
           spacing={2}
         >
           <Box>
-            <Typography
-              sx={{
-                fontFamily: dt.typography.fontFamily,
-                ...dt.typography.h2,
-                color: dt.colors.onSurface,
-              }}
-            >
-              Curated Categories
-            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography
+                sx={{
+                  fontFamily: dt.typography.fontFamily,
+                  ...dt.typography.h2,
+                  color: dt.colors.onSurface,
+                }}
+              >
+                Curated Categories
+              </Typography>
+              <RefreshButton size="small" disabled={isLoading} sx={{ color: dt.colors.onSurface }} />
+            </Stack>
             <Typography
               sx={{
                 fontFamily: dt.typography.fontFamily,

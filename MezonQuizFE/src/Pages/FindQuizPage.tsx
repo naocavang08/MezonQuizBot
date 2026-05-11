@@ -18,7 +18,9 @@ import {
 import { alpha, useTheme } from "@mui/material/styles";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
-import { MdRefresh, MdSearch } from "react-icons/md";
+import { MdSearch } from "react-icons/md";
+import useRefresh from "../Hooks/useRefresh";
+import RefreshButton from "../Components/RefreshButton";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getAllCategories } from "../Api/category.api";
 import { getAvailableQuizzes } from "../Api/quiz.api";
@@ -166,6 +168,7 @@ const FindQuizPage = () => {
     const [totalPages, setTotalPages] = useState(0);
 
     const [isLoading, setIsLoading] = useState(false);
+    const { refreshKey } = useRefresh();
     const {snackbar, showError, closeSnackbar } = useAppSnackbar();
     const quizCacheRef = useRef<Map<string, CachedQuizData>>(new Map());
 
@@ -319,7 +322,7 @@ const FindQuizPage = () => {
     useEffect(() => {
         void fetchQuizzes();
         // Intentionally include all query states to refetch as user changes filters.
-    }, [fetchQuizzes]);
+    }, [fetchQuizzes, refreshKey]);
 
     useEffect(() => {
         // Categories are part of "all" query shape, so invalidate previous "all" cache when they change.
@@ -388,27 +391,21 @@ const FindQuizPage = () => {
                                         </Typography>
                                     </Box>
 
-                                    <Tooltip title="Reload list">
-                                        <IconButton
-                                            onClick={() => {
-                                                void fetchQuizzes(true);
-                                            }}
-                                            sx={{
-                                                color: strongText,
+                                    <RefreshButton
+                                        disabled={isLoading}
+                                        sx={{
+                                            color: strongText,
+                                            bgcolor: isDark
+                                                ? "rgba(15, 23, 42, 0.95)"
+                                                : alpha(theme.palette.background.paper, 0.98),
+                                            border: `1px solid ${alpha(theme.palette.text.secondary, 0.3)}`,
+                                            "&:hover": {
                                                 bgcolor: isDark
-                                                    ? "rgba(15, 23, 42, 0.95)"
-                                                    : alpha(theme.palette.background.paper, 0.98),
-                                                border: `1px solid ${alpha(theme.palette.text.secondary, 0.3)}`,
-                                                "&:hover": {
-                                                    bgcolor: isDark
-                                                        ? "rgba(30, 41, 59, 0.95)"
-                                                        : alpha(theme.palette.background.paper, 0.9),
-                                                },
-                                            }}
-                                        >
-                                            <MdRefresh />
-                                        </IconButton>
-                                    </Tooltip>
+                                                    ? "rgba(30, 41, 59, 0.95)"
+                                                    : alpha(theme.palette.background.paper, 0.9),
+                                            },
+                                        }}
+                                    />
                                 </Stack>
 
                                 <TextField

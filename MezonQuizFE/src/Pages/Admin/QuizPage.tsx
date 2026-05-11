@@ -23,6 +23,8 @@ import {
 } from "@mui/material";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
+import useRefresh from "../../Hooks/useRefresh";
+import RefreshButton from "../../Components/RefreshButton";
 import { getAllCategories } from "../../Api/category.api";
 import { getQuiz, getAllQuizzes } from "../../Api/quiz.api";
 import {
@@ -57,6 +59,7 @@ const sessionStatusLabel: Record<number, string> = {
 };
 
 const QuizPage = () => {
+	const { refreshKey } = useRefresh();
 	const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
 	const [selectedQuizId, setSelectedQuizId] = useState("");
 	const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
@@ -208,20 +211,23 @@ const QuizPage = () => {
 		return () => {
 			isMounted = false;
 		};
-	}, []);
+	}, [refreshKey]);
 
 	useEffect(() => {
 		setSelectedQuizId("");
 		setSelectedQuiz(null);
 		setSessions([]);
 		void fetchQuizzes();
-	}, [fetchQuizzes]);
+	}, [fetchQuizzes, refreshKey]);
 
 	return (
 		<Box>
-			<Typography variant="h5" fontWeight={700} mb={2}>
-				Quiz Management
-			</Typography>
+			<Stack direction="row" spacing={1} alignItems="center" mb={2}>
+				<Typography variant="h5" fontWeight={700}>
+					Quiz Management
+				</Typography>
+				<RefreshButton size="small" disabled={loading} />
+			</Stack>
 
 			<Box
 				sx={{

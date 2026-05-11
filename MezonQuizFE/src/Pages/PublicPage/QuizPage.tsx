@@ -13,6 +13,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import useRefresh from "../../Hooks/useRefresh";
+import RefreshButton from "../../Components/RefreshButton";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { MdArrowForward, MdListAlt, MdStars } from "react-icons/md";
 import { getAllCategories } from "../../Api/category.api";
@@ -231,6 +233,7 @@ const QuizPreviewCard = ({ quiz, categoryById, onOpen }: QuizPreviewCardProps) =
 };
 
 const QuizPage = () => {
+  const { refreshKey } = useRefresh();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -363,7 +366,7 @@ const QuizPage = () => {
 
   useEffect(() => {
     void fetchCategories();
-  }, [fetchCategories]);
+  }, [fetchCategories, refreshKey]);
 
   useEffect(() => {
     const categoryParam = searchParams.get("category");
@@ -389,7 +392,7 @@ const QuizPage = () => {
     }
 
     void fetchQuizzes();
-  }, [fetchQuizzes, selectedCategory]);
+  }, [fetchQuizzes, selectedCategory, refreshKey]);
 
   useEffect(() => {
     if (selectedCategory !== "all") {
@@ -397,7 +400,7 @@ const QuizPage = () => {
     }
 
     void fetchGroupedQuizzes();
-  }, [fetchGroupedQuizzes, selectedCategory]);
+  }, [fetchGroupedQuizzes, selectedCategory, refreshKey]);
 
   return (
     <Box
@@ -410,15 +413,18 @@ const QuizPage = () => {
       <Container sx={{ maxWidth: `${dt.spacing.containerMax} !important` }}>
         <Stack spacing={3}>
           <Box>
-            <Typography
-              sx={{
-                fontFamily: dt.typography.fontFamily,
-                ...dt.typography.h2,
-                color: dt.colors.onSurface,
-              }}
-            >
-              Quizzes
-            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography
+                sx={{
+                  fontFamily: dt.typography.fontFamily,
+                  ...dt.typography.h2,
+                  color: dt.colors.onSurface,
+                }}
+              >
+                Quizzes
+              </Typography>
+              <RefreshButton size="small" disabled={isQuizLoading} sx={{ color: dt.colors.onSurface }} />
+            </Stack>
             <Typography
               sx={{
                 fontFamily: dt.typography.fontFamily,

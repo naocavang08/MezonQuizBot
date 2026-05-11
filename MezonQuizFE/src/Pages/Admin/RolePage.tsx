@@ -19,6 +19,8 @@ import { useForm } from "react-hook-form";
 import { getApiErrorMessage } from "../../Api/ApiClient";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
+import useRefresh from "../../Hooks/useRefresh";
+import RefreshButton from "../../Components/RefreshButton";
 import useAuthStore from "../../Stores/login.store";
 import { hasAnyPermission, PERMISSIONS } from "../../Lib/Utils/permissions";
 import { getAllRoles, getAllPermissions, getRolePermissions, assignPermissionsToRole, deleteRole, createRole } from "../../Api/role.api";
@@ -28,6 +30,7 @@ const getFirstErrorMessage = (errors: Record<string, { message?: string } | unde
 	Object.values(errors).find((error) => error?.message)?.message ?? "Invalid role data.";
 
 const RolePage = () => {
+	const { refreshKey } = useRefresh();
 	const [roles, setRoles] = useState<RoleResponse[]>([]);
 	const [permissions, setPermissions] = useState<PermissionResponse[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -137,7 +140,7 @@ const RolePage = () => {
 	useEffect(() => {
 		fetchRoles();
 		fetchPermissions();
-	}, []);
+	}, [refreshKey]);
 
 	const handleEditPermissions = async (role: RoleResponse) => {
 		if (!canUpdateRole) {
@@ -264,9 +267,12 @@ const RolePage = () => {
 	return (
 		<Box>
 			<Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-				<Typography variant="h5" fontWeight={700}>
-					Role Management
-				</Typography>
+				<Stack direction="row" spacing={1} alignItems="center">
+					<Typography variant="h5" fontWeight={700}>
+						Role Management
+					</Typography>
+					<RefreshButton size="small" disabled={loading} />
+				</Stack>
 				{canCreateRole ? (
 					<Button
 						variant="contained"

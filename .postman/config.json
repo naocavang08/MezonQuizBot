@@ -1,0 +1,17 @@
+{
+  "workspace": {
+    "id": "94ad83ea-0e61-4d75-9d3f-9e004a8f761c"
+  },
+  "entities": {
+    "environments": [],
+    "flows": [],
+    "globals": [],
+    "mocks": [],
+    "specs": [
+      "..\\MezonQuiz\\src\\Mezon-sdk\\Protobuf\\Api\\api.proto",
+      "..\\MezonQuiz\\src\\Mezon-sdk\\Protobuf\\RtApi\\realtime.proto",
+      "..\\MezonQuiz\\src\\WebApp\\obj\\Debug\\net8.0\\EndpointInfo\\WebApp.json"
+    ],
+    "collections": []
+  }
+}

@@ -29,6 +29,8 @@ import { useForm } from "react-hook-form";
 import { getApiErrorMessage } from "../Api/ApiClient";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
+import useRefresh from "../Hooks/useRefresh";
+import RefreshButton from "../Components/RefreshButton";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
@@ -181,6 +183,7 @@ const questionTypeLabel: Record<QuizQuestionDto["questionType"], string> = {
 };
 
 const QuizSettingPage = () => {
+	const { refreshKey } = useRefresh();
 	const navigate = useNavigate();
 	const { quizId } = useParams<{ quizId: string }>();
 
@@ -310,7 +313,7 @@ const QuizSettingPage = () => {
 		return () => {
 			isMounted = false;
 		};
-	}, [quizId, showError]);
+	}, [quizId, showError, refreshKey]);
 
 	const loadCategories = useCallback(async () => {
 		try {
@@ -663,9 +666,12 @@ const QuizSettingPage = () => {
 	return (
 		<Box sx={{ mt: 2 }}>
 			<Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={2} mb={3}>
-				<Typography variant="h4" fontWeight={700} mb={1}>
-					Quiz Setting - {form.title}
-				</Typography>
+				<Stack direction="row" spacing={1} alignItems="center">
+					<Typography variant="h4" fontWeight={700}>
+						Quiz Setting - {form.title}
+					</Typography>
+					<RefreshButton size="small" disabled={isLoading} />
+				</Stack>
 				<Button variant="outlined" onClick={() => navigate("/app/my-quizzes")}>
 					Back to My Quizzes
 				</Button>

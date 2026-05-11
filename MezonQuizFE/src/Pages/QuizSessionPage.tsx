@@ -15,6 +15,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getApiErrorMessage } from "../Api/ApiClient";
 import AppSnackbar from "../Components/AppSnackbar";
 import useAppSnackbar from "../Hooks/useAppSnackbar";
+import useRefresh from "../Hooks/useRefresh";
+import RefreshButton from "../Components/RefreshButton";
 import { createQuizSession, deleteQuizSession, getQuizSessions } from "../Api/session.api";
 import { getQuiz } from "../Api/quiz.api";
 import { QuizStatus } from "../Interface/quiz.dto";
@@ -38,6 +40,7 @@ const sessionStatusColor: Record<number, "default" | "info" | "success" | "warni
 };
 
 const QuizSessionPage = () => {
+    const { refreshKey } = useRefresh();
     const navigate = useNavigate();
     const { quizId = "" } = useParams<{ quizId: string }>();
     const userId = useAuthStore((state) => state.user?.id);
@@ -118,7 +121,7 @@ const QuizSessionPage = () => {
         return () => {
             isMounted = false;
         };
-    }, [quizId, userId, showError]);
+    }, [quizId, userId, showError, refreshKey]);
 
     const copyValue = async (value: string, message: string) => {
         if (!value) {
@@ -197,9 +200,12 @@ const QuizSessionPage = () => {
     return (
         <Box sx={{ mt: 2 }}>
             <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={2} mb={3}>
-                <Typography variant="h4" fontWeight={700} mb={1}>
-                    Quiz Sessions {quizTitle ? `- ${quizTitle}` : ""}
-                </Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="h4" fontWeight={700}>
+                        Quiz Sessions {quizTitle ? `- ${quizTitle}` : ""}
+                    </Typography>
+                    <RefreshButton size="small" disabled={isLoadingPage} />
+                </Stack>
                 <Stack direction="row" spacing={1}>
                     <Button variant="outlined" onClick={() => navigate(`/app/my-quizzes/${quizId}/settings`)}>
                         Open Quiz Setting

@@ -16,6 +16,8 @@ import {
 } from "@mui/material";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
+import useRefresh from "../../Hooks/useRefresh";
+import RefreshButton from "../../Components/RefreshButton";
 import { getDashboardSummary } from "../../Api/dashboard.api";
 import type {
 	DashboardDailyStatDto,
@@ -157,6 +159,7 @@ const renderDailyActivityChart = (items: DashboardDailyStatDto[]) => {
 };
 
 const DashboardPage = () => {
+	const { refreshKey } = useRefresh();
 	const [summary, setSummary] = useState<DashboardSummaryDto | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [refreshing, setRefreshing] = useState(false);
@@ -197,7 +200,7 @@ const DashboardPage = () => {
 
 	useEffect(() => {
 		void loadDashboard();
-	}, [loadDashboard]);
+	}, [loadDashboard, refreshKey]);
 
 	return (
 		<Box>
@@ -222,13 +225,7 @@ const DashboardPage = () => {
 							Updated: {formatDate(summary.generatedAt)}
 						</Typography>
 					) : null}
-					<Button
-						variant="contained"
-						onClick={() => void loadDashboard(true)}
-						disabled={loading || refreshing}
-					>
-						{refreshing ? "Refreshing..." : "Refresh"}
-					</Button>
+					<RefreshButton disabled={loading || refreshing} />
 				</Stack>
 			</Stack>
 

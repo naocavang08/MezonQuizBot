@@ -14,6 +14,8 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
+import useRefresh from "../../Hooks/useRefresh";
+import RefreshButton from "../../Components/RefreshButton";
 import { getAuditLogs } from "../../Api/auditlog.api";
 import type { AuditLogItemDto, AuditLogQueryParams } from "../../Interface/auditlog.dto";
 
@@ -54,6 +56,7 @@ const getStatusChipColor = (status: string): "default" | "warning" | "success" |
 };
 
 const AuditLogPage = () => {
+    const { refreshKey } = useRefresh();
     const [recentActivities, setRecentActivities] = useState<AuditLogItemDto[]>([]);
     const [page, setPage] = useState(1);
     const [pageSize] = useState(20);
@@ -108,7 +111,7 @@ const AuditLogPage = () => {
         return () => {
             isMounted = false;
         };
-    }, [loadAuditLogs]);
+    }, [loadAuditLogs, refreshKey]);
 
     const onApplyFilters = () => {
         setPage(1);
@@ -131,9 +134,12 @@ const AuditLogPage = () => {
 
     return (
     <Paper variant="outlined" sx={{ p: 2.25, boxShadow: "none" }}>
-        <Typography variant="h6" fontWeight={700} mb={1.25}>
-            Recent Activities
-        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center" mb={1.25}>
+            <Typography variant="h6" fontWeight={700}>
+                Recent Activities
+            </Typography>
+            <RefreshButton size="small" />
+        </Stack>
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.25} mb={1.5}>
             <TextField
                 size="small"

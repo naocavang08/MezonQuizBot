@@ -11,6 +11,8 @@ import {
 	DialogContent,
 	DialogTitle,
 	FormControlLabel,
+	IconButton,
+	InputAdornment,
 	Paper,
 	Stack,
 	Switch,
@@ -23,8 +25,11 @@ import {
 	Typography,
 } from "@mui/material";
 import { useForm } from "react-hook-form";
+import { MdVisibility, MdVisibilityOff } from "react-icons/md";
 import AppSnackbar from "../../Components/AppSnackbar";
 import useAppSnackbar from "../../Hooks/useAppSnackbar";
+import useRefresh from "../../Hooks/useRefresh";
+import RefreshButton from "../../Components/RefreshButton";
 import useAuthStore from "../../Stores/login.store";
 import { hasAnyPermission, PERMISSIONS } from "../../Lib/Utils/permissions";
 import {
@@ -45,6 +50,7 @@ const getFirstErrorMessage = (errors: Record<string, { message?: string } | unde
 	Object.values(errors).find((error) => error?.message)?.message ?? "Invalid user data.";
 
 const UserPage = () => {
+	const { refreshKey } = useRefresh();
 	const [users, setUsers] = useState<UserResponse[]>([]);
 	const [roles, setRoles] = useState<RoleResponse[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -66,6 +72,7 @@ const UserPage = () => {
 
 	const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
 	const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+	const [showPassword, setShowPassword] = useState(false);
 
 	const [createForm, setCreateForm] = useState<CreateUserRequest>({
 		email: "",
@@ -128,7 +135,7 @@ const UserPage = () => {
 	useEffect(() => {
 		void fetchUsers();
 		void fetchRoles();
-	}, [fetchRoles, fetchUsers]);
+	}, [fetchRoles, fetchUsers, refreshKey]);
 
 	const handleOpenEditDialog = (user: UserResponse) => {
 		if (!canUpdateUser) {
@@ -333,9 +340,12 @@ const UserPage = () => {
 	return (
 		<Box>
 			<Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-				<Typography variant="h5" fontWeight={700}>
-					User Management
-				</Typography>
+				<Stack direction="row" spacing={1} alignItems="center">
+					<Typography variant="h5" fontWeight={700}>
+						User Management
+					</Typography>
+					<RefreshButton size="small" disabled={loading} />
+				</Stack>
 				{canCreateUser ? (
 					<Button variant="contained" onClick={() => {
 						setCreateForm({
@@ -464,7 +474,7 @@ const UserPage = () => {
 						/>
 						<TextField
 							label="Password"
-							type="password"
+							type={showPassword ? "text" : "password"}
 							{...createMethods.register("password", {
 								required: "Password is required.",
 								validate: (value) => (value?.trim().length ?? 0) > 0 || "Password is required.",
@@ -475,6 +485,22 @@ const UserPage = () => {
 								createMethods.setValue("password", e.target.value, { shouldValidate: false });
 							}}
 							fullWidth
+							slotProps={{
+								input: {
+									endAdornment: (
+										<InputAdornment position="end">
+											<IconButton
+												aria-label="toggle password visibility"
+												onClick={() => setShowPassword((prev) => !prev)}
+												onMouseDown={(e) => e.preventDefault()}
+												edge="end"
+											>
+												{showPassword ? <MdVisibilityOff /> : <MdVisibility />}
+											</IconButton>
+										</InputAdornment>
+									)
+								},
+							}}
 						/>
 						<TextField
 							label="Email"

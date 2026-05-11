@@ -30,7 +30,8 @@ import {
 } from "../Interface/session.dto";
 import { isSameLeaderboard, isSameSession } from "../Lib/Utils/sessionRender";
 import { MdEmojiEvents, MdMilitaryTech, MdStars, MdTrendingUp } from "react-icons/md";
-import { MdRefresh } from "react-icons/md";
+import useRefresh from "../Hooks/useRefresh";
+import RefreshButton from "../Components/RefreshButton";
 import useSessionRealtime from "../Hooks/useSessionRealtime";
 
 const statusLabel: Record<number, string> = {
@@ -111,6 +112,7 @@ const getRankTier = (rank: number): RankTier => {
 };
 
 const LeaderboardPage = () => {
+    const { refreshKey } = useRefresh();
     const navigate = useNavigate();
     const { quizId = "", sessionId = "" } = useParams();
     const { snackbar, closeSnackbar, showError } = useAppSnackbar();
@@ -156,7 +158,7 @@ const LeaderboardPage = () => {
 
     useEffect(() => {
         void loadData();
-    }, [loadData]);
+    }, [loadData, refreshKey]);
 
     useSessionRealtime({
         sessionId,
@@ -197,15 +199,7 @@ const LeaderboardPage = () => {
                                     variant="outlined"
                                 />
                             ) : null}
-                            <Tooltip title="Refresh now">
-                                <IconButton
-                                    onClick={() => {
-                                        void loadData();
-                                    }}
-                                >
-                                    <MdRefresh />
-                                </IconButton>
-                            </Tooltip>
+                            <RefreshButton size="small" disabled={isLoading} />
                             <Button variant="outlined" onClick={() => navigate(`/app/find-quizzes/${quizId}`)}>
                                 Back to Quiz
                             </Button>
