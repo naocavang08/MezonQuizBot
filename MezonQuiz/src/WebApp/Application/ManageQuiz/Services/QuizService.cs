@@ -177,6 +177,15 @@ namespace WebApp.Application.ManageQuiz.Services
             ArgumentNullException.ThrowIfNull(input);
             input.Validate();
 
+            if (input.CategoryId.HasValue)
+            {
+                var categoryExists = await _dbContext.Categories.AnyAsync(c => c.Id == input.CategoryId.Value);
+                if (!categoryExists)
+                {
+                    throw new ArgumentException("Category does not exist.", nameof(input.CategoryId));
+                }
+            }
+
             var now = DateTime.UtcNow;
             var mappedQuestions = MapQuestions(input.Questions);
 
@@ -203,6 +212,15 @@ namespace WebApp.Application.ManageQuiz.Services
         {
             ArgumentNullException.ThrowIfNull(input);
             input.Validate();
+
+            if (input.CategoryId.HasValue)
+            {
+                var categoryExists = await _dbContext.Categories.AnyAsync(c => c.Id == input.CategoryId.Value);
+                if (!categoryExists)
+                {
+                    throw new ArgumentException("Category does not exist.", nameof(input.CategoryId));
+                }
+            }
 
             var quiz = await GetQuiz(quizId);
 
