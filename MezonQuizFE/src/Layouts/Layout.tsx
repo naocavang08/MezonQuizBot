@@ -133,7 +133,7 @@ function SvgIconPath({ path, size = 20, color = '#64748b' }: { path: string; siz
 const Layout = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const clearAuth = useAuthStore((state) => state.clearAuth)
+  const logout = useAuthStore((state) => state.logout)
   const user = useAuthStore((state) => state.user)
   const permissionName = useAuthStore((state) => state.permissionName)
   const hasSystemRole = useAuthStore((state) => state.hasSystemRole)
@@ -158,9 +158,9 @@ const Layout = () => {
     navigate(PUBLIC_HOME_PATH)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleCloseProfileMenu()
-    clearAuth()
+    await logout()
     navigate(PUBLIC_HOME_PATH, { replace: true })
   }
 
@@ -391,8 +391,8 @@ const Layout = () => {
             </Stack>
             <Button
               size="small"
-              onClick={() => {
-                clearAuth()
+              onClick={async () => {
+                await logout()
                 navigate(PUBLIC_HOME_PATH, { replace: true })
               }}
               sx={{ color: colors.textSecondary, textTransform: 'none', minWidth: 0, px: 1 }}

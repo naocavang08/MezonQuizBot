@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { LoginResponse, User } from "../Interface/login.dto";
+import { logout as logoutApi } from "../Api/login.api";
 import {
 	getAccessTokenExpiresAt,
 	getHasSystemRole,
@@ -36,6 +37,7 @@ type AuthState = {
 	setAuth: (payload: LoginResponse) => void;
 	setTokenBundle: (token: string, refreshToken: string, expiresIn: number) => void;
 	clearAuth: () => void;
+	logout: () => Promise<void>;
 };
 
 const initialToken = getTokenAccess();
@@ -99,6 +101,17 @@ const useAuthStore = create<AuthState>((set) => ({
 		removeRoleNames();
 		removePermissionNames();
 		set({ token: null, refreshToken: null, accessTokenExpiresAt: null, user: null, roleName: [], permissionName: [], hasSystemRole: false, isAuthenticated: false });
+	},
+	logout: async () => {
+		const { refreshToken, clearAuth } = useAuthStore.getState();
+		if (refreshToken) {
+			try {
+				await logoutApi(refreshToken);
+			} catch (error) {
+				console.error("Logout failed:", error);
+			}
+		}
+		clearAuth();
 	},
 }));
 

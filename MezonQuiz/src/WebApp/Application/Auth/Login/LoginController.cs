@@ -138,6 +138,41 @@ namespace WebApp.Application.Auth.Login
             return StatusCode(result.StatusCode, result.Payload);
         }
 
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
+            var incomingRefreshToken = request.RefreshToken?.Trim();
+            if (string.IsNullOrWhiteSpace(incomingRefreshToken))
+            {
+                return BadRequest(new { Message = "Refresh token is required." });
+            }
+
+            var tokenHash = HashToken(incomingRefreshToken);
+            var storedRefreshToken = await _dbContext.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash);
+
+            if (storedRefreshToken != null && storedRefreshToken.RevokedAt == null)
+            {
+                storedRefreshToken.RevokedAt = DateTime.UtcNow;
+                await _dbContext.SaveChangesAsync();
+
+                await WriteLoginAuditAsync(
+                    action: "logout.success",
+                    userId: storedRefreshToken.UserId,
+                    title: "Logout Success",
+                    description: "User logged out successfully.",
+                    status: "success");
+            }
+
+            return Ok(new { Message = "Logged out successfully." });
+        }
+
         private async Task<AuthResponseDto> BuildAuthResponseAsync(User user, RefreshToken? rotatingToken = null)
         {
             var accessToken = _tokenService.CreateAccessToken(user);

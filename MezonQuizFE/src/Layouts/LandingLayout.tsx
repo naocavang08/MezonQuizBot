@@ -36,7 +36,7 @@ const LandingLayout = () => {
   const user = useAuthStore((s) => s.user);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<HTMLElement | null>(null);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const logout = useAuthStore((s) => s.logout);
   const defaultAppPath = resolveDefaultAppPath(permissionName, hasSystemRole, roleName);
   const hasAppAccess = canAccessApp(permissionName, hasSystemRole, roleName);
   const isProfileMenuOpen = Boolean(profileMenuAnchor);
@@ -58,9 +58,9 @@ const LandingLayout = () => {
     navigate(defaultAppPath);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleCloseProfileMenu();
-    clearAuth();
+    await logout();
     navigate(PUBLIC_HOME_PATH, { replace: true });
   };
 

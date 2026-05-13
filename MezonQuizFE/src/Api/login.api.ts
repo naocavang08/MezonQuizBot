@@ -30,3 +30,9 @@ export const mezonAuthorize = () => {
     .get<{ authorizeUrl?: string; AuthorizeUrl?: string }>('/api/Login/mezon-authorize')
     .then((res) => res.data);
 };
+
+export const logout = (refreshToken: string) => {
+  return apiClient
+    .post('/api/Login/logout', { refreshToken })
+    .then((res) => res.data);
+};
