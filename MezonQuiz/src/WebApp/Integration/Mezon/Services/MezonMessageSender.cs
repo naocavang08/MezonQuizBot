@@ -158,7 +158,7 @@ public class MezonMessageSender
             return false;
         }
 
-        if (_state.ShouldSkipDuplicateOutboundMessage(userId, content))
+        if (await ShouldSkipDuplicateOutboundMessageAsync(userId, content))
         {
             _logger.LogDebug(
                 "Skipped duplicate outbound DM for user {UserId}.",
@@ -183,6 +183,32 @@ public class MezonMessageSender
         {
             _logger.LogWarning(ex, "Failed to send DM question to Mezon user {UserId}.", userId);
             return false;
+        }
+    }
+
+    private async Task<bool> ShouldSkipDuplicateOutboundMessageAsync(long userId, ChannelMessageContent content)
+    {
+        var payload = System.Text.Json.JsonSerializer.Serialize(content);
+        var hashBytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(payload));
+        var hashStr = Convert.ToHexString(hashBytes).ToLowerInvariant();
+        var key = $"msg:{userId}:{hashStr}";
+
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            dbContext.DedupRecords.Add(new Domain.Entites.DedupRecord
+            {
+                Key = key,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(5)
+            });
+            await dbContext.SaveChangesAsync();
+            return false;
+        }
+        catch (DbUpdateException)
+        {
+            return true;
         }
     }
 

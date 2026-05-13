@@ -82,6 +82,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<MezonBotHostedService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<MezonBotHostedService>());
+builder.Services.AddHostedService<DedupCleanupBackgroundService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

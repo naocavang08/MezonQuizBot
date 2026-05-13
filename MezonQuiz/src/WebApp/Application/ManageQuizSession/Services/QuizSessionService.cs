@@ -18,9 +18,6 @@ namespace WebApp.Application.ManageQuizSession.Services
 {
     public class QuizSessionService : IQuizSessionService
     {
-        private static readonly ConcurrentDictionary<string, DateTime> RecentQuestionDispatches = new();
-        private static readonly TimeSpan QuestionDispatchDedupWindow = TimeSpan.FromSeconds(3);
-
         private readonly AppDbContext _dbContext;
         private readonly IDynamicLinkService _dynamicLinkService;
         private readonly IHubContext<QuizHub> _hubContext;
@@ -1259,7 +1256,7 @@ namespace WebApp.Application.ManageQuizSession.Services
                 return;
             }
 
-            if (ShouldSkipDuplicateQuestionDispatch(session.Id, userId, questionIndex))
+            if (await ShouldSkipDuplicateQuestionDispatchAsync(session.Id, userId, questionIndex))
             {
                 return;
             }
@@ -1276,40 +1273,23 @@ namespace WebApp.Application.ManageQuizSession.Services
                 sendResult.RequestedCount);
         }
 
-        private static bool ShouldSkipDuplicateQuestionDispatch(Guid sessionId, Guid userId, int questionIndex)
+        private async Task<bool> ShouldSkipDuplicateQuestionDispatchAsync(Guid sessionId, Guid userId, int questionIndex)
         {
-            var now = DateTime.UtcNow;
-            var key = $"{sessionId:N}:{userId:N}:{questionIndex}";
+            var key = $"question:{sessionId:N}:{userId:N}:{questionIndex}";
 
-            foreach (var item in RecentQuestionDispatches)
+            try
             {
-                if (now - item.Value > QuestionDispatchDedupWindow)
+                _dbContext.DedupRecords.Add(new DedupRecord
                 {
-                    RecentQuestionDispatches.TryRemove(item.Key, out _);
-                }
+                    Key = key,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(5)
+                });
+                await _dbContext.SaveChangesAsync();
+                return false;
             }
-
-            while (true)
+            catch (DbUpdateException)
             {
-                if (RecentQuestionDispatches.TryGetValue(key, out var lastDispatch))
-                {
-                    if (now - lastDispatch <= QuestionDispatchDedupWindow)
-                    {
-                        return true;
-                    }
-
-                    if (RecentQuestionDispatches.TryUpdate(key, now, lastDispatch))
-                    {
-                        return false;
-                    }
-
-                    continue;
-                }
-
-                if (RecentQuestionDispatches.TryAdd(key, now))
-                {
-                    return false;
-                }
+                return true;
             }
         }
 

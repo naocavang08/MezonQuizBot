@@ -19,6 +19,7 @@ import {
 	Table,
 	TableBody,
 	TableCell,
+	TableContainer,
 	TableHead,
 	TableRow,
 	TextField,
@@ -339,7 +340,16 @@ const UserPage = () => {
 
 	return (
 		<Box>
-			<Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+			<Box
+				sx={{
+					display: 'flex',
+					flexDirection: { xs: 'column', sm: 'row' },
+					justifyContent: 'space-between',
+					alignItems: { xs: 'stretch', sm: 'center' },
+					gap: 2,
+					mb: 3
+				}}
+			>
 				<Stack direction="row" spacing={1} alignItems="center">
 					<Typography variant="h5" fontWeight={700}>
 						User Management
@@ -347,41 +357,46 @@ const UserPage = () => {
 					<RefreshButton size="small" disabled={loading} />
 				</Stack>
 				{canCreateUser ? (
-					<Button variant="contained" onClick={() => {
-						setCreateForm({
-							email: "",
-							username: "",
-							password: "",
-							displayName: "",
-							avatarUrl: "",
-						});
-						createMethods.reset({
-							email: "",
-							username: "",
-							password: "",
-							displayName: "",
-							avatarUrl: "",
-						});
-						setOpenCreateDialog(true);
-					}}>
+					<Button
+						variant="contained"
+						fullWidth={false}
+						sx={{ width: { xs: '100%', sm: 'auto' } }}
+						onClick={() => {
+							setCreateForm({
+								email: "",
+								username: "",
+								password: "",
+								displayName: "",
+								avatarUrl: "",
+							});
+							createMethods.reset({
+								email: "",
+								username: "",
+								password: "",
+								displayName: "",
+								avatarUrl: "",
+							});
+							setOpenCreateDialog(true);
+						}}
+					>
 						Add User
 					</Button>
 				) : null}
 			</Box>
 
-			<Paper variant="outlined" sx={{ boxShadow: "none" }}>
+			<TableContainer component={Paper} variant="outlined" sx={{ boxShadow: "none", width: '100%', overflowX: 'auto' }}>
 				{loading && users.length === 0 ? (
 					<Box py={6} display="flex" justifyContent="center">
 						<CircularProgress />
 					</Box>
 				) : (
-					<Table>
+					<Table sx={{ minWidth: { xs: 500, sm: 650 } }}>
 						<TableHead>
 							<TableRow>
-								<TableCell>Avatar</TableCell>
+								<TableCell width={60}>Avatar</TableCell>
 								<TableCell>Username</TableCell>
-								<TableCell>Display Name</TableCell>
-								<TableCell>Email</TableCell>
+								<TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Display Name</TableCell>
+								<TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>Email</TableCell>
 								<TableCell>Status</TableCell>
 								{hasAnyRowAction ? <TableCell align="right">Actions</TableCell> : null}
 							</TableRow>
@@ -397,9 +412,16 @@ const UserPage = () => {
 											{(user.displayName || user.username || "U").slice(0, 2).toUpperCase()}
 										</Avatar>
 									</TableCell>
-									<TableCell>{user.username}</TableCell>
-									<TableCell>{user.displayName || "-"}</TableCell>
-									<TableCell>{user.email || "-"}</TableCell>
+									<TableCell>
+										<Typography variant="body2" fontWeight={600}>
+											{user.username}
+										</Typography>
+										<Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', lg: 'none' } }}>
+											{user.email}
+										</Typography>
+									</TableCell>
+									<TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{user.displayName || "-"}</TableCell>
+									<TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{user.email || "-"}</TableCell>
 									<TableCell>
 										<Chip
 											label={user.isActive ? "Active" : "Inactive"}
@@ -445,7 +467,7 @@ const UserPage = () => {
 							))}
 							{users.length === 0 && (
 								<TableRow>
-									<TableCell colSpan={hasAnyRowAction ? 6 : 5} align="center">
+									<TableCell colSpan={6} align="center" sx={{ py: 4 }}>
 										No users found.
 									</TableCell>
 								</TableRow>
@@ -453,7 +475,7 @@ const UserPage = () => {
 						</TableBody>
 					</Table>
 				)}
-			</Paper>
+			</TableContainer>
 
 			<Dialog open={openCreateDialog && canCreateUser} onClose={() => setOpenCreateDialog(false)} maxWidth="sm" fullWidth>
 				<DialogTitle>Create User</DialogTitle>

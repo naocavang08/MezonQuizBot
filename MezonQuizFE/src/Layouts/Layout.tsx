@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type MouseEvent } from 'react'
 import {
   Avatar,
   Box,
   Button,
   Chip,
+  Divider,
   GlobalStyles,
   IconButton,
+  Menu,
+  MenuItem,
   Stack,
   Typography,
   useMediaQuery,
@@ -138,6 +141,28 @@ const Layout = () => {
   const isResponsive = useMediaQuery('(max-width:900px)')
   const themeMode = useThemeStore((state) => state.themeMode)
   const toggleTheme = useThemeStore((state) => state.toggleTheme)
+
+  const [profileMenuAnchor, setProfileMenuAnchor] = useState<HTMLElement | null>(null)
+  const isProfileMenuOpen = Boolean(profileMenuAnchor)
+
+  const handleOpenProfileMenu = (event: MouseEvent<HTMLElement>) => {
+    setProfileMenuAnchor(event.currentTarget)
+  }
+
+  const handleCloseProfileMenu = () => {
+    setProfileMenuAnchor(null)
+  }
+
+  const handleGoToWeb = () => {
+    handleCloseProfileMenu()
+    navigate(PUBLIC_HOME_PATH)
+  }
+
+  const handleLogout = () => {
+    handleCloseProfileMenu()
+    clearAuth()
+    navigate(PUBLIC_HOME_PATH, { replace: true })
+  }
 
   const colors = useMemo(
     () =>
@@ -407,13 +432,7 @@ const Layout = () => {
             </Stack>
 
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexShrink: 0 }}>
-              <Button
-                variant="outlined"
-                sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 700, borderColor: colors.border, color: colors.textPrimary, '&:hover': { borderColor: colors.textPrimary } }}
-                onClick={() => navigate(PUBLIC_HOME_PATH)}
-              >
-                Go To Web
-              </Button>
+
               {canCreateQuiz ? (
                 <Button
                   variant="contained"
@@ -438,6 +457,7 @@ const Layout = () => {
               </IconButton>
 
               <IconButton
+                onClick={handleOpenProfileMenu}
                 sx={{
                   p: 0,
                   width: 34,
@@ -466,6 +486,64 @@ const Layout = () => {
                   )}
                 </Avatar>
               </IconButton>
+
+              <Menu
+                anchorEl={profileMenuAnchor}
+                open={isProfileMenuOpen}
+                onClose={handleCloseProfileMenu}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      mt: 1.5,
+                      minWidth: 200,
+                      borderRadius: 2,
+                      bgcolor: colors.paperBg,
+                      border: `1px solid ${colors.border}`,
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                      '& .MuiMenuItem-root': {
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: colors.textPrimary,
+                        py: 1,
+                        '&:hover': {
+                          bgcolor: alpha('#0ea5e9', 0.1),
+                        },
+                      },
+                    },
+                  },
+                }}
+              >
+                <Box sx={{ px: 2, py: 1.5 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: colors.textPrimary,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {user?.displayName || user?.username || 'Quiz User'}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      mt: 0.5,
+                    }}
+                  >
+                    {user?.email}
+                  </Typography>
+                </Box>
+                <Divider sx={{ borderColor: colors.border }} />
+                <MenuItem onClick={handleGoToWeb}>
+                  Go To Web
+                </MenuItem>
+                <MenuItem onClick={handleLogout} sx={{ color: '#ef4444 !important' }}>
+                  Logout
+                </MenuItem>
+              </Menu>
             </Stack>
           </Stack>
 

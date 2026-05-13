@@ -11,9 +11,6 @@ public class MezonBotState
 {
     private readonly ConcurrentDictionary<string, DateTime> _recentAnswerSubmissions = new();
     private readonly TimeSpan _answerSubmissionDedupWindow = TimeSpan.FromSeconds(3);
-    
-    private readonly ConcurrentDictionary<string, DateTime> _recentOutboundMessages = new();
-    private readonly TimeSpan _outboundMessageDedupWindow = TimeSpan.FromSeconds(3);
 
     private readonly ConcurrentDictionary<long, DmRoute> _dmRoutes = new();
     private readonly ConcurrentDictionary<string, HashSet<int>> _pendingMultiChoiceSelections = new();
@@ -38,31 +35,6 @@ public class MezonBotState
         }
 
         _recentAnswerSubmissions[key] = now;
-        return false;
-    }
-
-    public bool ShouldSkipDuplicateOutboundMessage(long userId, ChannelMessageContent content)
-    {
-        var now = DateTime.UtcNow;
-
-        foreach (var item in _recentOutboundMessages)
-        {
-            if (now - item.Value > _outboundMessageDedupWindow)
-            {
-                _recentOutboundMessages.TryRemove(item.Key, out _);
-            }
-        }
-
-        var payload = JsonSerializer.Serialize(content);
-        var key = $"{userId}:{payload}";
-
-        if (_recentOutboundMessages.TryGetValue(key, out var lastSent)
-            && now - lastSent <= _outboundMessageDedupWindow)
-        {
-            return true;
-        }
-
-        _recentOutboundMessages[key] = now;
         return false;
     }
 

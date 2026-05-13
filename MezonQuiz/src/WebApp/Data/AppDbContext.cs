@@ -51,6 +51,7 @@ namespace WebApp.Data
             public DbSet<SessionParticipant> SessionParticipants => Set<SessionParticipant>();
             public DbSet<Answer> Answers => Set<Answer>();
             public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+            public DbSet<DedupRecord> DedupRecords => Set<DedupRecord>();
 
             public override int SaveChanges()
             {
@@ -261,6 +262,8 @@ namespace WebApp.Data
 
             protected override void OnModelCreating(ModelBuilder b)
             {
+                  b.Entity<DedupRecord>().HasKey(e => e.Key);
+
                   b.HasPostgresEnum<QuizVisibility>();
                   b.HasPostgresEnum<QuizStatus>();
                   b.HasPostgresEnum<SessionStatus>();
