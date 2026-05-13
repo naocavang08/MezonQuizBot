@@ -18,6 +18,16 @@ namespace WebApp.Application.Categories.Services
             ArgumentNullException.ThrowIfNull(request);
             request.Validate();
 
+            var existCategory = await _dbContext.QuizCategories
+                .FirstOrDefaultAsync(c =>
+                    c.Name.ToLower() == request.Name.ToLower() ||
+                    (c.Slug.ToLower() == request.Slug.ToLower()));
+
+            if (existCategory != null)
+            {
+                throw new ArgumentException("Category name or slug already exists.");
+            }
+
             var category = new QuizCategory
             {
                 Id = Guid.NewGuid(),

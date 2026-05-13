@@ -21,6 +21,14 @@ namespace WebApp.Application.Categories.Dtos
             {
                 throw new ArgumentException("Category name is required.", nameof(Name));
             }
+            else if (string.IsNullOrWhiteSpace(Slug))
+            {
+                throw new ArgumentException("Category slug is required.", nameof(Slug));
+            }
+            else if (SortOrder < 0)
+            {
+                throw new ArgumentException("Category sort order must be non-negative.", nameof(SortOrder));
+            }
         }
 
     }
