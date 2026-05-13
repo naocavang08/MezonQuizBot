@@ -14,6 +14,7 @@ import {
 	Typography,
 	CircularProgress,
 	FormControlLabel,
+	Switch,
 } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { getApiErrorMessage } from "../../Api/ApiClient";
@@ -470,6 +471,18 @@ const RolePage = () => {
 								setValue("description", e.target.value, { shouldValidate: false });
 							}}
 							disabled={loading}
+						/>
+						<FormControlLabel
+							control={
+								<Switch
+									checked={newRole.isSystem}
+									onChange={(e) => {
+										setNewRole((prev) => ({ ...prev, isSystem: e.target.checked }));
+										setValue("isSystem", e.target.checked, { shouldValidate: false });
+									}}
+								/>
+							}
+							label="System Role"
 						/>
 					</Stack>
 				</DialogContent>
