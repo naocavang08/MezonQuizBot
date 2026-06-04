@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using WebApp.Data;
 using WebApp.Domain.Entites;
+using WebApp.Application.Auth.Authorization;
 using WebApp.Application.ManageQuiz.Dtos;
 using static WebApp.Domain.Enums.Status;
 
@@ -240,7 +241,7 @@ namespace WebApp.Application.ManageQuiz.Services
             if (quiz is null)
                 throw new ArgumentException("Quiz not found.");
 
-            if (quiz.CreatorId != userId)
+            if (!await CanManageQuizAsync(quiz, userId))
                 throw new UnauthorizedAccessException("You do not have permission to update this quiz.");
 
             var mappedQuestions = MapQuestions(input.Questions);
@@ -272,13 +273,20 @@ namespace WebApp.Application.ManageQuiz.Services
             };
         }
 
-        public async Task DeleteQuiz(Quiz quiz)
+        public async Task DeleteQuiz(Guid userId, Guid quizId)
         {
+            var quiz = await GetQuiz(quizId);
+            if (quiz is null)
+                throw new ArgumentException("Quiz not found.");
+
+            if (!await CanManageQuizAsync(quiz, userId))
+                throw new UnauthorizedAccessException("You do not have permission to delete this quiz.");
+
             _dbContext.Quizzes.Remove(quiz);
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<QuizQuestion> AddQuestion(Guid quizId, QuizQuestion questionData)
+        public async Task<QuizQuestion> AddQuestion(Guid userId, Guid quizId, QuizQuestion questionData)
         {
             ArgumentNullException.ThrowIfNull(questionData);
             questionData.Validate();
@@ -286,6 +294,9 @@ namespace WebApp.Application.ManageQuiz.Services
             var quiz = await GetQuiz(quizId);
             if (quiz is null)
                 throw new ArgumentException("Quiz not found.");
+
+            if (!await CanManageQuizAsync(quiz, userId))
+                throw new UnauthorizedAccessException("You do not have permission to update this quiz.");
 
             quiz.Questions.Add(questionData);
             UpdateQuizMetadata(quiz);
@@ -294,7 +305,7 @@ namespace WebApp.Application.ManageQuiz.Services
             return questionData;
         }
 
-        public async Task<QuizQuestion> UpdateQuestion(Guid quizId, int questionIndex, QuizQuestion questionData)
+        public async Task<QuizQuestion> UpdateQuestion(Guid userId, Guid quizId, int questionIndex, QuizQuestion questionData)
         {
             ArgumentNullException.ThrowIfNull(questionData);
             questionData.Validate();
@@ -302,6 +313,9 @@ namespace WebApp.Application.ManageQuiz.Services
             var quiz = await GetQuiz(quizId);
             if (quiz is null)
                 throw new ArgumentException("Quiz not found.");
+
+            if (!await CanManageQuizAsync(quiz, userId))
+                throw new UnauthorizedAccessException("You do not have permission to update this quiz.");
 
             if (!TryGetQuestionByListIndex(quiz, questionIndex, out _))
                 throw new ArgumentException("Question not found.");
@@ -313,11 +327,14 @@ namespace WebApp.Application.ManageQuiz.Services
             return questionData;
         }
 
-        public async Task DeleteQuestion(Guid quizId, int questionIndex)
+        public async Task DeleteQuestion(Guid userId, Guid quizId, int questionIndex)
         {
             var quiz = await GetQuiz(quizId);
             if (quiz is null)
                 throw new ArgumentException("Quiz not found.");
+
+            if (!await CanManageQuizAsync(quiz, userId))
+                throw new UnauthorizedAccessException("You do not have permission to update this quiz.");
 
             if (!TryGetQuestionByListIndex(quiz, questionIndex, out _))
                 throw new ArgumentException("Question not found.");
@@ -328,7 +345,7 @@ namespace WebApp.Application.ManageQuiz.Services
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<QuizOption> AddOption(Guid quizId, int questionIndex, QuizOption optionData)
+        public async Task<QuizOption> AddOption(Guid userId, Guid quizId, int questionIndex, QuizOption optionData)
         {
             ArgumentNullException.ThrowIfNull(optionData);
             optionData.Validate();
@@ -336,6 +353,9 @@ namespace WebApp.Application.ManageQuiz.Services
             var quiz = await GetQuiz(quizId);
             if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
                 throw new ArgumentException("Quiz or question not found.");
+
+            if (!await CanManageQuizAsync(quiz, userId))
+                throw new UnauthorizedAccessException("You do not have permission to update this quiz.");
 
             question.Options.Add(optionData);
             try
@@ -354,7 +374,7 @@ namespace WebApp.Application.ManageQuiz.Services
             return optionData;
         }
 
-        public async Task<QuizOption> UpdateOption(Guid quizId, int questionIndex, int optionIndex, QuizOption optionData)
+        public async Task<QuizOption> UpdateOption(Guid userId, Guid quizId, int questionIndex, int optionIndex, QuizOption optionData)
         {
             ArgumentNullException.ThrowIfNull(optionData);
             optionData.Validate();
@@ -362,6 +382,9 @@ namespace WebApp.Application.ManageQuiz.Services
             var quiz = await GetQuiz(quizId);
             if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
                 throw new ArgumentException("Quiz or question not found.");
+
+            if (!await CanManageQuizAsync(quiz, userId))
+                throw new UnauthorizedAccessException("You do not have permission to update this quiz.");
 
             if (!TryGetOptionByListIndex(question, optionIndex, out _))
                 throw new ArgumentException("Option not found.");
@@ -385,11 +408,14 @@ namespace WebApp.Application.ManageQuiz.Services
             return optionData;
         }
 
-        public async Task DeleteOption(Guid quizId, int questionIndex, int optionIndex)
+        public async Task DeleteOption(Guid userId, Guid quizId, int questionIndex, int optionIndex)
         {
             var quiz = await GetQuiz(quizId);
             if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
                 throw new ArgumentException("Quiz or question not found.");
+
+            if (!await CanManageQuizAsync(quiz, userId))
+                throw new UnauthorizedAccessException("You do not have permission to update this quiz.");
 
             if (!TryGetOptionByListIndex(question, optionIndex, out var optionToRemove))
                 throw new ArgumentException("Option not found.");
@@ -411,7 +437,7 @@ namespace WebApp.Application.ManageQuiz.Services
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<QuizSettings> UpdateQuizSettings(Guid quizId, QuizSettings settingsData)
+        public async Task<QuizSettings> UpdateQuizSettings(Guid userId, Guid quizId, QuizSettings settingsData)
         {
             ArgumentNullException.ThrowIfNull(settingsData);
             settingsData.Validate();
@@ -419,6 +445,9 @@ namespace WebApp.Application.ManageQuiz.Services
             var quiz = await GetQuiz(quizId);
             if (quiz is null)
                 throw new ArgumentException("Quiz not found.");
+
+            if (!await CanManageQuizAsync(quiz, userId))
+                throw new UnauthorizedAccessException("You do not have permission to update this quiz.");
 
             quiz.Settings = MapSettings(settingsData);
             UpdateQuizMetadata(quiz);
@@ -518,6 +547,34 @@ namespace WebApp.Application.ManageQuiz.Services
             quiz.Questions ??= new List<QuizQuestion>();
             quiz.TotalPoints = quiz.Questions.Sum(q => q.Points);
             quiz.UpdatedAt = DateTime.UtcNow;
+        }
+
+        private async Task<bool> CanManageQuizAsync(Quiz quiz, Guid userId)
+        {
+            if (quiz.CreatorId == userId)
+            {
+                return true;
+            }
+
+            var hasSystemRole = await _dbContext.UserRoles
+                .AsNoTracking()
+                .Where(ur => ur.UserId == userId)
+                .Join(_dbContext.Roles.AsNoTracking(), ur => ur.RoleId, role => role.Id, (ur, role) => role.IsSystem)
+                .AnyAsync(isSystem => isSystem);
+
+            if (hasSystemRole)
+            {
+                return true;
+            }
+
+            return await _dbContext.UserRoles
+                .AsNoTracking()
+                .Where(ur => ur.UserId == userId)
+                .Join(_dbContext.RolePermissions.AsNoTracking(), ur => ur.RoleId, rp => rp.RoleId, (ur, rp) => rp.PermissionId)
+                .Join(_dbContext.Permissions.AsNoTracking(), permissionId => permissionId, p => p.Id, (permissionId, p) => p.Resource + "." + p.Action)
+                .AnyAsync(permissionName =>
+                    permissionName == PermissionNames.Quizzes.Admin_List ||
+                    permissionName == PermissionNames.Quizzes.Admin_View);
         }
 
         private static bool TryGetQuestionByListIndex(Quiz quiz, int questionIndex, out QuizQuestion question)

@@ -74,9 +74,15 @@ namespace WebApp.Application.ManageQuizSession
             PermissionNames.Sessions.Admin_View)]
         public async Task<IActionResult> JoinByCode(string code, [FromBody] JoinQuizSessionDto request)
         {
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
             try
             {
-                var result = await _sessionService.JoinByCode(code, request);
+                _ = request;
+                var result = await _sessionService.JoinByCodeForUser(code, currentUserId);
                 if (!result.Success)
                 {
                     return BadRequest(new { Message = result.Message });
@@ -91,6 +97,7 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/clear")]
+        [PermissionAuthorize(PermissionNames.Sessions.Moderate)]
         public async Task<IActionResult> ClearParticipant(Guid sessionId, [FromBody] ClearParticipantDto request)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -225,6 +232,10 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpGet("{sessionId}/current-question")]
+        [PermissionAuthorize(
+            PermissionNames.Sessions.Player_View,
+            PermissionNames.Sessions.Creator_View,
+            PermissionNames.Sessions.Admin_View)]
         public async Task<IActionResult> GetCurrentQuestion(Guid sessionId)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
@@ -242,11 +253,20 @@ namespace WebApp.Application.ManageQuizSession
         }
 
         [HttpPost("{sessionId}/answers")]
+        [PermissionAuthorize(
+            PermissionNames.Sessions.Player_View,
+            PermissionNames.Sessions.Creator_View,
+            PermissionNames.Sessions.Admin_View)]
         public async Task<IActionResult> SubmitAnswer(Guid sessionId, [FromBody] SubmitAnswerDto request)
         {
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
             try
             {
-                var result = await _sessionService.SubmitAnswer(sessionId, request);
+                var result = await _sessionService.SubmitAnswerForUser(sessionId, currentUserId, request);
                 if (!result.Success)
                     return BadRequest(new { Message = result.Message });
 

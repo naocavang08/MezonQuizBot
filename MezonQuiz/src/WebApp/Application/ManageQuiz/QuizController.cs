@@ -55,8 +55,7 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Creator_List, PermissionNames.Quizzes.Admin_List)]
         public async Task<IActionResult> GetAllQuizzes([FromQuery] QuizQuery input)
         {
-            var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userIdClaimValue, out var userId))
+            if (!TryGetCurrentUserId(out var userId))
             {
                 _logger.LogWarning("Unauthorized quiz list request: missing/invalid NameIdentifier claim.");
                 return Unauthorized(new { Message = "User identity is invalid or missing." });
@@ -80,8 +79,7 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Create)]
         public async Task<IActionResult> CreateQuiz([FromBody] SaveQuizDto input)
         {
-            var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userIdClaimValue, out var userId))
+            if (!TryGetCurrentUserId(out var userId))
             {
                 _logger.LogWarning("Unauthorized quiz list request: missing/invalid NameIdentifier claim.");
                 return Unauthorized(new { Message = "User identity is invalid or missing." });
@@ -102,8 +100,7 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateQuiz(Guid quizId, [FromBody] SaveQuizDto input)
         {
-            var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userIdClaimValue, out var userId))
+            if (!TryGetCurrentUserId(out var userId))
             {
                 _logger.LogWarning("Unauthorized quiz update request: missing/invalid NameIdentifier claim.");
                 return Unauthorized(new { Message = "User identity is invalid or missing." });
@@ -118,6 +115,11 @@ namespace WebApp.Application.ManageQuiz
             {
                 return BadRequest(new { Message = ex.Message });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Forbidden quiz update request for quiz {QuizId} by user {UserId}.", quizId, userId);
+                return Forbid();
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error while updating quiz {QuizId} by user {UserId}.", quizId, userId);
@@ -129,25 +131,51 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Delete)]
         public async Task<IActionResult> DeleteQuiz(Guid quizId)
         {
-            var quiz = await _quizService.GetQuiz(quizId);
-            if (quiz == null)
-                return NotFound(new { Message = "Quiz not found." });
-            await _quizService.DeleteQuiz(quiz);
-            return NoContent();
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                _logger.LogWarning("Unauthorized quiz delete request: missing/invalid NameIdentifier claim.");
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            try
+            {
+                await _quizService.DeleteQuiz(userId, quizId);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Forbidden quiz delete request for quiz {QuizId} by user {UserId}.", quizId, userId);
+                return Forbid();
+            }
         }
 
         [HttpPost("{quizId}/questions")]
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> AddQuestion(Guid quizId, [FromBody] QuizQuestion questionData)
         {
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                _logger.LogWarning("Unauthorized add question request: missing/invalid NameIdentifier claim.");
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
             try
             {
-                var added = await _quizService.AddQuestion(quizId, questionData);
+                var added = await _quizService.AddQuestion(userId, quizId, questionData);
                 return Ok(added);
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(new { Message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Forbidden add question request for quiz {QuizId} by user {UserId}.", quizId, userId);
+                return Forbid();
             }
         }
 
@@ -155,14 +183,25 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateQuestion(Guid quizId, int questionIndex, [FromBody] QuizQuestion questionData)
         {
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                _logger.LogWarning("Unauthorized update question request: missing/invalid NameIdentifier claim.");
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
             try
             {
-                var updated = await _quizService.UpdateQuestion(quizId, questionIndex, questionData);
+                var updated = await _quizService.UpdateQuestion(userId, quizId, questionIndex, questionData);
                 return Ok(updated);
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(new { Message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Forbidden update question request for quiz {QuizId} by user {UserId}.", quizId, userId);
+                return Forbid();
             }
         }
 
@@ -170,22 +209,51 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> DeleteQuestion(Guid quizId, int questionIndex)
         {
-            await _quizService.DeleteQuestion(quizId, questionIndex);
-            return NoContent();
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                _logger.LogWarning("Unauthorized delete question request: missing/invalid NameIdentifier claim.");
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            try
+            {
+                await _quizService.DeleteQuestion(userId, quizId, questionIndex);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Forbidden delete question request for quiz {QuizId} by user {UserId}.", quizId, userId);
+                return Forbid();
+            }
         }
 
         [HttpPost("{quizId}/questions/{questionIndex}/options")]
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> AddOption(Guid quizId, int questionIndex, [FromBody] QuizOption optionData)
         {
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                _logger.LogWarning("Unauthorized add option request: missing/invalid NameIdentifier claim.");
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
             try
             {
-                var added = await _quizService.AddOption(quizId, questionIndex, optionData);
+                var added = await _quizService.AddOption(userId, quizId, questionIndex, optionData);
                 return Ok(added);
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(new { Message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Forbidden add option request for quiz {QuizId} by user {UserId}.", quizId, userId);
+                return Forbid();
             }
         }
 
@@ -193,14 +261,25 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateOption(Guid quizId, int questionIndex, int optionIndex, [FromBody] QuizOption optionData)
         {
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                _logger.LogWarning("Unauthorized update option request: missing/invalid NameIdentifier claim.");
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
             try
             {
-                var updated = await _quizService.UpdateOption(quizId, questionIndex, optionIndex, optionData);
+                var updated = await _quizService.UpdateOption(userId, quizId, questionIndex, optionIndex, optionData);
                 return Ok(updated);
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(new { Message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Forbidden update option request for quiz {QuizId} by user {UserId}.", quizId, userId);
+                return Forbid();
             }
         }
 
@@ -208,22 +287,51 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> DeleteOption(Guid quizId, int questionIndex, int optionIndex)
         {
-            await _quizService.DeleteOption(quizId, questionIndex, optionIndex);
-            return NoContent();
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                _logger.LogWarning("Unauthorized delete option request: missing/invalid NameIdentifier claim.");
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
+            try
+            {
+                await _quizService.DeleteOption(userId, quizId, questionIndex, optionIndex);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Forbidden delete option request for quiz {QuizId} by user {UserId}.", quizId, userId);
+                return Forbid();
+            }
         }
 
         [HttpPut("{quizId}/settings")]
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> UpdateQuizSettings(Guid quizId, [FromBody] QuizSettings settingsData)
         {
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                _logger.LogWarning("Unauthorized update quiz settings request: missing/invalid NameIdentifier claim.");
+                return Unauthorized(new { Message = "User identity is invalid or missing." });
+            }
+
             try
             {
-                var updated = await _quizService.UpdateQuizSettings(quizId, settingsData);
+                var updated = await _quizService.UpdateQuizSettings(userId, quizId, settingsData);
                 return Ok(updated);
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(new { Message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Forbidden update quiz settings request for quiz {QuizId} by user {UserId}.", quizId, userId);
+                return Forbid();
             }
         }
 
@@ -241,6 +349,12 @@ namespace WebApp.Application.ManageQuiz
             }
 
             return Ok(new { Url = result.Url, Markdown = result.Markdown });
+        }
+
+        private bool TryGetCurrentUserId(out Guid userId)
+        {
+            var userIdClaimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Guid.TryParse(userIdClaimValue, out userId);
         }
     }
 }

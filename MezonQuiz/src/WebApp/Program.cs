@@ -18,8 +18,20 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? Array.Empty<string>();
+
+        if (builder.Environment.IsDevelopment() && allowedOrigins.Length == 0)
+        {
+            policy.AllowAnyOrigin();
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins);
+        }
+
         policy
-            .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -28,7 +40,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddSignalR(options =>
 {
-    options.EnableDetailedErrors = true;
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
 });
 builder.Services.AddHttpContextAccessor();
 
@@ -39,8 +51,11 @@ builder.Services
         options.MapInboundClaims = false;
 
         var jwtSettings = builder.Configuration.GetSection("JwtTokenSettings");
-        var signingKey = jwtSettings["SymmetricSecurityKey"]
-            ?? throw new InvalidOperationException("Missing JwtTokenSettings:SymmetricSecurityKey configuration.");
+        var signingKey = jwtSettings["SymmetricSecurityKey"];
+        if (string.IsNullOrWhiteSpace(signingKey))
+        {
+            throw new InvalidOperationException("Missing JwtTokenSettings:SymmetricSecurityKey configuration.");
+        }
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -59,8 +74,11 @@ builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Missing connection string: DefaultConnection.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("Missing connection string: DefaultConnection.");
+}
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
 dataSourceBuilder.MapEnum<QuizVisibility>("quiz_visibility");
@@ -120,15 +138,30 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var startupLogger = services.GetRequiredService<ILogger<Program>>();
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
         context.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        startupLogger.LogCritical(ex, "Database migration failed during startup.");
+        throw;
+    }
+
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
         await Seeder.SeedAsync(context);
     }
     catch (Exception ex)
     {
-        Console.WriteLine("Seeding error: " + ex.Message);
+        startupLogger.LogError(ex, "Database seeding failed during startup.");
+        if (!app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Startup:FailOnSeedError"))
+        {
+            throw;
+        }
     }
 }
 

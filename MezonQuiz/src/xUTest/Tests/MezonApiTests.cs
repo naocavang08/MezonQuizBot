@@ -6,7 +6,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Google.Protobuf;
-using Mezon.Protobuf;
+using Mezon.Net.Internal.Api;
 using Mezon_sdk.Models;
 using xUTest.TestUtils;
 

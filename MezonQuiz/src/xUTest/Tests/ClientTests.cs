@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Mezon.Protobuf;
+using Mezon.Net.Internal.Api;
 using Mezon_sdk;
 using Mezon_sdk.Managers;
 using Mezon_sdk.Messages;
 using Mezon_sdk.Models;
 using Mezon_sdk.Structures;
 
-using Rt = Mezon.Protobuf.Realtime;
-using PbChannelMessage = Mezon.Protobuf.ChannelMessage;
+using Rt = Mezon.Net.Internal.Realtime;
+using PbChannelMessage = Mezon.Net.Internal.Api.ChannelMessage;
 using SdkSession = Mezon_sdk.Session;
 using SdkUser = Mezon_sdk.Structures.User;
 

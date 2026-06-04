@@ -109,7 +109,7 @@ public class MezonCommandHandler
                 return;
             }
 
-            var joinResult = await quizSessionService.JoinByCode(code, new JoinQuizSessionDto
+            var joinResult = await quizSessionService.JoinByCodeFromBot(code, new JoinQuizSessionDto
             {
                 UserId = user.Id
             });

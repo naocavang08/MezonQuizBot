@@ -209,7 +209,20 @@ namespace WebApp.Application.ManageQuizSession.Services
             return (Success("Session created successfully."), dto);
         }
 
-        public async Task<SessionOperationResult> JoinByCode(string code, JoinQuizSessionDto request)
+        public Task<SessionOperationResult> JoinByCodeForUser(string code, Guid userId)
+        {
+            return JoinByCodeInternal(code, new JoinQuizSessionDto
+            {
+                UserId = userId
+            });
+        }
+
+        public Task<SessionOperationResult> JoinByCodeFromBot(string code, JoinQuizSessionDto request)
+        {
+            return JoinByCodeInternal(code, request);
+        }
+
+        private async Task<SessionOperationResult> JoinByCodeInternal(string code, JoinQuizSessionDto request)
         {
             if (string.IsNullOrWhiteSpace(code))
             {
@@ -613,7 +626,19 @@ namespace WebApp.Application.ManageQuizSession.Services
             return (Success("Current question loaded successfully."), dto);
         }
 
-        public async Task<SessionOperationResult> SubmitAnswer(Guid sessionId, SubmitAnswerDto request)
+        public Task<SessionOperationResult> SubmitAnswerForUser(Guid sessionId, Guid userId, SubmitAnswerDto request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            request.UserId = userId;
+            return SubmitAnswerInternal(sessionId, request);
+        }
+
+        public Task<SessionOperationResult> SubmitAnswerFromBot(Guid sessionId, SubmitAnswerDto request)
+        {
+            return SubmitAnswerInternal(sessionId, request);
+        }
+
+        private async Task<SessionOperationResult> SubmitAnswerInternal(Guid sessionId, SubmitAnswerDto request)
         {
             ArgumentNullException.ThrowIfNull(request);
             request.Validate();

@@ -1,4 +1,4 @@
-using Mezon.Protobuf;
+using Mezon.Net.Internal.Api;
 
 namespace xUTest.TestUtils
 {

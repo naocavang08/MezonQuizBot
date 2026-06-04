@@ -44,6 +44,7 @@ public class MezonWebhookTests
         return new MezonBotHostedService(
             Mock.Of<IServiceScopeFactory>(),
             configuration,
-            Mock.Of<ILogger<MezonBotHostedService>>());
+            Mock.Of<ILogger<MezonBotHostedService>>(),
+            LoggerFactory.Create(_ => { }));
     }
 }

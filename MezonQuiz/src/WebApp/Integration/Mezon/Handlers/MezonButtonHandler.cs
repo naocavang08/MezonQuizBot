@@ -150,7 +150,7 @@ public class MezonButtonHandler
                             .ToList();
                     }
 
-                    var multiChoiceSubmitResult = await quizSessionService.SubmitAnswer(sessionId, new SubmitAnswerDto
+                    var multiChoiceSubmitResult = await quizSessionService.SubmitAnswerFromBot(sessionId, new SubmitAnswerDto
                     {
                         UserId = user.Id,
                         SelectedOption = selectedIndexes[0],
@@ -235,7 +235,7 @@ public class MezonButtonHandler
                 questionIndex,
                 selectedOption);
 
-            var submitResult = await quizSessionService.SubmitAnswer(sessionId, new SubmitAnswerDto
+            var submitResult = await quizSessionService.SubmitAnswerFromBot(sessionId, new SubmitAnswerDto
             {
                 UserId = user.Id,
                 SelectedOption = resolvedOption,

@@ -18,10 +18,17 @@ namespace WebApp.Application.Categories.Services
             ArgumentNullException.ThrowIfNull(request);
             request.Validate();
 
+            var normalizedName = request.Name.Trim();
+            var normalizedSlug = string.IsNullOrWhiteSpace(request.Slug) ? null : request.Slug.Trim();
+            var normalizedNameLower = normalizedName.ToLower();
+            var normalizedSlugLower = normalizedSlug?.ToLower();
+
             var existCategory = await _dbContext.QuizCategories
                 .FirstOrDefaultAsync(c =>
-                    c.Name.ToLower() == request.Name.ToLower() ||
-                    (c.Slug.ToLower() == request.Slug.ToLower()));
+                    c.Name.ToLower() == normalizedNameLower ||
+                    (!string.IsNullOrWhiteSpace(normalizedSlugLower) &&
+                     c.Slug != null &&
+                     c.Slug.ToLower() == normalizedSlugLower));
 
             if (existCategory != null)
             {
@@ -31,8 +38,8 @@ namespace WebApp.Application.Categories.Services
             var category = new QuizCategory
             {
                 Id = Guid.NewGuid(),
-                Name = request.Name.Trim(),
-                Slug = request.Slug?.Trim(),
+                Name = normalizedName,
+                Slug = normalizedSlug,
                 Icon = request.Icon?.Trim(),
                 SortOrder = request.SortOrder,
                 CreatedAt = DateTime.UtcNow,
@@ -97,11 +104,30 @@ namespace WebApp.Application.Categories.Services
             ArgumentNullException.ThrowIfNull(request);
             request.Validate();
 
+            var normalizedName = request.Name.Trim();
+            var normalizedSlug = string.IsNullOrWhiteSpace(request.Slug) ? null : request.Slug.Trim();
+            var normalizedNameLower = normalizedName.ToLower();
+            var normalizedSlugLower = normalizedSlug?.ToLower();
+
+            var existCategory = await _dbContext.QuizCategories
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c =>
+                    c.Id != categoryId &&
+                    (c.Name.ToLower() == normalizedNameLower ||
+                     (!string.IsNullOrWhiteSpace(normalizedSlugLower) &&
+                      c.Slug != null &&
+                      c.Slug.ToLower() == normalizedSlugLower)));
+
+            if (existCategory != null)
+            {
+                throw new ArgumentException("Category name or slug already exists.");
+            }
+
             var category = await _dbContext.QuizCategories.FindAsync(categoryId);
             if (category == null) throw new ArgumentException("Category not found.");
-            category.Name = request.Name.Trim();
+            category.Name = normalizedName;
             category.SortOrder = request.SortOrder;
-            category.Slug = request.Slug?.Trim();
+            category.Slug = normalizedSlug;
             category.Icon = request.Icon?.Trim();
             _dbContext.QuizCategories.Update(category);
             await _dbContext.SaveChangesAsync();

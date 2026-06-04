@@ -21,7 +21,7 @@ namespace xUTest.Tests
             // Assert
             Assert.NotEqual(cid1, cid2);
             // cid sequence usually increments
-            Assert.True(long.Parse(cid1) < long.Parse(cid2));
+            Assert.True(cid1 < cid2);
         }
 
         [Fact]

@@ -9,7 +9,8 @@ using WebApp.Application.ManageQuizSession;
 using WebApp.Application.ManageQuizSession.Dtos;
 using WebApp.Data;
 using WebApp.Integration.Mezon;
-using PbChannelMessage = Mezon.Protobuf.ChannelMessage;
+using WebApp.Integration.Mezon.Handlers;
+using PbChannelMessage = Mezon.Net.Internal.Api.ChannelMessage;
 
 namespace xUTest.Tests;
 
@@ -20,7 +21,7 @@ public sealed class MezonBotHostedServiceTests
     {
         await using var harness = await CreateHarnessAsync();
         harness.QuizSessionService
-            .Setup(service => service.JoinByCode(
+            .Setup(service => service.JoinByCodeFromBot(
                 "ABCD1234",
                 It.Is<JoinQuizSessionDto>(dto => dto.UserId != Guid.Empty)))
             .ReturnsAsync(new SessionOperationResult
@@ -41,7 +42,7 @@ public sealed class MezonBotHostedServiceTests
         });
 
         harness.QuizSessionService.Verify(
-            svc => svc.JoinByCode(
+            svc => svc.JoinByCodeFromBot(
                 "ABCD1234",
                 It.Is<JoinQuizSessionDto>(dto => dto.UserId != Guid.Empty)),
             Times.Once);
@@ -66,7 +67,7 @@ public sealed class MezonBotHostedServiceTests
         });
 
         harness.QuizSessionService.Verify(
-            svc => svc.JoinByCode(It.IsAny<string>(), It.IsAny<JoinQuizSessionDto>()),
+            svc => svc.JoinByCodeFromBot(It.IsAny<string>(), It.IsAny<JoinQuizSessionDto>()),
             Times.Never);
         harness.QuizSessionService.Verify(
             svc => svc.LeaveSessions(It.IsAny<Guid>()),
@@ -110,15 +111,15 @@ public sealed class MezonBotHostedServiceTests
 
     private static async Task InvokeHandleChannelMessageAsync(MezonBotHostedService service, PbChannelMessage message)
     {
-        var method = typeof(MezonBotHostedService).GetMethod(
-            "HandleChannelMessageAsync",
+        var field = typeof(MezonBotHostedService).GetField(
+            "_commandHandler",
             BindingFlags.Instance | BindingFlags.NonPublic);
 
-        Assert.NotNull(method);
+        Assert.NotNull(field);
 
-        var task = method!.Invoke(service, [message]) as Task;
-        Assert.NotNull(task);
-        await task!;
+        var handler = field!.GetValue(service) as MezonCommandHandler;
+        Assert.NotNull(handler);
+        await handler!.HandleChannelMessageAsync(message);
     }
 
     private sealed class TestHarness : IAsyncDisposable
@@ -152,7 +153,8 @@ public sealed class MezonBotHostedServiceTests
             return new MezonBotHostedService(
                 ScopeFactory,
                 new ConfigurationBuilder().Build(),
-                Mock.Of<ILogger<MezonBotHostedService>>());
+                Mock.Of<ILogger<MezonBotHostedService>>(),
+                LoggerFactory.Create(_ => { }));
         }
 
         public async ValueTask DisposeAsync()

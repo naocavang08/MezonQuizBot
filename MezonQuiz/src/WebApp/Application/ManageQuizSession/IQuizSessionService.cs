@@ -9,7 +9,8 @@ namespace WebApp.Application.ManageQuizSession
         Task<List<QuizSessionDto>> GetAllSessions(Guid? QuizId);
         Task<QuizSessionDto?> GetSession(Guid sessionId);
         Task<(SessionOperationResult Result, QuizSessionDto? Session)> CreateSession(CreateQuizSessionDto request, Guid hostId);
-        Task<SessionOperationResult> JoinByCode(string code, JoinQuizSessionDto request);
+        Task<SessionOperationResult> JoinByCodeForUser(string code, Guid userId);
+        Task<SessionOperationResult> JoinByCodeFromBot(string code, JoinQuizSessionDto request);
         Task<SessionOperationResult> LeaveSessions(Guid userId);
         Task<SessionOperationResult> ClearParticipant(Guid sessionId, Guid hostId, ClearParticipantDto request);
         Task<SessionOperationResult> StartSession(Guid sessionId, Guid hostId);
@@ -20,7 +21,8 @@ namespace WebApp.Application.ManageQuizSession
         Task<SessionOperationResult> DeleteSession(Guid sessionId, Guid hostId);
         Task<SessionOperationResult> NextQuestion(Guid sessionId, Guid hostId);
         Task<(SessionOperationResult Result, QuizSessionQuestionDto? Question)> GetCurrentQuestion(Guid sessionId, Guid userId);
-        Task<SessionOperationResult> SubmitAnswer(Guid sessionId, SubmitAnswerDto request);
+        Task<SessionOperationResult> SubmitAnswerForUser(Guid sessionId, Guid userId, SubmitAnswerDto request);
+        Task<SessionOperationResult> SubmitAnswerFromBot(Guid sessionId, SubmitAnswerDto request);
         Task DispatchCurrentQuestionToParticipant(Guid sessionId, Guid userId);
         Task<QuizSessionDto?> GetCurrentSessionForUser(Guid userId);
         Task<List<SessionParticipantDto>> GetLeaderboard(Guid sessionId);
