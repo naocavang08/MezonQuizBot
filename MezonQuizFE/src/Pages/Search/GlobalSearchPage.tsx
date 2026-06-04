@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Card, CardActionArea, CardContent, Grid, Chip } from '@mui/material';
 import { searchGlobal } from '../../Api/search.api';
@@ -13,6 +13,7 @@ const GlobalSearchPage = () => {
   const query = searchParams.get('q') || '';
   const [results, setResults] = useState<GlobalSearchResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const searchRequestIdRef = useRef(0);
   const themeMode = useThemeStore((state) => state.themeMode);
 
   const permissionName = useAuthStore((state) => state.permissionName);
@@ -34,19 +35,30 @@ const GlobalSearchPage = () => {
   };
 
   useEffect(() => {
+    const requestId = searchRequestIdRef.current + 1;
+    searchRequestIdRef.current = requestId;
+
     const fetchSearchResults = async () => {
       if (!query.trim()) {
         setResults(null);
+        setLoading(false);
         return;
       }
       setLoading(true);
       try {
         const data = await searchGlobal(query, 50);
+        if (searchRequestIdRef.current !== requestId) {
+          return;
+        }
         setResults(data);
       } catch (error) {
-        console.error("Failed to search", error);
+        if (searchRequestIdRef.current === requestId) {
+          console.error("Failed to search", error);
+        }
       } finally {
-        setLoading(false);
+        if (searchRequestIdRef.current === requestId) {
+          setLoading(false);
+        }
       }
     };
 

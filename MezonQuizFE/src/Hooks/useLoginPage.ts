@@ -32,7 +32,7 @@ const useLoginPage = () => {
 			}
 
 			setAuth(response);
-			navigate(resolveDefaultAppPath(response.permissionName ?? [], response.hasSystemRole ?? false), { replace: true });
+			navigate(resolveDefaultAppPath(response.permissionName ?? [], response.hasSystemRole ?? false, response.roleName ?? []), { replace: true });
 		} catch (error: unknown) {
 			setErrorMessage(getApiErrorMessage(error, DEFAULT_ERROR_MESSAGE));
 		} finally {

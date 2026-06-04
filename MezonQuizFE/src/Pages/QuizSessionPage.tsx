@@ -73,7 +73,7 @@ const QuizSessionPage = () => {
         } finally {
             setIsLoadingSessions(false);
         }
-    }, [quizId, userId, showError]);
+    }, [quizId, showError]);
 
     useEffect(() => {
         let isMounted = true;

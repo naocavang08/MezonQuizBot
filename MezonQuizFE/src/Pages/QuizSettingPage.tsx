@@ -557,8 +557,8 @@ const QuizSettingPage = () => {
 
 		try {
 			setIsSubmitting(true);
-			const result = await updateQuiz(quizId, quizMethods.getValues());
-			showSuccess(result.message || "Quiz updated successfully.");
+			await updateQuiz(quizId, quizMethods.getValues());
+			showSuccess("Quiz updated successfully.");
 		} catch (error) {
 			showError(getApiErrorMessage(error, "Failed to update quiz. Please check your data and try again."));
 		} finally {
@@ -581,8 +581,8 @@ const QuizSettingPage = () => {
 
 		try {
 			setIsSavingSettings(true);
-			const result = await updateQuizSettings(quizId, settingsMethods.getValues());
-			showSuccess(result.message || "Quiz settings updated.");
+			await updateQuizSettings(quizId, settingsMethods.getValues());
+			showSuccess("Quiz settings updated.");
 		} catch (error) {
 			showError(getApiErrorMessage(error, "Failed to update quiz settings."));
 		} finally {
@@ -605,9 +605,9 @@ const QuizSettingPage = () => {
 
 		try {
 			setIsUpdatingStatus(true);
-			const result = await updateQuiz(quizId, quizMethods.getValues());
+			await updateQuiz(quizId, quizMethods.getValues());
 			setForm((prev) => ({ ...prev, status }));
-			showSuccess(result.message || "Quiz status updated.");
+			showSuccess("Quiz status updated.");
 		} catch (error) {
 			showError(getApiErrorMessage(error, "Failed to update quiz status."));
 		} finally {
@@ -627,8 +627,8 @@ const QuizSettingPage = () => {
 
 		try {
 			setIsDeletingQuiz(true);
-			const result = await deleteQuiz(quizId);
-			showSuccess(result.message || "Quiz removed.");
+			await deleteQuiz(quizId);
+			showSuccess("Quiz removed.");
 			navigate("/app/my-quizzes", { replace: true });
 		} catch (error) {
 			showError(getApiErrorMessage(error, "Failed to remove quiz."));

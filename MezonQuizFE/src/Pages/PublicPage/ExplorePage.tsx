@@ -396,6 +396,7 @@ const Explore = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const permissionName = useAuthStore((s) => s.permissionName);
   const hasSystemRole = useAuthStore((s) => s.hasSystemRole);
+  const roleName = useAuthStore((s) => s.roleName);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [isCategoryLoading, setIsCategoryLoading] = useState(true);
   const [categoryError, setCategoryError] = useState<string | null>(null);
@@ -460,7 +461,7 @@ const Explore = () => {
     fetchBotLink();
   }, []);
 
-  const defaultAppPath = resolveDefaultAppPath(permissionName, hasSystemRole);
+  const defaultAppPath = resolveDefaultAppPath(permissionName, hasSystemRole, roleName);
   const handleGetStarted = () => navigate(isAuthenticated ? defaultAppPath : '/login');
 
   return (

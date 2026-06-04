@@ -7,8 +7,16 @@ import type { GlobalSearchResult, SearchItem } from '../../Interface/search.dto'
 import useAuthStore from '../../Stores/login.store';
 import { ACCESS_PERMISSIONS, hasAnyPermission } from '../../Lib/Utils/permissions';
 
+type SearchBoxColors = {
+  textPrimary: string;
+  textSecondary: string;
+  fieldBg: string;
+  paperBg: string;
+  border: string;
+};
+
 interface GlobalSearchBoxProps {
-  colors: any;
+  colors: SearchBoxColors;
   currentTitle: string;
 }
 
@@ -26,13 +34,18 @@ const GlobalSearchBox = ({ colors, currentTitle }: GlobalSearchBoxProps) => {
   const canViewQuizzes = hasAnyPermission(permissionName, ACCESS_PERMISSIONS.QUIZ_WORKSPACE, hasSystemRole);
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchRequestIdRef = useRef(0);
   const debouncedSearchTerm = useDebounce(searchValue, 300);
 
   useEffect(() => {
+    const requestId = searchRequestIdRef.current + 1;
+    searchRequestIdRef.current = requestId;
+
     const fetchResults = async () => {
       if (!debouncedSearchTerm.trim()) {
         setResults(null);
         setIsOpen(false);
+        setLoading(false);
         return;
       }
 
@@ -40,11 +53,18 @@ const GlobalSearchBox = ({ colors, currentTitle }: GlobalSearchBoxProps) => {
       setIsOpen(true);
       try {
         const data = await searchGlobal(debouncedSearchTerm, 5);
+        if (searchRequestIdRef.current !== requestId) {
+          return;
+        }
         setResults(data);
       } catch (error) {
-        console.error('Failed to search', error);
+        if (searchRequestIdRef.current === requestId) {
+          console.error('Failed to search', error);
+        }
       } finally {
-        setLoading(false);
+        if (searchRequestIdRef.current === requestId) {
+          setLoading(false);
+        }
       }
     };
 

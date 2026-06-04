@@ -22,7 +22,10 @@ const useSessionRealtime = ({
     enabled = true,
 }: UseSessionRealtimeOptions) => {
     const callbackRef = useRef(onSessionStateChanged);
-    callbackRef.current = onSessionStateChanged;
+
+    useEffect(() => {
+        callbackRef.current = onSessionStateChanged;
+    }, [onSessionStateChanged]);
 
     useEffect(() => {
         if (!enabled || (joinGroup && !sessionId && !quizId)) {
@@ -54,6 +57,7 @@ const useSessionRealtime = ({
                 });
 
                 await hub.start();
+                connection = hub;
 
                 if (isDisposed) {
                     void hub.stop();
@@ -68,13 +72,16 @@ const useSessionRealtime = ({
                     await hub.invoke("JoinQuizGroup", quizId);
                 }
 
-                connection = hub;
-
                 if (timer !== undefined) {
                     window.clearInterval(timer);
                     timer = undefined;
                 }
             } catch (err) {
+                if (connection) {
+                    const conn = connection;
+                    connection = null;
+                    void conn.stop().catch(stopErr => console.warn("Error stopping SignalR connection:", stopErr));
+                }
                 console.warn("SignalR connection failed, falling back to polling:", err);
             }
         };

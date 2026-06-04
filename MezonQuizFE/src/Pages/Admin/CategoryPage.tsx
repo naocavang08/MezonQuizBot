@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Box,
 	Button,
@@ -63,7 +63,7 @@ const CategoryPage = () => {
 	const createMethods = useForm<SaveCategoryDto>({ defaultValues: defaultForm });
 	const editMethods = useForm<SaveCategoryDto>({ defaultValues: defaultForm });
 
-	const fetchCategories = async () => {
+	const fetchCategories = useCallback(async () => {
 		setLoading(true);
 		try {
 			const data = await getAllCategories();
@@ -73,11 +73,11 @@ const CategoryPage = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [showError]);
 
 	useEffect(() => {
 		fetchCategories();
-	}, [refreshKey]);
+	}, [fetchCategories, refreshKey]);
 
 	const normalizeForm = (form: SaveCategoryDto): SaveCategoryDto => ({
 		name: form.name.trim(),

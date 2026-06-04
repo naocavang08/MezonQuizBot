@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
 	Box,
 	Button,
@@ -74,7 +74,7 @@ const RolePage = () => {
 		},
 	});
 
-	const fetchRoles = async () => {
+	const fetchRoles = useCallback(async () => {
 		setLoading(true);
 		try {
 			const data = await getAllRoles();
@@ -85,9 +85,9 @@ const RolePage = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [showError]);
 
-	const fetchPermissions = async () => {
+	const fetchPermissions = useCallback(async () => {
 		if (!canUpdateRole) {
 			setPermissions([]);
 			return;
@@ -100,7 +100,7 @@ const RolePage = () => {
 			showError(getApiErrorMessage(err, "Failed to load permissions"));
 			console.error(err);
 		}
-	};
+	}, [canUpdateRole, showError]);
 
 	const fetchRolePermissions = async (roleId: string) => {
 		if (!canUpdateRole) {
@@ -141,7 +141,7 @@ const RolePage = () => {
 	useEffect(() => {
 		fetchRoles();
 		fetchPermissions();
-	}, [refreshKey]);
+	}, [fetchPermissions, fetchRoles, refreshKey]);
 
 	const handleEditPermissions = async (role: RoleResponse) => {
 		if (!canUpdateRole) {

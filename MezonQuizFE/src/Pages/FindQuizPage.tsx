@@ -7,12 +7,10 @@ import {
     Chip,
     CircularProgress,
     Container,
-    IconButton,
     InputAdornment,
     Pagination,
     Stack,
     TextField,
-    Tooltip,
     Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
@@ -159,6 +157,7 @@ const FindQuizPage = () => {
             : alpha(theme.palette.background.paper, 0.95),
     };
     const [categories, setCategories] = useState<CategoryDto[]>([]);
+    const [isCategoryLoading, setIsCategoryLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState<string>(() => searchParams.get("category") || "all");
     const [searchTitle, setSearchTitle] = useState("");
     const [page, setPage] = useState(1);
@@ -185,12 +184,17 @@ const FindQuizPage = () => {
 
     useEffect(() => {
         const loadCategories = async () => {
+            setIsCategoryLoading(true);
             try {
                 const data = await getAllCategories();
+                quizCacheRef.current.delete("all");
                 setCategories(data);
             } catch {
                 // Keep the page functional even if category API is unavailable.
+                quizCacheRef.current.delete("all");
                 setCategories([]);
+            } finally {
+                setIsCategoryLoading(false);
             }
         };
 
@@ -238,6 +242,11 @@ const FindQuizPage = () => {
     }, [navigate]);
 
     const fetchQuizzes = useCallback(async (forceRefresh = false) => {
+        if (selectedCategory === "all" && isCategoryLoading) {
+            setIsLoading(true);
+            return;
+        }
+
         const cacheKey = selectedCategory === "all"
             ? "all"
             : `${selectedCategory}:${page}`;
@@ -317,17 +326,12 @@ const FindQuizPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [categories, categoryParam, page, selectedCategory, showError]);
+    }, [categories, categoryParam, isCategoryLoading, page, selectedCategory, showError]);
 
     useEffect(() => {
         void fetchQuizzes();
         // Intentionally include all query states to refetch as user changes filters.
     }, [fetchQuizzes, refreshKey]);
-
-    useEffect(() => {
-        // Categories are part of "all" query shape, so invalidate previous "all" cache when they change.
-        quizCacheRef.current.delete("all");
-    }, [categories]);
 
     const handleCategoryChange = useCallback((categoryId: string) => {
         setSelectedCategory((current) => {

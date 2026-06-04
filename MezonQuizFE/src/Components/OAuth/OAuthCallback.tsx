@@ -33,7 +33,7 @@ const OAuthCallback: React.FC = () => {
         }
 
         setAuth(response);
-        navigate(resolveDefaultAppPath(response.permissionName ?? [], response.hasSystemRole ?? false), { replace: true });
+        navigate(resolveDefaultAppPath(response.permissionName ?? [], response.hasSystemRole ?? false, response.roleName ?? []), { replace: true });
       } catch {
         setError('Không thể kết nối tới server hoặc xác thực thất bại.');
       }
