@@ -90,10 +90,7 @@ namespace WebApp.Application.ManageQuiz
             try
             {
                 var created = await _quizService.CreateQuiz(userId, input);
-                if (!created)
-                    return BadRequest(new { Message = "Invalid quiz data or failed to create quiz." });
-
-                return Ok(new { Message = "Quiz created successfully" });
+                return CreatedAtAction(nameof(GetQuiz), new { quizId = created.Id }, created);
             }
             catch (ArgumentException ex)
             {
@@ -112,10 +109,10 @@ namespace WebApp.Application.ManageQuiz
                 return Unauthorized(new { Message = "User identity is invalid or missing." });
             }
 
-            bool updated;
             try
             {
-                updated = await _quizService.UpdateQuiz(userId, quizId, input);
+                var updated = await _quizService.UpdateQuiz(userId, quizId, input);
+                return Ok(updated);
             }
             catch (ArgumentException ex)
             {
@@ -126,11 +123,6 @@ namespace WebApp.Application.ManageQuiz
                 _logger.LogError(ex, "Unexpected error while updating quiz {QuizId} by user {UserId}.", quizId, userId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "Unexpected server error while updating quiz." });
             }
-
-            if (!updated)
-                return BadRequest(new { Message = "Could not update quiz." });
-
-            return Ok(new { Message = $"Quiz {quizId} updated successfully" });
         }
 
         [HttpDelete("{quizId}")]
@@ -140,11 +132,8 @@ namespace WebApp.Application.ManageQuiz
             var quiz = await _quizService.GetQuiz(quizId);
             if (quiz == null)
                 return NotFound(new { Message = "Quiz not found." });
-            var deleted = await _quizService.DeleteQuiz(quiz);
-            if (!deleted)
-                return NotFound(new { Message = "Error occurred while deleting the quiz." });
-
-            return Ok(new { Message = $"Quiz {quizId} deleted successfully" });
+            await _quizService.DeleteQuiz(quiz);
+            return NoContent();
         }
 
         [HttpPost("{quizId}/questions")]
@@ -154,10 +143,7 @@ namespace WebApp.Application.ManageQuiz
             try
             {
                 var added = await _quizService.AddQuestion(quizId, questionData);
-                if (!added)
-                    return BadRequest(new { Message = "Could not add question to quiz." });
-
-                return Ok(new { Message = "Question added successfully" });
+                return Ok(added);
             }
             catch (ArgumentException ex)
             {
@@ -172,10 +158,7 @@ namespace WebApp.Application.ManageQuiz
             try
             {
                 var updated = await _quizService.UpdateQuestion(quizId, questionIndex, questionData);
-                if (!updated)
-                    return BadRequest(new { Message = "Could not update question." });
-
-                return Ok(new { Message = "Question updated successfully" });
+                return Ok(updated);
             }
             catch (ArgumentException ex)
             {
@@ -187,11 +170,8 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> DeleteQuestion(Guid quizId, int questionIndex)
         {
-            var deleted = await _quizService.DeleteQuestion(quizId, questionIndex);
-            if (!deleted)
-                return NotFound(new { Message = "Could not delete question." });
-
-            return Ok(new { Message = "Question deleted successfully" });
+            await _quizService.DeleteQuestion(quizId, questionIndex);
+            return NoContent();
         }
 
         [HttpPost("{quizId}/questions/{questionIndex}/options")]
@@ -201,10 +181,7 @@ namespace WebApp.Application.ManageQuiz
             try
             {
                 var added = await _quizService.AddOption(quizId, questionIndex, optionData);
-                if (!added)
-                    return BadRequest(new { Message = "Could not add option to question." });
-
-                return Ok(new { Message = "Option added successfully" });
+                return Ok(added);
             }
             catch (ArgumentException ex)
             {
@@ -219,10 +196,7 @@ namespace WebApp.Application.ManageQuiz
             try
             {
                 var updated = await _quizService.UpdateOption(quizId, questionIndex, optionIndex, optionData);
-                if (!updated)
-                    return BadRequest(new { Message = "Could not update option." });
-
-                return Ok(new { Message = "Option updated successfully" });
+                return Ok(updated);
             }
             catch (ArgumentException ex)
             {
@@ -234,11 +208,8 @@ namespace WebApp.Application.ManageQuiz
         [PermissionAuthorize(PermissionNames.Quizzes.Update)]
         public async Task<IActionResult> DeleteOption(Guid quizId, int questionIndex, int optionIndex)
         {
-            var deleted = await _quizService.DeleteOption(quizId, questionIndex, optionIndex);
-            if (!deleted)
-                return NotFound(new { Message = "Could not delete option." });
-
-            return Ok(new { Message = "Option deleted successfully" });
+            await _quizService.DeleteOption(quizId, questionIndex, optionIndex);
+            return NoContent();
         }
 
         [HttpPut("{quizId}/settings")]
@@ -248,10 +219,7 @@ namespace WebApp.Application.ManageQuiz
             try
             {
                 var updated = await _quizService.UpdateQuizSettings(quizId, settingsData);
-                if (!updated)
-                    return BadRequest(new { Message = "Could not update quiz settings." });
-
-                return Ok(new { Message = "Quiz settings updated successfully" });
+                return Ok(updated);
             }
             catch (ArgumentException ex)
             {

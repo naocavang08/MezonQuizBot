@@ -15,22 +15,22 @@ namespace WebApp.Application.ManageQuiz
         Task<Quiz?> GetQuiz(Guid quizId);
 
         // Quiz operations
-        Task<bool> CreateQuiz(Guid userId, SaveQuizDto input);
-        Task<bool> UpdateQuiz(Guid userId, Guid quizId, SaveQuizDto input);
-        Task<bool> DeleteQuiz(Quiz quiz);
+        Task<QuizDto> CreateQuiz(Guid userId, SaveQuizDto input);
+        Task<QuizDto> UpdateQuiz(Guid userId, Guid quizId, SaveQuizDto input);
+        Task DeleteQuiz(Quiz quiz);
         
         // Question operations
-        Task<bool> AddQuestion(Guid quizId, QuizQuestion questionData);
-        Task<bool> UpdateQuestion(Guid quizId, int questionIndex, QuizQuestion questionData);
-        Task<bool> DeleteQuestion(Guid quizId, int questionIndex);
+        Task<QuizQuestion> AddQuestion(Guid quizId, QuizQuestion questionData);
+        Task<QuizQuestion> UpdateQuestion(Guid quizId, int questionIndex, QuizQuestion questionData);
+        Task DeleteQuestion(Guid quizId, int questionIndex);
         
         // Option operations
-        Task<bool> AddOption(Guid quizId, int questionIndex, QuizOption optionData);
-        Task<bool> UpdateOption(Guid quizId, int questionIndex, int optionIndex, QuizOption optionData);
-        Task<bool> DeleteOption(Guid quizId, int questionIndex, int optionIndex);
-
+        Task<QuizOption> AddOption(Guid quizId, int questionIndex, QuizOption optionData);
+        Task<QuizOption> UpdateOption(Guid quizId, int questionIndex, int optionIndex, QuizOption optionData);
+        Task DeleteOption(Guid quizId, int questionIndex, int optionIndex);
+        
         // Setting Options
-        Task<bool> UpdateQuizSettings(Guid quizId, QuizSettings settingsData);
+        Task<QuizSettings> UpdateQuizSettings(Guid quizId, QuizSettings settingsData);
 
         // Media operations
         Task<(bool Success, string Message, string? Url, string? Markdown)> UploadQuestionMedia(IFormFile? file, HttpRequest request);

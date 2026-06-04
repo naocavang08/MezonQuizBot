@@ -1,4 +1,4 @@
-﻿using WebApp.Application.Categories.Dtos;
+using WebApp.Application.Categories.Dtos;
 
 namespace WebApp.Application.Categories
 {
@@ -6,8 +6,8 @@ namespace WebApp.Application.Categories
     {
         Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync();
         Task<CategoryDto?> GetCategoryByIdAsync(Guid categoryId);
-        Task<bool> CreateCategoryAsync(SaveCategoryDto request);
-        Task<bool> UpdateCategoryAsync(Guid categoryId, SaveCategoryDto request);
-        Task<bool> DeleteCategoryAsync(Guid categoryId);
+        Task<CategoryDto> CreateCategoryAsync(SaveCategoryDto request);
+        Task<CategoryDto> UpdateCategoryAsync(Guid categoryId, SaveCategoryDto request);
+        Task DeleteCategoryAsync(Guid categoryId);
     }
 }

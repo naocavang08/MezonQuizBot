@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Application.Auth.Authorization;
 using WebApp.Application.Categories.Dtos;
@@ -23,6 +23,15 @@ namespace WebApp.Application.Categories
             return Ok(categories);
         }
 
+        [HttpGet("{id}")]
+        [PermissionAuthorize(PermissionNames.Categories.Admin_List, PermissionNames.Categories.Creator_List, PermissionNames.Categories.Player_List)]
+        public async Task<IActionResult> GetCategoryById(Guid id)
+        {
+            var category = await _categoryService.GetCategoryByIdAsync(id);
+            if (category == null) return NotFound();
+            return Ok(category);
+        }
+
         [HttpPost]
         [PermissionAuthorize(PermissionNames.Categories.Create)]
         public async Task<IActionResult> CreateCategory([FromBody] SaveCategoryDto request)
@@ -30,8 +39,7 @@ namespace WebApp.Application.Categories
             try
             {
                 var result = await _categoryService.CreateCategoryAsync(request);
-                if (result) return Ok();
-                return BadRequest("Failed to create category");
+                return CreatedAtAction(nameof(GetCategoryById), new { id = result.Id }, result);
             }
             catch (ArgumentException ex)
             {
@@ -46,8 +54,7 @@ namespace WebApp.Application.Categories
             try
             {
                 var result = await _categoryService.UpdateCategoryAsync(id, request);
-                if (result) return Ok();
-                return NotFound("Category not found");
+                return Ok(result);
             }
             catch (ArgumentException ex)
             {
@@ -59,9 +66,8 @@ namespace WebApp.Application.Categories
         [PermissionAuthorize(PermissionNames.Categories.Delete)]
         public async Task<IActionResult> DeleteCategory(Guid id)
         {
-            var result = await _categoryService.DeleteCategoryAsync(id);
-            if (result) return Ok();
-            return NotFound("Category not found");
+            await _categoryService.DeleteCategoryAsync(id);
+            return NoContent();
         }
     }
 }

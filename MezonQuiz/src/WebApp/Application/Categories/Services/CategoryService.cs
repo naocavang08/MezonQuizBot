@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using WebApp.Application.Categories;
 using WebApp.Application.Categories.Dtos;
 using WebApp.Data;
@@ -13,7 +13,7 @@ namespace WebApp.Application.Categories.Services
         {
             _dbContext = dbContext;
         }
-        public async Task<bool> CreateCategoryAsync(SaveCategoryDto request)
+        public async Task<CategoryDto> CreateCategoryAsync(SaveCategoryDto request)
         {
             ArgumentNullException.ThrowIfNull(request);
             request.Validate();
@@ -38,18 +38,26 @@ namespace WebApp.Application.Categories.Services
                 CreatedAt = DateTime.UtcNow,
             };
             _dbContext.QuizCategories.Add(category);
-            var result = await _dbContext.SaveChangesAsync();
-            return result > 0;
+            await _dbContext.SaveChangesAsync();
+            return new CategoryDto
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Slug = category.Slug,
+                Icon = category.Icon,
+                SortOrder = category.SortOrder,
+                CreatedAt = category.CreatedAt,
+            };
         }
 
-        public async Task<bool> DeleteCategoryAsync(Guid categoryId)
+        public async Task DeleteCategoryAsync(Guid categoryId)
         {
             var category = await _dbContext.QuizCategories.FindAsync(categoryId);
-            if (category == null)
-                return false;
-            _dbContext.QuizCategories.Remove(category);
-            var result = await _dbContext.SaveChangesAsync();
-            return result > 0;
+            if (category != null)
+            {
+                _dbContext.QuizCategories.Remove(category);
+                await _dbContext.SaveChangesAsync();
+            }
         }
 
         public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
@@ -84,20 +92,28 @@ namespace WebApp.Application.Categories.Services
             };
         }
 
-        public async Task<bool> UpdateCategoryAsync(Guid categoryId, SaveCategoryDto request)
+        public async Task<CategoryDto> UpdateCategoryAsync(Guid categoryId, SaveCategoryDto request)
         {
             ArgumentNullException.ThrowIfNull(request);
             request.Validate();
 
             var category = await _dbContext.QuizCategories.FindAsync(categoryId);
-            if (category == null) return false;
+            if (category == null) throw new ArgumentException("Category not found.");
             category.Name = request.Name.Trim();
             category.SortOrder = request.SortOrder;
             category.Slug = request.Slug?.Trim();
             category.Icon = request.Icon?.Trim();
             _dbContext.QuizCategories.Update(category);
-            var result = await _dbContext.SaveChangesAsync();
-            return result > 0;
+            await _dbContext.SaveChangesAsync();
+            return new CategoryDto
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Slug = category.Slug,
+                Icon = category.Icon,
+                SortOrder = category.SortOrder,
+                CreatedAt = category.CreatedAt,
+            };
         }
     }
 }

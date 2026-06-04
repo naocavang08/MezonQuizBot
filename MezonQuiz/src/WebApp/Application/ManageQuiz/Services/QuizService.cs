@@ -172,7 +172,7 @@ namespace WebApp.Application.ManageQuiz.Services
             return quiz;
         }
 
-        public async Task<bool> CreateQuiz(Guid userId, SaveQuizDto input)
+        public async Task<QuizDto> CreateQuiz(Guid userId, SaveQuizDto input)
         {
             ArgumentNullException.ThrowIfNull(input);
             input.Validate();
@@ -205,10 +205,23 @@ namespace WebApp.Application.ManageQuiz.Services
             };
 
             _dbContext.Quizzes.Add(quiz);
-            return await _dbContext.SaveChangesAsync() > 0;
+            await _dbContext.SaveChangesAsync();
+            return new QuizDto
+            {
+                Id = quiz.Id,
+                CreatorId = quiz.CreatorId,
+                Title = quiz.Title,
+                Description = quiz.Description,
+                CategoryId = quiz.CategoryId,
+                TotalPoints = quiz.TotalPoints,
+                Visibility = quiz.Visibility,
+                Status = quiz.Status,
+                CreatedAt = quiz.CreatedAt,
+                UpdatedAt = quiz.UpdatedAt
+            };
         }
 
-        public async Task<bool> UpdateQuiz(Guid userId, Guid quizId, SaveQuizDto input)
+        public async Task<QuizDto> UpdateQuiz(Guid userId, Guid quizId, SaveQuizDto input)
         {
             ArgumentNullException.ThrowIfNull(input);
             input.Validate();
@@ -225,10 +238,10 @@ namespace WebApp.Application.ManageQuiz.Services
             var quiz = await GetQuiz(quizId);
 
             if (quiz is null)
-                return false;
+                throw new ArgumentException("Quiz not found.");
 
             if (quiz.CreatorId != userId)
-                return false;
+                throw new UnauthorizedAccessException("You do not have permission to update this quiz.");
 
             var mappedQuestions = MapQuestions(input.Questions);
 
@@ -242,65 +255,87 @@ namespace WebApp.Application.ManageQuiz.Services
             quiz.Status = input.Status;
             UpdateQuizMetadata(quiz);
 
-            return await _dbContext.SaveChangesAsync() > 0;
+            await _dbContext.SaveChangesAsync();
+
+            return new QuizDto
+            {
+                Id = quiz.Id,
+                CreatorId = quiz.CreatorId,
+                Title = quiz.Title,
+                Description = quiz.Description,
+                CategoryId = quiz.CategoryId,
+                TotalPoints = quiz.TotalPoints,
+                Visibility = quiz.Visibility,
+                Status = quiz.Status,
+                CreatedAt = quiz.CreatedAt,
+                UpdatedAt = quiz.UpdatedAt
+            };
         }
 
-        public async Task<bool> DeleteQuiz(Quiz quiz)
+        public async Task DeleteQuiz(Quiz quiz)
         {
             _dbContext.Quizzes.Remove(quiz);
-            return await _dbContext.SaveChangesAsync() > 0;
+            await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<bool> AddQuestion(Guid quizId, QuizQuestion questionData)
+        public async Task<QuizQuestion> AddQuestion(Guid quizId, QuizQuestion questionData)
         {
             ArgumentNullException.ThrowIfNull(questionData);
             questionData.Validate();
 
             var quiz = await GetQuiz(quizId);
             if (quiz is null)
-                return false;
+                throw new ArgumentException("Quiz not found.");
 
             quiz.Questions.Add(questionData);
             UpdateQuizMetadata(quiz);
 
-            return await _dbContext.SaveChangesAsync() > 0;
+            await _dbContext.SaveChangesAsync();
+            return questionData;
         }
 
-        public async Task<bool> UpdateQuestion(Guid quizId, int questionIndex, QuizQuestion questionData)
+        public async Task<QuizQuestion> UpdateQuestion(Guid quizId, int questionIndex, QuizQuestion questionData)
         {
             ArgumentNullException.ThrowIfNull(questionData);
             questionData.Validate();
 
             var quiz = await GetQuiz(quizId);
-            if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out _))
-                return false;
+            if (quiz is null)
+                throw new ArgumentException("Quiz not found.");
+
+            if (!TryGetQuestionByListIndex(quiz, questionIndex, out _))
+                throw new ArgumentException("Question not found.");
 
             quiz.Questions[questionIndex] = questionData;
             UpdateQuizMetadata(quiz);
 
-            return await _dbContext.SaveChangesAsync() > 0;
+            await _dbContext.SaveChangesAsync();
+            return questionData;
         }
 
-        public async Task<bool> DeleteQuestion(Guid quizId, int questionIndex)
+        public async Task DeleteQuestion(Guid quizId, int questionIndex)
         {
             var quiz = await GetQuiz(quizId);
-            if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out _))
-                return false;
+            if (quiz is null)
+                throw new ArgumentException("Quiz not found.");
+
+            if (!TryGetQuestionByListIndex(quiz, questionIndex, out _))
+                throw new ArgumentException("Question not found.");
 
             quiz.Questions.RemoveAt(questionIndex);
             UpdateQuizMetadata(quiz);
 
-            return await _dbContext.SaveChangesAsync() > 0;
+            await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<bool> AddOption(Guid quizId, int questionIndex, QuizOption optionData)
+        public async Task<QuizOption> AddOption(Guid quizId, int questionIndex, QuizOption optionData)
         {
             ArgumentNullException.ThrowIfNull(optionData);
             optionData.Validate();
 
             var quiz = await GetQuiz(quizId);
             if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
-                return false;
+                throw new ArgumentException("Quiz or question not found.");
 
             question.Options.Add(optionData);
             try
@@ -315,20 +350,21 @@ namespace WebApp.Application.ManageQuiz.Services
 
             UpdateQuizMetadata(quiz);
 
-            return await _dbContext.SaveChangesAsync() > 0;
+            await _dbContext.SaveChangesAsync();
+            return optionData;
         }
 
-        public async Task<bool> UpdateOption(Guid quizId, int questionIndex, int optionIndex, QuizOption optionData)
+        public async Task<QuizOption> UpdateOption(Guid quizId, int questionIndex, int optionIndex, QuizOption optionData)
         {
             ArgumentNullException.ThrowIfNull(optionData);
             optionData.Validate();
 
             var quiz = await GetQuiz(quizId);
             if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
-                return false;
+                throw new ArgumentException("Quiz or question not found.");
 
             if (!TryGetOptionByListIndex(question, optionIndex, out _))
-                return false;
+                throw new ArgumentException("Option not found.");
 
             var previousOption = question.Options[optionIndex];
             question.Options[optionIndex] = optionData;
@@ -345,17 +381,18 @@ namespace WebApp.Application.ManageQuiz.Services
 
             UpdateQuizMetadata(quiz);
 
-            return await _dbContext.SaveChangesAsync() > 0;
+            await _dbContext.SaveChangesAsync();
+            return optionData;
         }
 
-        public async Task<bool> DeleteOption(Guid quizId, int questionIndex, int optionIndex)
+        public async Task DeleteOption(Guid quizId, int questionIndex, int optionIndex)
         {
             var quiz = await GetQuiz(quizId);
             if (quiz is null || !TryGetQuestionByListIndex(quiz, questionIndex, out var question))
-                return false;
+                throw new ArgumentException("Quiz or question not found.");
 
             if (!TryGetOptionByListIndex(question, optionIndex, out var optionToRemove))
-                return false;
+                throw new ArgumentException("Option not found.");
 
             question.Options.RemoveAt(optionIndex);
 
@@ -371,22 +408,23 @@ namespace WebApp.Application.ManageQuiz.Services
 
             UpdateQuizMetadata(quiz);
 
-            return await _dbContext.SaveChangesAsync() > 0;
+            await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<bool> UpdateQuizSettings(Guid quizId, QuizSettings settingsData)
+        public async Task<QuizSettings> UpdateQuizSettings(Guid quizId, QuizSettings settingsData)
         {
             ArgumentNullException.ThrowIfNull(settingsData);
             settingsData.Validate();
 
             var quiz = await GetQuiz(quizId);
             if (quiz is null)
-                return false;
+                throw new ArgumentException("Quiz not found.");
 
             quiz.Settings = MapSettings(settingsData);
             UpdateQuizMetadata(quiz);
 
-            return await _dbContext.SaveChangesAsync() > 0;
+            await _dbContext.SaveChangesAsync();
+            return quiz.Settings;
         }
 
         public async Task<(bool Success, string Message, string? Url, string? Markdown)> UploadQuestionMedia(IFormFile? file, HttpRequest request)

@@ -112,25 +112,11 @@ export interface PagedQuizListDto<T extends AvailableQuizDto | QuizDto> {
     totalPages: number;
 }
 
-export interface CreateQuizResponse {
-    message: string;
-}
-
-export interface UpdateQuizResponse {
-    message: string;
-}
-
-export interface DeleteQuizResponse {
-    message: string;
-}
-
-export interface QuestionOperationResponse {
-    message: string;
-}
-
-export interface OptionOperationResponse {
-    message: string;
-}
+export type CreateQuizResponse = QuizDto;
+export type UpdateQuizResponse = QuizDto;
+export type DeleteQuizResponse = void;
+export type QuestionOperationResponse = QuizQuestionDto;
+export type OptionOperationResponse = QuizOptionDto;
 
 export type OperationResponse = {
     message: string;

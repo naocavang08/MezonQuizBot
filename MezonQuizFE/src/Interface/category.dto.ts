@@ -10,14 +10,6 @@ export interface SaveCategoryDto {
     sortOrder?: number;
 }
 
-export interface createCategoryResponse {
-    message: string;
-}
-
-export interface updateCategoryResponse {
-    message: string;
-}
-
-export interface deleteCategoryResponse {
-    message: string;
-}
+export type createCategoryResponse = CategoryDto;
+export type updateCategoryResponse = CategoryDto;
+export type deleteCategoryResponse = void;

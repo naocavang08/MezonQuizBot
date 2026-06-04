@@ -2,16 +2,13 @@ import apiClient from "./ApiClient";
 import type {
     CreateQuizResponse,
     DeleteQuizResponse,
-    OptionOperationResponse,
     PagedQuizListDto,
     QuizListQueryParams,
-    QuestionOperationResponse,
     QuizDto,
-    QuizOptionDto,
-    QuizQuestionDto,
     UpdateQuizResponse,
     SaveQuizDto,
     AvailableQuizDto,
+    QuizSettingsDto,
     Quiz,
 } from "../Interface/quiz.dto";
 
@@ -63,7 +60,7 @@ export const getAvailableQuiz = (id: string) => {
         .then((res) => {
             return res.data;
         }
-    );
+        );
 };
 
 export const getAllQuizzes = (params?: QuizListQueryParams) => {
@@ -112,79 +109,79 @@ export const deleteQuiz = (quizId: string) => {
         });
 };
 
-export const addQuestion = (quizId: string, question: QuizQuestionDto) => {
-    return apiClient
-        .post<QuestionOperationResponse>(`/api/Quiz/${quizId}/questions`, question)
-        .then((res) => {
-            return res.data;
-        });
-};
+// export const addQuestion = (quizId: string, question: QuizQuestionDto) => {
+//     return apiClient
+//         .post<QuestionOperationResponse>(`/api/Quiz/${quizId}/questions`, question)
+//         .then((res) => {
+//             return res.data;
+//         });
+// };
 
-export const updateQuestion = (quizId: string, questionIndex: number, question: QuizQuestionDto) => {
-    return apiClient
-        .put<QuestionOperationResponse>(
-            `/api/Quiz/${quizId}/questions/${questionIndex}`,
-            question
-        )
-        .then((res) => {
-            return res.data;
-        });
-};
+// export const updateQuestion = (quizId: string, questionIndex: number, question: QuizQuestionDto) => {
+//     return apiClient
+//         .put<QuestionOperationResponse>(
+//             `/api/Quiz/${quizId}/questions/${questionIndex}`,
+//             question
+//         )
+//         .then((res) => {
+//             return res.data;
+//         });
+// };
 
-export const deleteQuestion = (quizId: string, questionIndex: number) => {
-    return apiClient
-        .delete<QuestionOperationResponse>(
-            `/api/Quiz/${quizId}/questions/${questionIndex}`
-        )
-        .then((res) => {
-            return res.data;
-        });
-};
+// export const deleteQuestion = (quizId: string, questionIndex: number) => {
+//     return apiClient
+//         .delete<QuestionOperationResponse>(
+//             `/api/Quiz/${quizId}/questions/${questionIndex}`
+//         )
+//         .then((res) => {
+//             return res.data;
+//         });
+// };
 
-export const addOption = (quizId: string, questionIndex: number, option: QuizOptionDto) => {
-    return apiClient
-        .post<OptionOperationResponse>(
-            `/api/Quiz/${quizId}/questions/${questionIndex}/options`,
-            option
-        )
-        .then((res) => {
-            return res.data;
-        });
-};
+// export const addOption = (quizId: string, questionIndex: number, option: QuizOptionDto) => {
+//     return apiClient
+//         .post<OptionOperationResponse>(
+//             `/api/Quiz/${quizId}/questions/${questionIndex}/options`,
+//             option
+//         )
+//         .then((res) => {
+//             return res.data;
+//         });
+// };
 
-export const updateOption = (
-    quizId: string,
-    questionIndex: number,
-    optionIndex: number,
-    option: QuizOptionDto
-) => {
-    return apiClient
-        .put<OptionOperationResponse>(
-            `/api/Quiz/${quizId}/questions/${questionIndex}/options/${optionIndex}`,
-            option
-        )
-        .then((res) => {
-            return res.data;
-        });
-};
+// export const updateOption = (
+//     quizId: string,
+//     questionIndex: number,
+//     optionIndex: number,
+//     option: QuizOptionDto
+// ) => {
+//     return apiClient
+//         .put<OptionOperationResponse>(
+//             `/api/Quiz/${quizId}/questions/${questionIndex}/options/${optionIndex}`,
+//             option
+//         )
+//         .then((res) => {
+//             return res.data;
+//         });
+// };
 
-export const deleteOption = (
-    quizId: string,
-    questionIndex: number,
-    optionIndex: number
-) => {
-    return apiClient
-        .delete<OptionOperationResponse>(
-            `/api/Quiz/${quizId}/questions/${questionIndex}/options/${optionIndex}`
-        )
-        .then((res) => {
-            return res.data;
-        });
-};
+// export const deleteOption = (
+//     quizId: string,
+//     questionIndex: number,
+//     optionIndex: number
+// ) => {
+//     return apiClient
+//         .delete<OptionOperationResponse>(
+//             `/api/Quiz/${quizId}/questions/${questionIndex}/options/${optionIndex}`
+//         )
+//         .then((res) => {
+//             return res.data;
+//         });
+// };
 
 export const updateQuizSettings = (quizId: string, settings: Quiz["settings"]) => {
     return apiClient
-        .put<UpdateQuizResponse>(`/api/Quiz/${quizId}/settings`, settings)
+        .put<QuizSettingsDto>(`/api/Quiz/${quizId}/settings`, settings)
         .then((res) => {
             return res.data;
         });

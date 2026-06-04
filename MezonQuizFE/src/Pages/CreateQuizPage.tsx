@@ -479,8 +479,8 @@ const CreateQuizPage = () => {
 
 		try {
 			setIsSubmitting(true);
-			const result = await createQuiz(quizMethods.getValues());
-			showSuccess(result.message || "Quiz created successfully.");
+			await createQuiz(quizMethods.getValues());
+			showSuccess("Quiz created successfully.");
 
 			setTimeout(() => {
 				navigate("/app/my-quizzes", { replace: true });
