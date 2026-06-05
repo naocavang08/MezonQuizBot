@@ -20,16 +20,18 @@ The Docker image defaults `ASPNETCORE_ENVIRONMENT=Production`, so ASP.NET Core l
 
 ## Frontend configuration
 
-Point the frontend to the Render backend URL:
+When deploying the frontend separately, point it to the Render backend URL:
 
 ```text
 VITE_QUIZ_API_URL=https://<render-service-name>.onrender.com
 ```
 
-Update the Mezon OAuth callback URL to:
+If the frontend is deployed to Vercel, also add the Vercel production origin to `Cors:AllowedOrigins` in `APPSETTINGS_PRODUCTION`.
+
+Update the Mezon OAuth callback URL to the frontend callback route:
 
 ```text
-https://<render-service-name>.onrender.com/oauth/mezon/callback
+https://<frontend-production-domain>/oauth/mezon/callback
 ```
 
 ## Local Docker check

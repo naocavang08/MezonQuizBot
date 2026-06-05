@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { HubConnectionBuilder, LogLevel, type HubConnection, HubConnectionState } from "@microsoft/signalr";
 import type { SessionStateChangedDto } from "../Interface/session.dto";
+import { getApiBaseUrl } from "../Api/apiBaseUrl";
 
 type UseSessionRealtimeOptions = {
     sessionId?: string;
@@ -11,7 +12,7 @@ type UseSessionRealtimeOptions = {
     enabled?: boolean;
 };
 
-const resolveHubUrl = () => "/hubs/quiz-session";
+const resolveHubUrl = () => `${getApiBaseUrl()}/hubs/quiz-session`;
 
 const useSessionRealtime = ({
     sessionId,

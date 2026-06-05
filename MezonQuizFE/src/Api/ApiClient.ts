@@ -4,9 +4,10 @@ import type { LoginResponse } from '../Interface/login.dto';
 import { PUBLIC_HOME_PATH } from '../Lib/Utils/permissions';
 import useAuthStore from '../Stores/login.store';
 import { getRefreshToken, getTokenAccess } from '../Lib/Utils/localStorage';
+import { getApiBaseUrl } from './apiBaseUrl';
 
 const baseURL = axios.create({
-  baseURL: '',
+  baseURL: getApiBaseUrl(),
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
