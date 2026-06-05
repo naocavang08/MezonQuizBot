@@ -5,10 +5,8 @@ This deploys only the ASP.NET Core backend. The frontend can stay local or be ho
 ## Render service
 
 - Create a Render PostgreSQL instance first.
-- Create a Render Web Service from this repository.
-- Set **Root Directory** to `MezonQuiz`.
-- Set **Environment** to `Docker`.
-- Set **Dockerfile Path** to `Dockerfile`.
+- Create a Render Web Service from an existing Docker image.
+- Set the image to `docker.io/<dockerhub-username>/mezonquiz-api:latest`.
 - Set **Health Check Path** to `/`.
 - Disable Render auto-deploy if GitHub Actions should be the only deployment trigger.
 
@@ -45,18 +43,29 @@ On startup, the backend runs EF migrations and then seed data.
 
 ## GitHub Actions deployment
 
-The workflow `.github/workflows/deploy-backend-render.yml` verifies the backend and then triggers Render.
+The workflow `.github/workflows/deploy-backend-render.yml` verifies the backend, pushes the Docker image to Docker Hub, and then triggers Render.
+
+Create a Docker Hub access token, then add these GitHub repository secrets:
+
+```text
+Settings > Secrets and variables > Actions > New repository secret
+
+Name: DOCKERHUB_USERNAME
+Value: <Docker Hub username>
+
+Name: DOCKERHUB_TOKEN
+Value: <Docker Hub access token>
+```
 
 In Render, open the backend Web Service and create a **Deploy Hook**. Add that URL to GitHub:
 
 ```text
-Settings > Secrets and variables > Actions > New repository secret
-Name: RENDER_DEPLOY_HOOK_URL
+Name: DEPLOY_WEBHOOK_URL
 Value: <Render deploy hook URL>
 ```
 
 The workflow behavior is:
 
 - Pull requests that touch `MezonQuiz/**` run tests and Docker build only.
-- Pushes to `main` or `master` run tests, Docker build, then trigger Render deploy.
-- Manual runs through `workflow_dispatch` also trigger Render after verification.
+- Pushes to `main` or `master` run tests, push `latest` and commit-SHA tags to Docker Hub, then trigger Render deploy.
+- Manual runs through `workflow_dispatch` do the same after verification.
