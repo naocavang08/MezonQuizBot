@@ -5,9 +5,6 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
-    <RestoreFallbackFolders>$(RestoreFallbackFolders);$(UserProfile)\.nuget\packages</RestoreFallbackFolders>
-    <RestoreAdditionalProjectFallbackFolders>$(UserProfile)\.nuget\packages</RestoreAdditionalProjectFallbackFolders>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
