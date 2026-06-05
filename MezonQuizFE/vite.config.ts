@@ -9,18 +9,18 @@ export default defineConfig({
     allowedHosts: ['.ngrok-free.app'],
     proxy: {
       '/api': {
-        target: 'https://0.0.0.0:7086',
+        target: 'https://mezonquiz-api-latest.onrender.com',
         changeOrigin: true,
         secure: false,
       },
       '/hubs': {
-        target: 'https://0.0.0.0:7086',
+        target: 'https://mezonquiz-api-latest.onrender.com',
         changeOrigin: true,
         secure: false,
         ws: true,
       },
       '/uploads': {
-        target: 'https://0.0.0.0:7086',
+        target: 'https://mezonquiz-api-latest.onrender.com',
         changeOrigin: true,
         secure: false,
       },

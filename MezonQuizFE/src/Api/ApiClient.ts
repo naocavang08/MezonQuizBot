@@ -6,7 +6,7 @@ import useAuthStore from '../Stores/login.store';
 import { getRefreshToken, getTokenAccess } from '../Lib/Utils/localStorage';
 
 const baseURL = axios.create({
-  baseURL: import.meta.env.VITE_QUIZ_API_URL ?? '',
+  baseURL: '',
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
