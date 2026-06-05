@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import { MdLogin } from "react-icons/md";
 import CopyWrite from "../../Components/CopyWrite";
 import useLoginPage, { type LoginFormValues } from "../../Hooks/useLoginPage";
+import mezonIcon from "../../assets/mezon_icon.png";
 
 const usernameRules = {
     required: "Username là bắt buộc",
@@ -121,7 +122,7 @@ const LoginPage = () => {
                         variant="outlined"
                         size="large"
                         sx={{ color: "purple" }}
-                        startIcon={<img src="/src/assets/mezon_icon.png" alt="Mezon Logo" width={24} height={24} />}
+                        startIcon={<img src={mezonIcon} alt="Mezon Logo" width={24} height={24} />}
                         onClick={onLoginWithMezon}
                     >
                         Login With Mezon
