@@ -14,6 +14,8 @@ This deploys only the ASP.NET Core backend. The frontend can stay local or be ho
 
 Copy the keys from `.env.render.example` into Render Environment Variables and replace every placeholder.
 
+To reuse the full `appsettings.json` without baking it into the Docker image, set `APPSETTINGS_JSON` in Render to a minified JSON value. The app loads that JSON first, then loads normal environment variables again, so specific variables such as `ConnectionStrings__DefaultConnection` override the JSON.
+
 Use Render's PostgreSQL connection string for `ConnectionStrings__DefaultConnection`. Keep all secrets in Render; do not copy production secrets into `appsettings.json` or into the Docker image.
 
 ## Frontend configuration

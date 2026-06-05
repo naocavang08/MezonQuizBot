@@ -14,6 +14,13 @@ using WebApp.Integration.Mezon;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var appsettingsJson = Environment.GetEnvironmentVariable("APPSETTINGS_JSON");
+if (!string.IsNullOrWhiteSpace(appsettingsJson))
+{
+    builder.Configuration.AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(appsettingsJson)));
+    builder.Configuration.AddEnvironmentVariables();
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
