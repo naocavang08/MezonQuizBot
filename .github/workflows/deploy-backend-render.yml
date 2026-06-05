@@ -79,6 +79,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Generate production appsettings
+        env:
+          APPSETTINGS_PRODUCTION: ${{ secrets.APPSETTINGS_PRODUCTION }}
+        run: |
+          test -n "$APPSETTINGS_PRODUCTION"
+          printf '%s' "$APPSETTINGS_PRODUCTION" > MezonQuiz/src/WebApp/appsettings.Production.json
+          jq -e . MezonQuiz/src/WebApp/appsettings.Production.json > /dev/null
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
