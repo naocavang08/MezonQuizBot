@@ -12,19 +12,16 @@ namespace xUTest.Tests
         {
             // Arrange
             var eventManager = new EventManager();
-            bool handlerInvoked = false;
+            var handlerInvoked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             
-            Action<string> handler = (msg) => { handlerInvoked = true; };
+            Action<string> handler = (msg) => { handlerInvoked.SetResult(); };
             eventManager.On("test_event", handler);
 
             // Act
             await eventManager.EmitAsync("test_event", "hello");
 
-            // Allow user handlers (fire-and-forget) to execute
-            await Task.Delay(100);
-
             // Assert
-            Assert.True(handlerInvoked);
+            await handlerInvoked.Task.WaitAsync(TimeSpan.FromSeconds(5));
             Assert.True(eventManager.HasListeners("test_event"));
         }
 
