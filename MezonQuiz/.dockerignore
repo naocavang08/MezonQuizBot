@@ -1,0 +1,33 @@
+.git
+.gitignore
+.vs
+.vscode
+bin
+obj
+**/bin
+**/obj
+TestResults
+**/TestResults
+*.user
+*.suo
+*.tmp
+*.log
+err.txt
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.render.example
+appsettings.Local.json
+
+# Frontend and unrelated local artifacts when building from the MezonQuiz context
+../MezonQuizFE
+../StitchDesign
+../mezon-sdk-python
+../node_modules
+
+# Docker/build metadata
+Dockerfile*
+docker-compose*.yml
+README.md
+AUTHORIZATION.md
