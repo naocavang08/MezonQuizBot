@@ -311,7 +311,7 @@ namespace Mezon_sdk.Models
         }
 
         // =========================
-        // JSON PARSER (giống Python logic)
+        // JSON PARSER (matches the Python logic)
         // =========================
         private static T? ParseJson<T>(Dictionary<string, object> dict, string key)
         {
@@ -322,7 +322,7 @@ namespace Mezon_sdk.Models
             {
                 var val = dict[key];
 
-                // Nếu là string → parse JSON
+                // If the value is a string, parse it as JSON.
                 if (val is string str)
                 {
                     if (string.IsNullOrWhiteSpace(str))
@@ -331,7 +331,7 @@ namespace Mezon_sdk.Models
                     return JsonSerializer.Deserialize<T>(str);
                 }
 
-                // Nếu đã là object → convert lại qua JSON
+                // If the value is already an object, convert it through JSON.
                 var json = JsonSerializer.Serialize(val);
                 return JsonSerializer.Deserialize<T>(json);
             }
@@ -342,7 +342,7 @@ namespace Mezon_sdk.Models
         }
 
         // =========================
-        // SAFE CONVERT giống model_validate
+        // SAFE CONVERT (matches model_validate)
         // =========================
         private static T? SafeConvert<T>(object obj)
         {

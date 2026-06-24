@@ -45,7 +45,7 @@ namespace Mezon_sdk.Messages
             var channelId = message.GetValueOrDefault("channel_id")?.ToString();
 
             if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(channelId)) return;
-            // Kiểm tra xem message đã tồn tại chưa, nếu có thì update, nếu không thì tạo mới
+            // Update an existing message, or create a new record when it does not exist.
             var entity = await context.Messages
                 .FirstOrDefaultAsync(m => m.Id == id && m.ChannelId == channelId)
                 ?? new MessageEntity { Id = id, ChannelId = channelId };
