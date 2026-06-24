@@ -455,6 +455,8 @@ message EphemeralMessageSend {
 message QuickMenuDataEvent {
   string menu_name = 1;
   ChannelMessageSend message = 2;
+  int64 sender_id = 3;
+  int64 message_sender_id = 4;
 }
 
 message VoiceReactionSend {
@@ -533,6 +535,8 @@ message ChannelMessageUpdate {
   int64 topic_id = 10;
   // update message topic
   bool is_update_msg_topic = 11;
+  // Message create time.
+  uint32 create_time_seconds = 12;
 }
 
 // Remove a message previously sent to a realtime channel.
