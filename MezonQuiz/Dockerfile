@@ -4,7 +4,6 @@ WORKDIR /src
 
 COPY MezonQuiz.slnx ./
 COPY src/WebApp/WebApp.csproj src/WebApp/
-COPY src/Mezon-sdk/Mezon-sdk.csproj src/Mezon-sdk/
 
 RUN dotnet restore src/WebApp/WebApp.csproj
 
